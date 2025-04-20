@@ -1,0 +1,20 @@
+{
+  "name": "shortcut-game",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "bun check && tsc && vite build",
+    "check": "biome check .",
+    "fix": "biome check . --fix --unsafe"
+  },
+  "dependencies": {
+    "pixi.js": "^8.8.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0-beta.1",
+    "typescript": "~5.7.3",
+    "vite": "^6.2.0"
+  }
+}
