@@ -4,16 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prepare": "bun sync",
+    "sync": "lefthook install",
     "dev": "vite",
     "build": "bun check && tsc && vite build",
     "check": "biome check .",
-    "fix": "biome check . --fix --unsafe"
+    "fix": "biome check . --fix --unsafe",
+    "fix:safe": "biome check . --fix"
   },
   "dependencies": {
     "pixi.js": "^8.8.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0-beta.1",
+    "lefthook": "^1.11.10",
     "typescript": "~5.7.3",
     "vite": "^6.2.0"
   }
