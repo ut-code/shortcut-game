@@ -60,11 +60,10 @@ export class AbilityControl {
     }
   }
   cut() {
-    console.log("running cut...");
-    console.log("context", this);
     if (!this.focused) return;
     const target = getBlock(this.focused.x, this.focused.y);
-    if (!target) return;
+    // removable 以外はカットできない
+    if (!target || target !== Block.movable) return;
     this.inventory = target;
     setBlock(this.focused.x, this.focused.y, Block.air);
   }
