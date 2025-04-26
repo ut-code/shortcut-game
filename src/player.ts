@@ -29,8 +29,10 @@ export class Player extends Sprite {
     );
     app.ticker.add((ticker) => this.update(ticker));
 
-    this.x = app.screen.width / 2 + 30;
-    this.y = app.screen.height / 2 - 20;
+    // todo: 初期座標をフィールドとともにどこかで決定
+    this.x = app.screen.width / 2;
+    this.y = app.screen.height / 2 - 400;
+
     this.width = constants.playerWidth * pixelSize;
     this.height = constants.playerHeight * pixelSize;
 
