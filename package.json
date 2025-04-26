@@ -4,21 +4,27 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare": "bun sync",
-    "sync": "lefthook install",
+    "prepare": "lefthook install && bun sync",
+    "sync": "svelte-kit sync || true",
     "dev": "vite",
     "build": "bun check && tsc && vite build",
     "check": "biome check .",
+    "check:svelte": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "fix": "biome check . --fix --unsafe",
     "fix:safe": "biome check . --fix"
   },
   "dependencies": {
-    "pixi.js": "^8.8.1"
+    "pixi.js": "^8.9.1",
+    "svelte": "^5.28.2"
   },
   "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.8",
+    "@sveltejs/kit": "^2.20.7",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "svelte-check": "^4.1.6",
     "@biomejs/biome": "^1.9.4",
-    "lefthook": "^1.11.10",
+    "lefthook": "^1.11.11",
     "typescript": "~5.7.3",
-    "vite": "^6.2.0"
+    "vite": "^6.3.3"
   }
 }
