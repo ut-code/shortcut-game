@@ -1,5 +1,7 @@
 import { Sprite, SpriteOptions, Texture, Ticker } from "pixi.js";
 import * as constants from "./constants";
+import { Block, getBlock, pixelSize } from "./grid";
+import { app } from "./resources";
 
 enum Inputs {
   Left,
@@ -16,6 +18,22 @@ export class Player extends Sprite {
   elapsed: number;
   constructor(options?: SpriteOptions | Texture) {
     super(options);
+    // Center the sprite's anchor point
+    this.anchor.set(0.5, 1);
+    // Move the sprite to the center of the screen
+    document.addEventListener("keydown", (event) =>
+      this.handleInput(event, true),
+    );
+    document.addEventListener("keyup", (event) =>
+      this.handleInput(event, false),
+    );
+    app.ticker.add((ticker) => this.update(ticker));
+
+    this.x = app.screen.width / 2 + 30;
+    this.y = app.screen.height / 2 - 20;
+    this.width = constants.playerWidth * pixelSize;
+    this.height = constants.playerHeight * pixelSize;
+
     this.vx = 0;
     this.vy = 0;
     this.onGround = false;
@@ -59,19 +77,82 @@ export class Player extends Sprite {
       }
     }
 
+    const isBlock = (x: number, y: number) =>
+      getBlock(Math.floor(x), Math.floor(y)) !== Block.air &&
+      getBlock(Math.floor(x), Math.floor(y)) !== undefined;
+    // プレイヤーの下がブロック
+    // = プレイヤーの左下端がブロック or プレイヤーの右下端がブロック
+    // 壁に触れている際にバグるのを避けるためx方向は±1
+    this.onGround =
+      isBlock(
+        (this.x + 1) / pixelSize - constants.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / pixelSize,
+      ) ||
+      isBlock(
+        (this.x - 1) / pixelSize + constants.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / pixelSize,
+      );
+    if (this.onGround) {
+      // 自分の位置は衝突したブロックの上
+      this.y =
+        Math.floor((this.y + this.vy * ticker.deltaTime) / pixelSize) *
+        pixelSize;
+      this.vy = 0;
+    }
+    // 右に動いていて、プレイヤーの右上端または右下端がブロック
+    // 地面に触れている際にバグるのを避けるためy方向は-1
+    if (
+      this.vx > 0 &&
+      (isBlock(
+        (this.x + this.vx * ticker.deltaTime) / pixelSize +
+          constants.playerWidth / 2,
+        (this.y - 1) / pixelSize,
+      ) ||
+        isBlock(
+          (this.x + this.vx * ticker.deltaTime) / pixelSize +
+            constants.playerWidth / 2,
+          (this.y + 1) / pixelSize - constants.playerHeight,
+        ))
+    ) {
+      console.log("hit right");
+      this.x =
+        (Math.floor(
+          (this.x + this.vx * ticker.deltaTime) / pixelSize +
+            constants.playerWidth / 2,
+        ) -
+          constants.playerWidth / 2) *
+        pixelSize;
+      this.vx = 0;
+    }
+    // 左に動いていて、プレイヤーの左上端または左下端がブロック
+    if (
+      this.vx < 0 &&
+      (isBlock(
+        (this.x + this.vx * ticker.deltaTime) / pixelSize -
+          constants.playerWidth / 2,
+        (this.y - 1) / pixelSize,
+      ) ||
+        isBlock(
+          (this.x + this.vx * ticker.deltaTime) / pixelSize -
+            constants.playerWidth / 2,
+          (this.y + 1) / pixelSize - constants.playerHeight,
+        ))
+    ) {
+      console.log("hit left");
+      this.x =
+        (Math.ceil(
+          (this.x + this.vx * ticker.deltaTime) / pixelSize -
+            constants.playerWidth / 2,
+        ) +
+          constants.playerWidth / 2) *
+        pixelSize;
+      this.vx = 0;
+    }
+
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
     this.vy += constants.gravity;
     this.elapsed += ticker.deltaTime;
-
-    // 当たり判定実装前の仮の地面 (todo)
-    if (this.y >= 400) {
-      this.y = 400;
-      this.vy = 0;
-      this.onGround = true;
-    } else {
-      this.onGround = false;
-    }
 
     // if (bunny.x >= app.screen.width / 2 + 200) {
     //   app.stage.removeChild(bunny);

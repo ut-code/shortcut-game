@@ -1,3 +1,5 @@
+import { app } from "./resources";
+
 export enum Block {
   air = "air",
   block = "block",
@@ -7,20 +9,22 @@ export enum Block {
 export const grid: Block[][] = [];
 export const gridX = 17;
 export const gridY = 16;
+export const pixelSize = Math.min(
+  app.screen.width / gridX,
+  app.screen.height / gridY,
+);
 export function getRandom() {
-  switch (Math.floor(Math.random() * 3)) {
-    case 0:
-      return Block.air;
+  switch (Math.floor(Math.random() * 10)) {
     case 1:
       return Block.block;
     case 2:
       return Block.movable;
     default:
-      throw new Error("oops!");
+      return Block.air;
   }
 }
 export function getBlock(x: number, y: number) {
-  return grid[y][x];
+  return grid[y]?.[x];
 }
 export function setBlock(x: number, y: number, block: Block) {
   grid[y][x] = block;
