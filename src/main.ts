@@ -1,6 +1,6 @@
 import { Sprite } from "pixi.js";
-import { getBlock, gridX, gridY, pixelSize } from "./grid.ts";
 import { Block } from "./constants.ts";
+import { getBlock, gridX, gridY, pixelSize } from "./grid.ts";
 import { Player } from "./player.ts";
 import { app, bunnyTexture, rockTexture, stageContainer } from "./resources.ts";
 
@@ -33,5 +33,7 @@ app.ticker.add(() => {
   cleanup = rerender();
 });
 
-// Add the bunny to the stage
-app.stage.addChild(new Player(bunnyTexture));
+// Add the player to the stage
+const player = new Player(bunnyTexture);
+app.ticker.add((ticker) => player.tick(ticker));
+app.stage.addChild(player);

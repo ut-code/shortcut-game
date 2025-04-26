@@ -1,9 +1,8 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
-import { AbilityControl, type AbilityEnableOptions } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import { getBlock, pixelSize } from "./grid.ts";
-import { app } from "./resources.ts";
+import { AbilityControl, type AbilityInit } from "./ability.ts";
 
 enum Inputs {
   Left = 0,
@@ -23,7 +22,7 @@ export class Player extends Sprite {
   constructor(
     superOptions?: SpriteOptions | Texture,
     thisOptions?: {
-      ability?: AbilityEnableOptions;
+      ability?: AbilityInit;
     },
   ) {
     super(superOptions);
@@ -36,7 +35,6 @@ export class Player extends Sprite {
     document.addEventListener("keyup", (event) =>
       this.handleInput(event, false),
     );
-    app.ticker.add((ticker) => this.tick(ticker));
 
     // todo: 初期座標をフィールドとともにどこかで決定
     this.x = 2 * pixelSize;
@@ -54,15 +52,13 @@ export class Player extends Sprite {
     this.holdingKeys = {};
   }
   getCoords() {
-    const x = this.x / 32;
-    const y = this.y / 32; // pixelSize 後で考える
+    const x = Math.floor(this.x / pixelSize);
+    const y = Math.floor(this.y / pixelSize);
     return { x, y };
   }
   handleInput(event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
       this.ability.handleKeyDown(event);
-    } else {
-      this.ability.handleKeyUp(event);
     }
     console.log(event.key);
     switch (event.key) {
@@ -182,6 +178,7 @@ export class Player extends Sprite {
     this.vy += c.gravity * pixelSize;
     this.elapsed += ticker.deltaTime;
 
+    this.ability.highlightCoord(this.getCoords(), this.facing);
     // if (bunny.x >= app.screen.width / 2 + 200) {
     //   app.stage.removeChild(bunny);
     // }

@@ -1,8 +1,12 @@
-import { type Block, Facing } from "./constants.ts";
+import { Block, Facing } from "./constants.ts";
+import { getBlock, setBlock } from "./grid.ts";
 
 export type Coords = {
   x: number;
   y: number;
+};
+export type AbilityInit = {
+  enabled?: AbilityEnableOptions;
 };
 export type AbilityEnableOptions = {
   copy: boolean;
@@ -10,16 +14,18 @@ export type AbilityEnableOptions = {
   cut: boolean;
 };
 export class AbilityControl {
-  controlPressed = false;
-  holdingBlock: Block | null = null;
-  constructor(
-    public enabled: AbilityEnableOptions = {
+  inventory: Block | null = null;
+  inventoryIsInfinite = false;
+  enabled: AbilityEnableOptions;
+  focused: Coords | undefined;
+  constructor(options?: AbilityInit) {
+    this.enabled = options?.enabled ?? {
       copy: true,
       paste: true,
       cut: true,
-    },
-  ) {}
-  highlightCoord(coords: Coords, facing: Facing) {
+    };
+  }
+  highlightCoord(playerAt: Coords, facing: Facing) {
     let dx: number;
     switch (facing) {
       case Facing.left:
@@ -31,32 +37,48 @@ export class AbilityControl {
       default:
         dx = facing satisfies never;
     }
-    return {
-      ...coords,
-      x: coords.x + dx,
+    this.focused = {
+      ...playerAt,
+      x: playerAt.x + dx,
     };
+    return this.focused;
   }
-  copy() {}
-  paste() {}
+  copy() {
+    if (!this.focused) return;
+    const target = getBlock(this.focused.x, this.focused.y);
+    if (!target) return;
+    this.inventory = target;
+  }
+  paste() {
+    if (!this.focused) return;
+    if (!this.inventory || this.inventory === Block.air) return;
+    const target = getBlock(this.focused.x, this.focused.y);
+    if (!target || target !== Block.air) return;
+    setBlock(this.focused.x, this.focused.y, this.inventory);
+    if (!this.inventoryIsInfinite) {
+      this.inventory = Block.air;
+    }
+  }
+  cut() {
+    console.log("running cut...");
+    console.log("context", this);
+    if (!this.focused) return;
+    const target = getBlock(this.focused.x, this.focused.y);
+    if (!target) return;
+    this.inventory = target;
+    setBlock(this.focused.x, this.focused.y, Block.air);
+  }
   handleKeyDown(e: KeyboardEvent) {
-    if (e.ctrlKey || e.metaKey) {
-      this.controlPressed = true;
-      return;
+    if (!(e.ctrlKey || e.metaKey)) return;
+
+    if (this.enabled.paste && e.key === "v") {
+      this.paste();
     }
-    if (!this.controlPressed) return;
-    if (this.enabled.paste && e.code === "V") {
-      this.paste;
+    if (this.enabled.copy && e.key === "c") {
+      this.copy();
     }
-    if (this.enabled.copy && e.code === "C") {
-      // copy
-    }
-    if (this.enabled.cut && e.code === "X") {
-      // cut
-    }
-  }
-  handleKeyUp(e: KeyboardEvent) {
-    if (e.ctrlKey || e.metaKey) {
-      this.controlPressed = false;
+    if (this.enabled.cut && e.key === "x") {
+      this.cut();
     }
   }
 }
