@@ -47,12 +47,15 @@ export class Player extends Sprite {
     console.log(event.key);
     switch (event.key) {
       case "ArrowLeft":
+      case "a":
         this.holdingKeys[Inputs.Left] = down;
         break;
       case "ArrowRight":
+      case "d":
         this.holdingKeys[Inputs.Right] = down;
         break;
       case "ArrowUp":
+      case "w":
         this.holdingKeys[Inputs.Up] = down;
         break;
     }
