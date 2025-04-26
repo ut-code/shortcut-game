@@ -1,6 +1,6 @@
 import { Block } from "./constants.ts";
+import createStage from "./createStage.ts";
 import { app } from "./resources.ts";
-import createStage from "./stages/createStage.ts";
 
 const grid1 = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],

@@ -1,4 +1,4 @@
-import { Block } from "../constants.ts";
+import { Block } from "./constants.ts";
 
 export default function createStage1(numGrid: number[][]): Block[][] {
   const grid: Block[][] = [];
