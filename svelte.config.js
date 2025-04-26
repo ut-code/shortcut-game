@@ -7,9 +7,13 @@ const config = {
   preprocess: vitePreprocess(),
 
   kit: {
-    adapter: adapter(),
+    adapter: adapter({
+      pages: "dist",
+      assets: "dist",
+    }),
     files: {
       routes: "./routes",
+      assets: "./public",
     },
   },
 };

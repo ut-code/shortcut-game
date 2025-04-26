@@ -3,7 +3,7 @@ import createStage from "./createStage.ts";
 import { app } from "./resources.ts";
 import { grid1, grid2, grid3 } from "./stages.ts";
 
-const stage = 1;
+const stage = 1 as 1 | 2 | 3;
 const numGrid = (() => {
   switch (stage) {
     case 1:
