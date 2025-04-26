@@ -36,7 +36,7 @@ import { Application, Assets, Container, Sprite } from "pixi.js";
   bunny.anchor.set(0.5);
 
   // Move the sprite to the center of the screen
-  bunny.position.set(app.screen.width /2 + 30, app.screen.height / 2 - 20);
+  bunny.position.set(app.screen.width / 2 + 30, app.screen.height / 2 - 20);
 
   // Add the bunny to the stage
   app.stage.addChild(bunny);
@@ -49,7 +49,6 @@ import { Application, Assets, Container, Sprite } from "pixi.js";
       app.stage.removeChild(bunny);
     }
     return;
-  })
+  });
   // Listen for animate update
-
 })();
