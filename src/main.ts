@@ -42,9 +42,13 @@ import { Application, Assets, Container, Sprite } from "pixi.js";
   app.stage.addChild(bunny);
 
   document.addEventListener("keydown", (event) => {
-    if (event.ctrlKey && event.key === "b") {
+    if (event.key === "ArrowLeft") {
+      bunny.x -= 10;
+    }
+    if (event.key === "ArrowRight") {
       bunny.x += 10;
     }
+    console.log(event.key)
     if (bunny.x >= app.screen.width / 2 + 200) {
       app.stage.removeChild(bunny);
     }
