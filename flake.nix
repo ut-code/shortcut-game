@@ -19,7 +19,8 @@
       devShells.default = pkgs.mkShell {
         packages = [
           bunnix.packages.${system}.v1_2_10
-          pkgs.nodejs
+          pkgs.nodejs-slim
+          pkgs.static-web-server
         ];
       };
     });

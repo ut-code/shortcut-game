@@ -2,13 +2,14 @@ import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
 import { AbilityControl, type AbilityInit } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
-import { getBlock, pixelSize } from "./grid.ts";
+import { getBlock, getPixelSize } from "./grid.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
 
 enum Inputs {
   Left = 0,
   Right = 1,
   Up = 2,
+  Ctrl = 3,
 }
 export class Player extends Sprite {
   holdingKeys: { [key in Inputs]?: boolean };
@@ -38,11 +39,11 @@ export class Player extends Sprite {
     );
 
     // todo: 初期座標をフィールドとともにどこかで決定
-    this.x = 2 * pixelSize;
-    this.y = 2 * pixelSize;
+    this.x = 2 * getPixelSize();
+    this.y = 2 * getPixelSize();
 
-    this.width = c.playerWidth * pixelSize;
-    this.height = c.playerHeight * pixelSize;
+    this.width = c.playerWidth * getPixelSize();
+    this.height = c.playerHeight * getPixelSize();
 
     this.ability = new AbilityControl(thisOptions?.ability);
     this.vx = 0;
@@ -53,30 +54,38 @@ export class Player extends Sprite {
     this.holdingKeys = {};
   }
   getCoords() {
-    const x = Math.floor(this.x / pixelSize);
-    const y = Math.floor((this.y - 1) / pixelSize);
+    const x = Math.floor(this.x / getPixelSize());
+    const y = Math.floor((this.y - 1) / getPixelSize());
     return { x, y };
   }
   createHighlight() {
-    const texture =
-      this.ability.inventory === null ? highlightTexture : highlightHoldTexture;
-    const highlight: Sprite = new Sprite(texture);
-    highlight.width = pixelSize;
-    highlight.height = pixelSize;
-    const highlightCoords = this.ability.highlightCoord(
-      this.getCoords(),
-      this.facing,
-    );
-    highlight.x = highlightCoords.x * pixelSize;
-    highlight.y = highlightCoords.y * pixelSize;
-    return highlight;
+    if (this.holdingKeys[Inputs.Ctrl] && this.onGround) {
+      const texture =
+        this.ability.inventory === null
+          ? highlightTexture
+          : highlightHoldTexture;
+      const highlight: Sprite = new Sprite(texture);
+      highlight.width = getPixelSize();
+      highlight.height = getPixelSize();
+      const highlightCoords = this.ability.highlightCoord(
+        this.getCoords(),
+        this.facing,
+      );
+      highlight.x = highlightCoords.x * getPixelSize();
+      highlight.y = highlightCoords.y * getPixelSize();
+      return highlight;
+    }
   }
   handleInput(event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
-      this.ability.handleKeyDown(event);
+      this.ability.handleKeyDown(event, this.onGround);
     }
     console.log(event.key);
     switch (event.key) {
+      case "Control":
+      case "Meta":
+        this.holdingKeys[Inputs.Ctrl] = eventIsKeyDown;
+        break;
       case "ArrowLeft":
       case "a":
         this.holdingKeys[Inputs.Left] = eventIsKeyDown;
@@ -101,20 +110,20 @@ export class Player extends Sprite {
   tick(ticker: Ticker) {
     this.vx = 0;
     if (this.holdingKeys[Inputs.Left]) {
-      this.vx -= c.moveVX * pixelSize;
+      this.vx -= c.moveVX * getPixelSize();
     }
     if (this.holdingKeys[Inputs.Right]) {
-      this.vx += c.moveVX * pixelSize;
+      this.vx += c.moveVX * getPixelSize();
     }
     if (this.holdingKeys[Inputs.Up]) {
       if (this.onGround) {
-        this.vy = -c.jumpVY * pixelSize;
+        this.vy = -c.jumpVY * getPixelSize();
         this.jumpingBegin = this.elapsed;
       } else if (
         this.jumpingBegin &&
         this.elapsed - this.jumpingBegin < c.jumpFrames
       ) {
-        this.vy = -c.jumpVY * pixelSize;
+        this.vy = -c.jumpVY * getPixelSize();
       } else {
         this.jumpingBegin = null;
       }
@@ -123,104 +132,111 @@ export class Player extends Sprite {
     const isBlock = (x: number, y: number) =>
       getBlock(Math.floor(x), Math.floor(y)) !== Block.air &&
       getBlock(Math.floor(x), Math.floor(y)) !== undefined;
+    // 天井
+    const hittingCeil =
+      isBlock(
+        (this.x + 1) / getPixelSize() - c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / getPixelSize() - c.playerHeight,
+      ) ||
+      isBlock(
+        (this.x - 1) / getPixelSize() + c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / getPixelSize() - c.playerHeight,
+      );
+    if (this.vy < 0 && hittingCeil) {
+      this.y =
+        (Math.ceil(
+          (this.y + this.vy * ticker.deltaTime) / getPixelSize() -
+            c.playerHeight,
+        ) +
+          c.playerHeight) *
+        getPixelSize();
+      this.vy = 0;
+      this.jumpingBegin = null;
+    }
     // プレイヤーの下がブロック
     // = プレイヤーの左下端がブロック or プレイヤーの右下端がブロック
     // 壁に触れている際にバグるのを避けるためx方向は±1
     this.onGround =
       this.vy >= 0 &&
       (isBlock(
-        (this.x + 1) / pixelSize - c.playerWidth / 2,
-        (this.y + this.vy * ticker.deltaTime) / pixelSize,
+        (this.x + 1) / getPixelSize() - c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / getPixelSize(),
       ) ||
         isBlock(
-          (this.x - 1) / pixelSize + c.playerWidth / 2,
-          (this.y + this.vy * ticker.deltaTime) / pixelSize,
+          (this.x - 1) / getPixelSize() + c.playerWidth / 2,
+          (this.y + this.vy * ticker.deltaTime) / getPixelSize(),
         ));
     if (this.onGround) {
       // 自分の位置は衝突したブロックの上
-      this.y =
-        Math.floor((this.y + this.vy * ticker.deltaTime) / pixelSize) *
-        pixelSize;
+      if (!hittingCeil) {
+        this.y =
+          Math.floor((this.y + this.vy * ticker.deltaTime) / getPixelSize()) *
+          getPixelSize();
+      }
       this.vy = 0;
-    }
-    // 天井
-    if (
-      this.vy < 0 &&
-      (isBlock(
-        (this.x + 1) / pixelSize - c.playerWidth / 2,
-        (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
-      ) ||
-        isBlock(
-          (this.x - 1) / pixelSize + c.playerWidth / 2,
-          (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
-        ))
-    ) {
-      this.y =
-        (Math.ceil(
-          (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
-        ) +
-          c.playerHeight) *
-        pixelSize;
-      this.vy = 0;
-      this.jumpingBegin = null;
     }
     // 右に動いていて、プレイヤーの右上端または右下端がブロック
     // 地面に触れている際にバグるのを避けるためy方向は-1
     if (
       this.vx > 0 &&
       (isBlock(
-        (this.x + this.vx * ticker.deltaTime) / pixelSize + c.playerWidth / 2,
-        (this.y - 1) / pixelSize,
+        (this.x + this.vx * ticker.deltaTime) / getPixelSize() +
+          c.playerWidth / 2,
+        (this.y - 1) / getPixelSize(),
       ) ||
         isBlock(
-          (this.x + this.vx * ticker.deltaTime) / pixelSize + c.playerWidth / 2,
-          (this.y + 1) / pixelSize - c.playerHeight,
+          (this.x + this.vx * ticker.deltaTime) / getPixelSize() +
+            c.playerWidth / 2,
+          (this.y + 1) / getPixelSize() - c.playerHeight,
         ))
     ) {
       console.log("hit right");
       this.x =
         (Math.floor(
-          (this.x + this.vx * ticker.deltaTime) / pixelSize + c.playerWidth / 2,
+          (this.x + this.vx * ticker.deltaTime) / getPixelSize() +
+            c.playerWidth / 2,
         ) -
           c.playerWidth / 2) *
-        pixelSize;
+        getPixelSize();
       this.vx = 0;
     }
     // 左に動いていて、プレイヤーの左上端または左下端がブロック
     if (
       this.vx < 0 &&
       (isBlock(
-        (this.x + this.vx * ticker.deltaTime) / pixelSize - c.playerWidth / 2,
-        (this.y - 1) / pixelSize,
+        (this.x + this.vx * ticker.deltaTime) / getPixelSize() -
+          c.playerWidth / 2,
+        (this.y - 1) / getPixelSize(),
       ) ||
         isBlock(
-          (this.x + this.vx * ticker.deltaTime) / pixelSize - c.playerWidth / 2,
-          (this.y + 1) / pixelSize - c.playerHeight,
+          (this.x + this.vx * ticker.deltaTime) / getPixelSize() -
+            c.playerWidth / 2,
+          (this.y + 1) / getPixelSize() - c.playerHeight,
         ))
     ) {
       console.log("hit left");
       this.x =
         (Math.ceil(
-          (this.x + this.vx * ticker.deltaTime) / pixelSize - c.playerWidth / 2,
+          (this.x + this.vx * ticker.deltaTime) / getPixelSize() -
+            c.playerWidth / 2,
         ) +
           c.playerWidth / 2) *
-        pixelSize;
+        getPixelSize();
       this.vx = 0;
     }
     // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
     // Todo: 本当はブロックの移動状況含むステージの状況すべてをリセットすべき
     // Todo: ステージ個別に用意される初期座標に移動させる
-    if (this.y > 6.5 * pixelSize || this.y < -1) {
-      this.x = 2 * pixelSize;
-      this.y = 3 * pixelSize;
+    if (this.y > 6.5 * getPixelSize() || this.y < -1) {
+      this.x = 2 * getPixelSize();
+      this.y = 3 * getPixelSize();
     }
 
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
-    this.vy += c.gravity * pixelSize;
+    this.vy += c.gravity * getPixelSize() * ticker.deltaTime;
     this.elapsed += ticker.deltaTime;
 
-    this.ability.highlightCoord(this.getCoords(), this.facing);
     // if (bunny.x >= app.screen.width / 2 + 200) {
     //   app.stage.removeChild(bunny);
     // }

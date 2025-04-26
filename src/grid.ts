@@ -24,6 +24,13 @@ export let resolvePixelSize: (n: number) => void;
 export const pixelSize = await new Promise<number>((resolve) => {
   resolvePixelSize = resolve;
 });
+let pixelSize_ = 1;
+export function getPixelSize() {
+  return pixelSize_;
+}
+export function setPixelSize(pixelSize: number) {
+  pixelSize_ = pixelSize;
+}
 export function getRandom() {
   switch (Math.floor(Math.random() * 3)) {
     case 0:

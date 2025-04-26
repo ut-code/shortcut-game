@@ -107,16 +107,16 @@ export class AbilityControl {
     this.inventory = this.history[this.historyIndex].inventory;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
-  handleKeyDown(e: KeyboardEvent) {
+  handleKeyDown(e: KeyboardEvent, onGround: boolean) {
     if (!(e.ctrlKey || e.metaKey)) return;
 
-    if (this.enabled.paste && e.key === "v") {
+    if (this.enabled.paste && onGround && e.key === "v") {
       this.paste();
     }
-    if (this.enabled.copy && e.key === "c") {
+    if (this.enabled.copy && onGround && e.key === "c") {
       this.copy();
     }
-    if (this.enabled.cut && e.key === "x") {
+    if (this.enabled.cut && onGround && e.key === "x") {
       this.cut();
     }
     if (e.key === "z") {

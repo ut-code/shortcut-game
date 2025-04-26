@@ -1,23 +1,10 @@
-import { Application, Sprite } from "pixi.js";
+import { Application, Container, Sprite } from "pixi.js";
 import { Block } from "./constants.ts";
-import { getBlock, gridX, gridY, pixelSize, resolvePixelSize } from "./grid.ts";
+import { getBlock, getPixelSize, gridX, gridY, setPixelSize } from "./grid.ts";
 import { Player } from "./player.ts";
-import { bunnyTexture, rockTexture, stageContainer } from "./resources.ts";
+import { bunnyTexture, rockTexture } from "./resources.ts";
 
-export async function createApp(el: HTMLElement, stage: number) {
-  console.log("stage", stage);
-  const app = new Application();
-
-  // Initialize the application
-  await app.init({ background: "white", resizeTo: window });
-  app.stage.addChild(stageContainer);
-
-  // Append the application canvas to the document body
-  el.appendChild(app.canvas);
-  resolvePixelSize(
-    Math.min(app.screen.width / gridX, app.screen.height / gridY),
-  );
-
+(async () => {
   function rerender() {
     const rocks: Sprite[] = [];
     for (let y = 0; y < gridY; y++) {
@@ -26,23 +13,45 @@ export async function createApp(el: HTMLElement, stage: number) {
         if (type === Block.air) continue;
         const rock = new Sprite(rockTexture);
         if (type === Block.movable) rock.tint = 0xff0000;
-        rock.width = pixelSize;
-        rock.height = pixelSize;
-        rock.x = x * pixelSize;
-        rock.y = y * pixelSize;
+        rock.width = getPixelSize();
+        rock.height = getPixelSize();
+        rock.x = x * getPixelSize();
+        rock.y = y * getPixelSize();
         stageContainer.addChild(rock);
         rocks.push(rock);
       }
     }
     const highlight = player.createHighlight();
-    stageContainer.addChild(highlight);
+    if (highlight) {
+      stageContainer.addChild(highlight);
+    }
     return () => {
-      stageContainer.removeChild(highlight);
+      if (highlight) {
+        stageContainer.removeChild(highlight);
+      }
       for (const rock of rocks) {
         stageContainer.removeChild(rock);
       }
     };
   }
+
+  // Create a new application
+  const app = new Application();
+
+  const stageContainer = new Container();
+  app.stage.addChild(stageContainer);
+
+  // Initialize the application
+  await app.init({ background: "white", resizeTo: window });
+  setPixelSize(Math.min(app.screen.width / gridX, app.screen.height / gridY));
+
+  // Append the application canvas to the document body
+  const container = document.getElementById("pixi-container");
+  if (!container) {
+    console.error("Container not found!");
+    throw new Error("Container not found!");
+  }
+  container.appendChild(app.canvas);
 
   let cleanup: undefined | (() => void);
   app.ticker.add(() => {
@@ -54,4 +63,4 @@ export async function createApp(el: HTMLElement, stage: number) {
   const player = new Player(bunnyTexture);
   app.ticker.add((ticker) => player.tick(ticker));
   app.stage.addChild(player);
-}
+})().catch(console.error);
