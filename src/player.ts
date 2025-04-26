@@ -65,12 +65,16 @@ export class Player extends Sprite {
       case "ArrowLeft":
       case "a":
         this.holdingKeys[Inputs.Left] = eventIsKeyDown;
-        this.facing = c.Facing.left;
+        if (eventIsKeyDown) {
+          this.facing = c.Facing.left;
+        }
         break;
       case "ArrowRight":
       case "d":
         this.holdingKeys[Inputs.Right] = eventIsKeyDown;
-        this.facing = c.Facing.right;
+        if (eventIsKeyDown) {
+          this.facing = c.Facing.right;
+        }
         break;
       case "ArrowUp":
       case "w":
