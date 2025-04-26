@@ -1,4 +1,4 @@
-import { Block } from "../grid.ts";
+import { Block } from "../constants.ts";
 
 export default function createStage1(gridX: number): Block[][] {
   const gridRow0 = new Array(gridX).fill(Block.block);

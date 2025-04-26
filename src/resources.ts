@@ -1,4 +1,4 @@
-import { Application, Assets, Container, Sprite } from "pixi.js";
+import { Application, Assets, Container } from "pixi.js";
 // Create a new application
 export const app = new Application();
 

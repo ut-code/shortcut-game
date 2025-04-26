@@ -1,5 +1,6 @@
 import { Sprite } from "pixi.js";
-import { Block, getBlock, gridX, gridY, pixelSize } from "./grid.ts";
+import { getBlock, gridX, gridY, pixelSize } from "./grid.ts";
+import { Block } from "./constants.ts";
 import { Player } from "./player.ts";
 import { app, bunnyTexture, rockTexture, stageContainer } from "./resources.ts";
 
