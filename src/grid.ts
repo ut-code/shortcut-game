@@ -1,20 +1,24 @@
 import { Block } from "./constants.ts";
 import createStage from "./createStage.ts";
 import { app } from "./resources.ts";
+import { grid1, grid2 } from "./stages.ts";
 
-const grid1 = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
+const stage = 1;
+const numGrid = (() => {
+  switch (stage) {
+    case 1:
+      return grid1;
+    case 2:
+      return grid2;
+    default:
+      throw new Error("hoge");
+  }
+})();
 
-export const gridX = grid1[0].length;
-export const gridY = grid1.length;
+export const gridX = numGrid[0].length;
+export const gridY = numGrid.length;
 
-export const grid: Block[][] = createStage(grid1);
+export const grid: Block[][] = createStage(numGrid);
 export const pixelSize = Math.min(
   app.screen.width / gridX,
   app.screen.height / gridY,
