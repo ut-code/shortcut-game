@@ -1,8 +1,15 @@
 import { Sprite } from "pixi.js";
 import { Block } from "./constants.ts";
+import * as c from "./constants.ts";
 import { getBlock, gridX, gridY, pixelSize } from "./grid.ts";
 import { Player } from "./player.ts";
-import { app, bunnyTexture, rockTexture, stageContainer } from "./resources.ts";
+import {
+  app,
+  bunnyTexture,
+  highlightTexture,
+  rockTexture,
+  stageContainer,
+} from "./resources.ts";
 
 export function rerender() {
   const rocks: Sprite[] = [];
@@ -20,7 +27,20 @@ export function rerender() {
       rocks.push(rock);
     }
   }
+  const highlight: Sprite = new Sprite(highlightTexture);
+  highlight.width = pixelSize;
+  highlight.height = pixelSize;
+  const { x, y } = player.getCoords();
+  highlight.x = x * pixelSize;
+  highlight.y = y * pixelSize;
+  if (player.facing === c.Facing.left) {
+    highlight.x -= pixelSize;
+  } else {
+    highlight.x += pixelSize;
+  }
+  stageContainer.addChild(highlight);
   return () => {
+    stageContainer.removeChild(highlight);
     for (const rock of rocks) {
       stageContainer.removeChild(rock);
     }
