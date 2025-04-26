@@ -53,7 +53,7 @@ export class Player extends Sprite {
   }
   getCoords() {
     const x = Math.floor(this.x / pixelSize);
-    const y = Math.floor(this.y / pixelSize);
+    const y = Math.floor(this.y / pixelSize) - 1;
     return { x, y };
   }
   handleInput(event: KeyboardEvent, eventIsKeyDown: boolean) {
