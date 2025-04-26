@@ -1,6 +1,5 @@
 import { Block } from "./constants.ts";
 import createStage from "./createStage.ts";
-import { app } from "./resources.ts";
 import { grid1, grid2, grid3 } from "./stages.ts";
 
 const stage = 1;
@@ -21,10 +20,13 @@ export const gridX = numGrid[0].length;
 export const gridY = numGrid.length;
 
 export const grid: Block[][] = createStage(numGrid);
-export const pixelSize = Math.min(
-  app.screen.width / gridX,
-  app.screen.height / gridY,
-);
+let pixelSize_ = 1;
+export function getPixelSize() {
+  return pixelSize_;
+}
+export function setPixelSize(pixelSize: number) {
+  pixelSize_ = pixelSize;
+}
 export function getRandom() {
   switch (Math.floor(Math.random() * 3)) {
     case 0:
