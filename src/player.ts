@@ -30,8 +30,8 @@ export class Player extends Sprite {
     app.ticker.add((ticker) => this.update(ticker));
 
     // todo: 初期座標をフィールドとともにどこかで決定
-    this.x = app.screen.width / 2;
-    this.y = app.screen.height / 2 - 400;
+    this.x = 2 * pixelSize;
+    this.y = 2 * pixelSize;
 
     this.width = constants.playerWidth * pixelSize;
     this.height = constants.playerHeight * pixelSize;
@@ -60,20 +60,20 @@ export class Player extends Sprite {
   update(ticker: Ticker) {
     this.vx = 0;
     if (this.holdingKeys[Inputs.Left]) {
-      this.vx -= constants.moveVX;
+      this.vx -= constants.moveVX * pixelSize;
     }
     if (this.holdingKeys[Inputs.Right]) {
-      this.vx += constants.moveVX;
+      this.vx += constants.moveVX * pixelSize;
     }
     if (this.holdingKeys[Inputs.Up]) {
       if (this.onGround) {
-        this.vy = -constants.jumpVY;
+        this.vy = -constants.jumpVY * pixelSize;
         this.jumpingBegin = this.elapsed;
       } else if (
         this.jumpingBegin &&
         this.elapsed - this.jumpingBegin < constants.jumpFrames
       ) {
-        this.vy = -constants.jumpVY;
+        this.vy = -constants.jumpVY * pixelSize;
       } else {
         this.jumpingBegin = null;
       }
@@ -153,7 +153,7 @@ export class Player extends Sprite {
 
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
-    this.vy += constants.gravity;
+    this.vy += constants.gravity * pixelSize;
     this.elapsed += ticker.deltaTime;
 
     // if (bunny.x >= app.screen.width / 2 + 200) {
