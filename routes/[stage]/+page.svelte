@@ -1,6 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import { createApp } from "../../src/main.ts";
+// biome-ignore lint: tsc will error
+import { createApp } from "../../src/main";
 
 const stages = new Map([
   ["stage-1", 1],
@@ -9,7 +10,7 @@ const stages = new Map([
 ]);
 const { data } = $props();
 const stage = stages.get(data.params.stage);
-console.log(stage);
+console.log("stage:", stage);
 const container: HTMLDivElement = $state();
 
 $inspect(container);
@@ -19,11 +20,13 @@ onMount(() => {
 });
 </script>
 
+DIUNTAIPUTD DPANITUN
 <div id="app">
   <div bind:this={container}></div>
 </div>
 
 <style>
+  /*
   :global(body) {
     margin: 0;
     padding: 0;
@@ -39,4 +42,5 @@ onMount(() => {
     justify-content: center;
     align-items: center;
   }
+  */
 </style>
