@@ -7,8 +7,8 @@
     "prepare": "lefthook install && bun sync",
     "sync": "svelte-kit sync || true",
     "dev": "vite",
-    "build": "vite build",
-    "check": "biome check . && bun check:svelte",
+    "build": "bun check && tsc && vite build",
+    "check": "biome check .",
     "check:svelte": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "fix": "biome check . --fix --unsafe",
     "fix:safe": "biome check . --fix"
