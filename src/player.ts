@@ -53,7 +53,7 @@ export class Player extends Sprite {
   }
   getCoords() {
     const x = Math.floor(this.x / pixelSize);
-    const y = Math.floor(this.y / pixelSize);
+    const y = Math.floor(this.y / pixelSize) - 1;
     return { x, y };
   }
   handleInput(event: KeyboardEvent, eventIsKeyDown: boolean) {
@@ -190,9 +190,9 @@ export class Player extends Sprite {
     // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
     // Todo: 本当はブロックの移動状況含むステージの状況すべてをリセットすべき
     // Todo: ステージ個別に用意される初期座標に移動させる
-    if (this.y > 6.5 * pixelSize) {
+    if (this.y > 6.5 * pixelSize || this.y < -1) {
       this.x = 2 * pixelSize;
-      this.y = 2 * pixelSize;
+      this.y = 3 * pixelSize;
     }
 
     this.x += this.vx * ticker.deltaTime;
