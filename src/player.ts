@@ -132,6 +132,26 @@ export class Player extends Sprite {
     const isBlock = (x: number, y: number) =>
       getBlock(Math.floor(x), Math.floor(y)) !== Block.air &&
       getBlock(Math.floor(x), Math.floor(y)) !== undefined;
+    // 天井
+    const hittingCeil =
+      isBlock(
+        (this.x + 1) / pixelSize - c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
+      ) ||
+      isBlock(
+        (this.x - 1) / pixelSize + c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
+      );
+    if (this.vy < 0 && hittingCeil) {
+      this.y =
+        (Math.ceil(
+          (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
+        ) +
+          c.playerHeight) *
+        pixelSize;
+      this.vy = 0;
+      this.jumpingBegin = null;
+    }
     // プレイヤーの下がブロック
     // = プレイヤーの左下端がブロック or プレイヤーの右下端がブロック
     // 壁に触れている際にバグるのを避けるためx方向は±1
@@ -147,31 +167,12 @@ export class Player extends Sprite {
         ));
     if (this.onGround) {
       // 自分の位置は衝突したブロックの上
-      this.y =
-        Math.floor((this.y + this.vy * ticker.deltaTime) / pixelSize) *
-        pixelSize;
+      if (!hittingCeil) {
+        this.y =
+          Math.floor((this.y + this.vy * ticker.deltaTime) / pixelSize) *
+          pixelSize;
+      }
       this.vy = 0;
-    }
-    // 天井
-    if (
-      this.vy < 0 &&
-      (isBlock(
-        (this.x + 1) / pixelSize - c.playerWidth / 2,
-        (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
-      ) ||
-        isBlock(
-          (this.x - 1) / pixelSize + c.playerWidth / 2,
-          (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
-        ))
-    ) {
-      this.y =
-        (Math.ceil(
-          (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
-        ) +
-          c.playerHeight) *
-        pixelSize;
-      this.vy = 0;
-      this.jumpingBegin = null;
     }
     // 右に動いていて、プレイヤーの右上端または右下端がブロック
     // 地面に触れている際にバグるのを避けるためy方向は-1
