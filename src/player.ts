@@ -1,8 +1,8 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
+import { AbilityControl, type AbilityInit } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import { getBlock, pixelSize } from "./grid.ts";
-import { AbilityControl, type AbilityInit } from "./ability.ts";
 
 enum Inputs {
   Left = 0,
@@ -107,20 +107,42 @@ export class Player extends Sprite {
     // = プレイヤーの左下端がブロック or プレイヤーの右下端がブロック
     // 壁に触れている際にバグるのを避けるためx方向は±1
     this.onGround =
-      isBlock(
+      this.vy >= 0 &&
+      (isBlock(
         (this.x + 1) / pixelSize - c.playerWidth / 2,
         (this.y + this.vy * ticker.deltaTime) / pixelSize,
       ) ||
-      isBlock(
-        (this.x - 1) / pixelSize + c.playerWidth / 2,
-        (this.y + this.vy * ticker.deltaTime) / pixelSize,
-      );
+        isBlock(
+          (this.x - 1) / pixelSize + c.playerWidth / 2,
+          (this.y + this.vy * ticker.deltaTime) / pixelSize,
+        ));
     if (this.onGround) {
       // 自分の位置は衝突したブロックの上
       this.y =
         Math.floor((this.y + this.vy * ticker.deltaTime) / pixelSize) *
         pixelSize;
       this.vy = 0;
+    }
+    // 天井
+    if (
+      this.vy < 0 &&
+      (isBlock(
+        (this.x + 1) / pixelSize - c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
+      ) ||
+        isBlock(
+          (this.x - 1) / pixelSize + c.playerWidth / 2,
+          (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
+        ))
+    ) {
+      this.y =
+        (Math.ceil(
+          (this.y + this.vy * ticker.deltaTime) / pixelSize - c.playerHeight,
+        ) +
+          c.playerHeight) *
+        pixelSize;
+      this.vy = 0;
+      this.jumpingBegin = null;
     }
     // 右に動いていて、プレイヤーの右上端または右下端がブロック
     // 地面に触れている際にバグるのを避けるためy方向は-1
