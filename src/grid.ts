@@ -2,7 +2,7 @@ import { Block } from "./constants.ts";
 import createStage from "./createStage.ts";
 import { grid1, grid2, grid3 } from "./stages.ts";
 
-const stage = 1 as 1 | 2 | 3;
+const stage = 1;
 const numGrid = (() => {
   switch (stage) {
     case 1:
@@ -20,10 +20,6 @@ export const gridX = numGrid[0].length;
 export const gridY = numGrid.length;
 
 export const grid: Block[][] = createStage(numGrid);
-export let resolvePixelSize: (n: number) => void;
-export const pixelSize = await new Promise<number>((resolve) => {
-  resolvePixelSize = resolve;
-});
 let pixelSize_ = 1;
 export function getPixelSize() {
   return pixelSize_;

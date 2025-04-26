@@ -1,6 +1,4 @@
-import { Assets, Container } from "pixi.js";
-// Create a new application
-export const stageContainer = new Container();
+import { Assets } from "pixi.js";
 
 // assets
 export const bunnyTexture = await Assets.load("/assets/bunny.png");
