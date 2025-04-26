@@ -13,8 +13,12 @@ export type AbilityEnableOptions = {
   paste: boolean;
   cut: boolean;
 };
+type History = {
+  grid: Block[][];
+  inventory: Block | null;
+};
 export class AbilityControl {
-  history: Block[][][] = [];
+  history: History[] = [];
   historyIndex = 0;
   inventory: Block | null = null;
   inventoryIsInfinite = false;
@@ -27,7 +31,6 @@ export class AbilityControl {
       cut: true,
     };
     this.pushHistory(); // todo: ここ以外でもフィールドをリセットすることがあるならhistoryを初期化する必要がある
-    this.historyIndex = 0;
   }
   highlightCoord(playerAt: Coords, facing: Facing) {
     let dx: number;
@@ -59,10 +62,10 @@ export class AbilityControl {
     const target = getBlock(this.focused.x, this.focused.y);
     if (!target || target !== Block.air) return;
     setBlock(this.focused.x, this.focused.y, this.inventory);
-    this.pushHistory();
     if (!this.inventoryIsInfinite) {
       this.inventory = null;
     }
+    this.pushHistory();
   }
   cut() {
     if (!this.focused) return;
@@ -75,7 +78,10 @@ export class AbilityControl {
   }
   pushHistory() {
     this.history = this.history.slice(0, this.historyIndex + 1);
-    this.history.push(grid.map((row) => row.slice()));
+    this.history.push({
+      grid: grid.map((row) => row.slice()),
+      inventory: this.inventory,
+    });
     this.historyIndex = this.history.length - 1;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
@@ -85,8 +91,9 @@ export class AbilityControl {
     grid.splice(
       0,
       grid.length,
-      ...this.history[this.historyIndex].map((row) => row.slice()),
+      ...this.history[this.historyIndex].grid.map((row) => row.slice()),
     );
+    this.inventory = this.history[this.historyIndex].inventory;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
   redo() {
@@ -95,8 +102,9 @@ export class AbilityControl {
     grid.splice(
       0,
       grid.length,
-      ...this.history[this.historyIndex].map((row) => row.slice()),
+      ...this.history[this.historyIndex].grid.map((row) => row.slice()),
     );
+    this.inventory = this.history[this.historyIndex].inventory;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
   handleKeyDown(e: KeyboardEvent) {
