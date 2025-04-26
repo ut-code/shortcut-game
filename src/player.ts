@@ -1,12 +1,12 @@
-import { Sprite, SpriteOptions, Texture, Ticker } from "pixi.js";
-import * as constants from "./constants";
-import { Block, getBlock, pixelSize } from "./grid";
-import { app } from "./resources";
+import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
+import * as constants from "./constants.ts";
+import { Block, getBlock, pixelSize } from "./grid.ts";
+import { app } from "./resources.ts";
 
 enum Inputs {
-  Left,
-  Right,
-  Up,
+  Left = 0,
+  Right = 1,
+  Up = 2,
 }
 export class Player extends Sprite {
   holdingKeys: { [key in Inputs]?: boolean };

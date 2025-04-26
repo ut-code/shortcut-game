@@ -6,7 +6,7 @@ export const app = new Application();
 await app.init({ background: "white", resizeTo: window });
 
 // Append the application canvas to the document body
-document.getElementById("pixi-container")!.appendChild(app.canvas);
+document.getElementById("pixi-container")?.appendChild(app.canvas);
 
 export const stageContainer = new Container();
 app.stage.addChild(stageContainer);
