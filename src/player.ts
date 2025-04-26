@@ -89,6 +89,7 @@ export class Player extends Sprite {
       case "ArrowLeft":
       case "a":
         this.holdingKeys[Inputs.Left] = eventIsKeyDown;
+        event.preventDefault();
         if (eventIsKeyDown) {
           this.facing = c.Facing.left;
         }
@@ -96,6 +97,7 @@ export class Player extends Sprite {
       case "ArrowRight":
       case "d":
         this.holdingKeys[Inputs.Right] = eventIsKeyDown;
+        event.preventDefault();
         if (eventIsKeyDown) {
           this.facing = c.Facing.right;
         }
@@ -104,6 +106,7 @@ export class Player extends Sprite {
       case "w":
       case " ":
         this.holdingKeys[Inputs.Up] = eventIsKeyDown;
+        event.preventDefault();
         break;
     }
   }
