@@ -1,5 +1,6 @@
 import { Sprite } from "pixi.js";
-import { Block, getBlock, gridX, gridY, shuffleGrid } from "./grid.ts";
+import { Block, getBlock, gridX, gridY } from "./grid.ts";
+import { Player } from "./player.ts";
 import { app, bunnyTexture, rockTexture, stageContainer } from "./resources.ts";
 
 export function rerender() {
@@ -36,7 +37,7 @@ app.ticker.add(() => {
 
 (async () => {
   // Create a bunny Sprite
-  const bunny = new Sprite(bunnyTexture);
+  const bunny = new Player(bunnyTexture);
 
   // Center the sprite's anchor point
   bunny.anchor.set(0.5);
@@ -47,18 +48,11 @@ app.ticker.add(() => {
   // Add the bunny to the stage
   app.stage.addChild(bunny);
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft") {
-      bunnyTexture.x -= 10;
-    }
-    if (event.key === "ArrowRight") {
-      bunnyTexture.x += 10;
-    }
-    console.log(event.key);
-    if (bunnyTexture.x >= app.screen.width / 2 + 200) {
-      app.stage.removeChild(bunnyTexture);
-    }
-    return;
-  });
-  // Listen for animate update
+  document.addEventListener("keydown", (event) =>
+    bunny.handleInput(event, true),
+  );
+  document.addEventListener("keyup", (event) =>
+    bunny.handleInput(event, false),
+  );
+  app.ticker.add((ticker) => bunny.update(ticker));
 })();
