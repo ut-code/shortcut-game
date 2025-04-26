@@ -1,36 +1,43 @@
-import { Application, Assets, Container, Sprite } from "pixi.js";
+import { Sprite } from "pixi.js";
+import { Block, getBlock, gridX, gridY, shuffleGrid } from "./grid.ts";
+import { app, bunnyTexture, rockTexture, stageContainer } from "./resources.ts";
+
+export function rerender() {
+  const pixelSize = Math.min(
+    app.screen.width / gridX,
+    app.screen.height / gridY,
+  );
+  const rocks: Sprite[] = [];
+  for (let y = 0; y < gridY; y++) {
+    for (let x = 0; x < gridX; x++) {
+      if (getBlock(x, y) === Block.air) continue;
+      const rock = new Sprite(rockTexture);
+
+      rock.width = pixelSize;
+      rock.height = pixelSize;
+      rock.x = x * pixelSize;
+      rock.y = y * pixelSize;
+      stageContainer.addChild(rock);
+      rocks.push(rock);
+    }
+  }
+  return () => {
+    for (const rock of rocks) {
+      stageContainer.removeChild(rock);
+    }
+  };
+}
+
+let cleanup: undefined | (() => void);
+setInterval(() => {
+  if (cleanup) cleanup();
+  cleanup = rerender();
+  shuffleGrid();
+}, 1000 / 60);
 
 (async () => {
-  // Create a new application
-  const app = new Application();
-
-  // Initialize the application
-  await app.init({ background: "white", resizeTo: window });
-
-  // Append the application canvas to the document body
-  document.getElementById("pixi-container")!.appendChild(app.canvas);
-
-  const stageContainer = new Container();
-  app.stage.addChild(stageContainer);
-  const rockTexture = await Assets.load("/assets/block.png");
-
-  for (let i = 0; i < 10; i++) {
-    const rock = new Sprite(rockTexture);
-
-    rock.width = 30;
-    rock.height = 30;
-    rock.x = (i % 5) * 40;
-    rock.y = Math.floor(i / 5) * 40;
-    stageContainer.addChild(rock);
-  }
-
-  stageContainer.x = app.screen.width / 2;
-  stageContainer.y = app.screen.height / 2;
-  // Load the bunny texture
-  const texture = await Assets.load("/assets/bunny.png");
-
   // Create a bunny Sprite
-  const bunny = new Sprite(texture);
+  const bunny = new Sprite(bunnyTexture);
 
   // Center the sprite's anchor point
   bunny.anchor.set(0.5);
@@ -43,14 +50,14 @@ import { Application, Assets, Container, Sprite } from "pixi.js";
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft") {
-      bunny.x -= 10;
+      bunnyTexture.x -= 10;
     }
     if (event.key === "ArrowRight") {
-      bunny.x += 10;
+      bunnyTexture.x += 10;
     }
     console.log(event.key);
-    if (bunny.x >= app.screen.width / 2 + 200) {
-      app.stage.removeChild(bunny);
+    if (bunnyTexture.x >= app.screen.width / 2 + 200) {
+      app.stage.removeChild(bunnyTexture);
     }
     return;
   });

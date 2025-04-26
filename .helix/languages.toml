@@ -1,0 +1,7 @@
+[[language]]
+name = "typescript"
+formatter = { command = "bun", args = [
+  "biome",
+  "format",
+  "--stdin-file-path=a.ts",
+] }
