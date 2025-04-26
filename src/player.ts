@@ -3,7 +3,7 @@ import { AbilityControl, type AbilityInit } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import { getBlock, pixelSize } from "./grid.ts";
-import { highlightTexture } from "./resources.ts";
+import { highlightHoldTexture, highlightTexture } from "./resources.ts";
 
 enum Inputs {
   Left = 0,
@@ -58,7 +58,9 @@ export class Player extends Sprite {
     return { x, y };
   }
   createHighlight() {
-    const highlight: Sprite = new Sprite(highlightTexture);
+    const texture =
+      this.ability.inventory === null ? highlightTexture : highlightHoldTexture;
+    const highlight: Sprite = new Sprite(texture);
     highlight.width = pixelSize;
     highlight.height = pixelSize;
     const highlightCoords = this.ability.highlightCoord(
