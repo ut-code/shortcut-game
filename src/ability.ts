@@ -56,7 +56,7 @@ export class AbilityControl {
     if (!target || target !== Block.air) return;
     setBlock(this.focused.x, this.focused.y, this.inventory);
     if (!this.inventoryIsInfinite) {
-      this.inventory = Block.air;
+      this.inventory = null;
     }
   }
   cut() {
