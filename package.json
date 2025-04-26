@@ -7,8 +7,8 @@
     "prepare": "bun sync",
     "sync": "lefthook install",
     "dev": "vite",
-    "build": "bun check && tsc && vite build",
-    "check": "biome check .",
+    "build": "vite build",
+    "check": "biome check . && tsc",
     "fix": "biome check . --fix --unsafe",
     "fix:safe": "biome check . --fix"
   },
