@@ -48,7 +48,7 @@ import { Application, Assets, Container, Sprite } from "pixi.js";
     if (event.key === "ArrowRight") {
       bunny.x += 10;
     }
-    console.log(event.key)
+    console.log(event.key);
     if (bunny.x >= app.screen.width / 2 + 200) {
       app.stage.removeChild(bunny);
     }
