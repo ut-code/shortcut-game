@@ -11,9 +11,10 @@ export function rerender() {
   const rocks: Sprite[] = [];
   for (let y = 0; y < gridY; y++) {
     for (let x = 0; x < gridX; x++) {
-      if (getBlock(x, y) === Block.air) continue;
+      const type = getBlock(x, y);
+      if (type === Block.air) continue;
       const rock = new Sprite(rockTexture);
-
+      if (type === Block.movable) rock.tint = 0xff0000;
       rock.width = pixelSize;
       rock.height = pixelSize;
       rock.x = x * pixelSize;
