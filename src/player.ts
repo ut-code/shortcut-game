@@ -1,8 +1,8 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
+import { AbilityControl, type AbilityInit } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import { getBlock, pixelSize } from "./grid.ts";
-import { AbilityControl, type AbilityInit } from "./ability.ts";
 
 enum Inputs {
   Left = 0,
