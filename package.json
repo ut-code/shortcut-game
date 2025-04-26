@@ -8,6 +8,7 @@
     "sync": "lefthook install",
     "dev": "vite",
     "build": "vite build",
+    "preview": "static-web-server --root dist --port 3000",
     "check": "biome check . && tsc",
     "fix": "biome check . --fix --unsafe",
     "fix:safe": "biome check . --fix"
