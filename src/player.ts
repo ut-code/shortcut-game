@@ -91,6 +91,7 @@ export class Player extends Sprite {
         break;
       case "ArrowUp":
       case "w":
+      case " ":
         this.holdingKeys[Inputs.Up] = eventIsKeyDown;
         break;
     }
