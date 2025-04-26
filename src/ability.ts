@@ -46,7 +46,7 @@ export class AbilityControl {
   copy() {
     if (!this.focused) return;
     const target = getBlock(this.focused.x, this.focused.y);
-    if (!target) return;
+    if (!target || target !== Block.movable) return;
     this.inventory = target;
   }
   paste() {
