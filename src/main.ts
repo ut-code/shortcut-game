@@ -32,7 +32,6 @@ let cleanup: undefined | (() => void);
 setInterval(() => {
   if (cleanup) cleanup();
   cleanup = rerender();
-  shuffleGrid();
 }, 1000 / 60);
 
 (async () => {
