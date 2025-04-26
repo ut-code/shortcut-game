@@ -1,5 +1,5 @@
 import { Sprite, SpriteOptions, Texture, Ticker } from "pixi.js";
-import * as constants from "./constants";
+import * as constants from "./constants.ts";
 
 enum Inputs {
   Left,
