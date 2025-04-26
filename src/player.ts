@@ -3,6 +3,7 @@ import { AbilityControl, type AbilityInit } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import { getBlock, pixelSize } from "./grid.ts";
+import { highlightTexture } from "./resources.ts";
 
 enum Inputs {
   Left = 0,
@@ -55,6 +56,18 @@ export class Player extends Sprite {
     const x = Math.floor(this.x / pixelSize);
     const y = Math.floor((this.y - 1) / pixelSize);
     return { x, y };
+  }
+  createHighlight() {
+    const highlight: Sprite = new Sprite(highlightTexture);
+    highlight.width = pixelSize;
+    highlight.height = pixelSize;
+    const highlightCoords = this.ability.highlightCoord(
+      this.getCoords(),
+      this.facing,
+    );
+    highlight.x = highlightCoords.x * pixelSize;
+    highlight.y = highlightCoords.y * pixelSize;
+    return highlight;
   }
   handleInput(event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {

@@ -27,17 +27,7 @@ export function rerender() {
       rocks.push(rock);
     }
   }
-  const highlight: Sprite = new Sprite(highlightTexture);
-  highlight.width = pixelSize;
-  highlight.height = pixelSize;
-  const { x, y } = player.getCoords();
-  highlight.x = x * pixelSize;
-  highlight.y = y * pixelSize;
-  if (player.facing === c.Facing.left) {
-    highlight.x -= pixelSize;
-  } else {
-    highlight.x += pixelSize;
-  }
+  const highlight = player.createHighlight();
   stageContainer.addChild(highlight);
   return () => {
     stageContainer.removeChild(highlight);
