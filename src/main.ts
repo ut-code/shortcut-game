@@ -4,7 +4,12 @@ import { getBlock, getPixelSize, gridX, gridY, setPixelSize } from "./grid.ts";
 import { Player } from "./player.ts";
 import { bunnyTexture, rockTexture } from "./resources.ts";
 
-(async () => {
+export async function initializeApp(
+  container: HTMLElement | undefined,
+  stage: number,
+) {
+  console.log("stage:", stage);
+
   function rerender() {
     const rocks: Sprite[] = [];
     for (let y = 0; y < gridY; y++) {
@@ -45,8 +50,6 @@ import { bunnyTexture, rockTexture } from "./resources.ts";
   await app.init({ background: "white", resizeTo: window });
   setPixelSize(Math.min(app.screen.width / gridX, app.screen.height / gridY));
 
-  // Append the application canvas to the document body
-  const container = document.getElementById("pixi-container");
   if (!container) {
     console.error("Container not found!");
     throw new Error("Container not found!");
@@ -63,4 +66,4 @@ import { bunnyTexture, rockTexture } from "./resources.ts";
   const player = new Player(bunnyTexture);
   app.ticker.add((ticker) => player.tick(ticker));
   app.stage.addChild(player);
-})().catch(console.error);
+}

@@ -1,32 +1,25 @@
 <script lang="ts">
-import { onMount } from "svelte";
-// biome-ignore lint: tsc will error
-import { createApp } from "../../src/main";
+import { initializeApp } from "../../src/main.ts";
+import type { PageProps } from "./$types.ts";
 
-const stages = new Map([
-  ["stage-1", 1],
-  ["stage-2", 2],
-  ["stage-3", 3],
-]);
-const { data } = $props();
-const stage = stages.get(data.params.stage);
+const { data }: PageProps = $props();
+const stage = data.props.stage;
 console.log("stage:", stage);
-const container: HTMLDivElement = $state();
+let container: HTMLDivElement | undefined = $state();
 
-$inspect(container);
-onMount(() => {
-  if (!stage) throw new Error("STAGE NOT FOUND!");
-  createApp(container, stage);
+$effect(() => {
+  if (!stage) console.error("STAGE NOT FOUND!");
+  initializeApp(container, stage).then(() => {
+    console.log("initialization done");
+  });
 });
 </script>
 
-DIUNTAIPUTD DPANITUN
 <div id="app">
   <div bind:this={container}></div>
 </div>
 
 <style>
-  /*
   :global(body) {
     margin: 0;
     padding: 0;
@@ -42,5 +35,4 @@ DIUNTAIPUTD DPANITUN
     justify-content: center;
     align-items: center;
   }
-  */
 </style>
