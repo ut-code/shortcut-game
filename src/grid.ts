@@ -1,7 +1,7 @@
 import { Block } from "./constants.ts";
 import createStage from "./createStage.ts";
 import { app } from "./resources.ts";
-import { grid1, grid2 } from "./stages.ts";
+import { grid1, grid2, grid3 } from "./stages.ts";
 
 const stage = 1;
 const numGrid = (() => {
@@ -10,6 +10,8 @@ const numGrid = (() => {
       return grid1;
     case 2:
       return grid2;
+    case 3:
+      return grid3;
     default:
       throw new Error("hoge");
   }
