@@ -29,10 +29,10 @@ export function rerender() {
 }
 
 let cleanup: undefined | (() => void);
-setInterval(() => {
+app.ticker.add(() => {
   if (cleanup) cleanup();
   cleanup = rerender();
-}, 1000 / 60);
+});
 
 (async () => {
   // Create a bunny Sprite
