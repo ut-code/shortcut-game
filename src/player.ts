@@ -226,7 +226,7 @@ export class Player extends Sprite {
 
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
-    this.vy += c.gravity * pixelSize;
+    this.vy += c.gravity * pixelSize * ticker.deltaTime;
     this.elapsed += ticker.deltaTime;
 
     // if (bunny.x >= app.screen.width / 2 + 200) {
