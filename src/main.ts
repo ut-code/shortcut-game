@@ -21,9 +21,13 @@ export function rerender() {
     }
   }
   const highlight = player.createHighlight();
-  stageContainer.addChild(highlight);
+  if (highlight) {
+    stageContainer.addChild(highlight);
+  }
   return () => {
-    stageContainer.removeChild(highlight);
+    if (highlight) {
+      stageContainer.removeChild(highlight);
+    }
     for (const rock of rocks) {
       stageContainer.removeChild(rock);
     }

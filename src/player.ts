@@ -9,6 +9,7 @@ enum Inputs {
   Left = 0,
   Right = 1,
   Up = 2,
+  Ctrl = 3,
 }
 export class Player extends Sprite {
   holdingKeys: { [key in Inputs]?: boolean };
@@ -58,25 +59,33 @@ export class Player extends Sprite {
     return { x, y };
   }
   createHighlight() {
-    const texture =
-      this.ability.inventory === null ? highlightTexture : highlightHoldTexture;
-    const highlight: Sprite = new Sprite(texture);
-    highlight.width = pixelSize;
-    highlight.height = pixelSize;
-    const highlightCoords = this.ability.highlightCoord(
-      this.getCoords(),
-      this.facing,
-    );
-    highlight.x = highlightCoords.x * pixelSize;
-    highlight.y = highlightCoords.y * pixelSize;
-    return highlight;
+    if (this.holdingKeys[Inputs.Ctrl] && this.onGround) {
+      const texture =
+        this.ability.inventory === null
+          ? highlightTexture
+          : highlightHoldTexture;
+      const highlight: Sprite = new Sprite(texture);
+      highlight.width = pixelSize;
+      highlight.height = pixelSize;
+      const highlightCoords = this.ability.highlightCoord(
+        this.getCoords(),
+        this.facing,
+      );
+      highlight.x = highlightCoords.x * pixelSize;
+      highlight.y = highlightCoords.y * pixelSize;
+      return highlight;
+    }
   }
   handleInput(event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
-      this.ability.handleKeyDown(event);
+      this.ability.handleKeyDown(event, this.onGround);
     }
     console.log(event.key);
     switch (event.key) {
+      case "Control":
+      case "Meta":
+        this.holdingKeys[Inputs.Ctrl] = eventIsKeyDown;
+        break;
       case "ArrowLeft":
       case "a":
         this.holdingKeys[Inputs.Left] = eventIsKeyDown;
@@ -220,7 +229,6 @@ export class Player extends Sprite {
     this.vy += c.gravity * pixelSize;
     this.elapsed += ticker.deltaTime;
 
-    this.ability.highlightCoord(this.getCoords(), this.facing);
     // if (bunny.x >= app.screen.width / 2 + 200) {
     //   app.stage.removeChild(bunny);
     // }
