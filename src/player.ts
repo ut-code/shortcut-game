@@ -1,9 +1,9 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
+import { AbilityControl, type AbilityEnableOptions } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import { getBlock, pixelSize } from "./grid.ts";
 import { app } from "./resources.ts";
-import { AbilityControl, type AbilityEnableOptions } from "./ability.ts";
 
 enum Inputs {
   Left = 0,
@@ -168,6 +168,13 @@ export class Player extends Sprite {
           c.playerWidth / 2) *
         pixelSize;
       this.vx = 0;
+    }
+    // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
+    // Todo: 本当はブロックの移動状況含むステージの状況すべてをリセットすべき
+    // Todo: ステージ個別に用意される初期座標に移動させる
+    if (this.y > 6.5 * pixelSize) {
+      this.x = 2 * pixelSize;
+      this.y = 2 * pixelSize;
     }
 
     this.x += this.vx * ticker.deltaTime;

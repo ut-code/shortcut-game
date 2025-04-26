@@ -17,6 +17,7 @@ export default function createStage1(gridX: number): Block[][] {
     gridRow4[i] = Block.block;
   }
   const gridRow5 = new Array(gridX).fill(Block.block);
+  gridRow5[4] = Block.air;
 
   return [gridRow0, gridRow1, gridRow2, gridRow3, gridRow4, gridRow5];
 }
