@@ -8,6 +8,8 @@ const config = {
   kit: {
     adapter: adapter({
       fallback: "index.html",
+      assets: "dist",
+      pages: "dist",
     }),
     files: {
       routes: "./routes",
