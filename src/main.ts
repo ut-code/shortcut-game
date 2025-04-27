@@ -6,22 +6,41 @@ import { Player } from "./player.ts";
 import { bunnyTexture, rockTexture } from "./resources.ts";
 
 export async function setup(el: HTMLElement, gridDefinition: number[][]) {
+  const VSpriteOM: ({ type: Block; sprite: Sprite } | null)[][] = [];
   function rerender() {
-    const rocks: Sprite[] = [];
     for (let y = 0; y < gridY; y++) {
+      if (!VSpriteOM[y]) VSpriteOM.push([]);
+      const layer = VSpriteOM[y];
+      if (!layer) throw new Error("Something is seriously wrong");
       for (let x = 0; x < gridX; x++) {
         const type = getBlock(grid, x, y);
-        if (type === Block.air) continue;
-        const rock = new Sprite(rockTexture);
-        if (type === Block.movable) rock.tint = 0xff0000;
-        rock.width = blockSize;
-        rock.height = blockSize;
-        rock.x = x * blockSize;
-        rock.y = y * blockSize;
-        stage.addChild(rock);
-        rocks.push(rock);
+        if (!type) throw new Error("invalid gridX/Y size");
+        const prev = layer[x];
+        if (prev?.type === type || (prev == null && type === Block.air)) {
+          // reuse previous sprite
+          continue;
+        }
+        // update this block
+        console.log("[renderer] updating block...");
+        if (prev) stage.removeChild(prev.sprite);
+        if (type === Block.air) {
+          layer[x] = null;
+        } else {
+          const rock = new Sprite(rockTexture);
+          rock.tint = type === Block.movable ? 0xff0000 : 0xffffff;
+          rock.width = blockSize;
+          rock.height = blockSize;
+          rock.x = x * blockSize;
+          rock.y = y * blockSize;
+          stage.addChild(rock);
+          layer[x] = {
+            sprite: rock,
+            type,
+          };
+        }
       }
     }
+    // highlight is re-rendered every tick
     const highlight = player.createHighlight(cx);
     if (highlight) {
       stage.addChild(highlight);
@@ -29,9 +48,6 @@ export async function setup(el: HTMLElement, gridDefinition: number[][]) {
     return () => {
       if (highlight) {
         stage.removeChild(highlight);
-      }
-      for (const rock of rocks) {
-        stage.removeChild(rock);
       }
     };
   }
