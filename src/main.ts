@@ -14,10 +14,10 @@ export async function setup(el: HTMLElement, gridDefinition: number[][]) {
         if (type === Block.air) continue;
         const rock = new Sprite(rockTexture);
         if (type === Block.movable) rock.tint = 0xff0000;
-        rock.width = pixelSize;
-        rock.height = pixelSize;
-        rock.x = x * pixelSize;
-        rock.y = y * pixelSize;
+        rock.width = blockSize;
+        rock.height = blockSize;
+        rock.x = x * blockSize;
+        rock.y = y * blockSize;
         stage.addChild(rock);
         rocks.push(rock);
       }
@@ -47,7 +47,7 @@ export async function setup(el: HTMLElement, gridDefinition: number[][]) {
 
   // Initialize the application
   await app.init({ background: "white", resizeTo: window });
-  const pixelSize = Math.min(
+  const blockSize = Math.min(
     app.screen.width / gridX,
     app.screen.height / gridY,
   );
@@ -55,9 +55,13 @@ export async function setup(el: HTMLElement, gridDefinition: number[][]) {
     stage,
     gridX,
     gridY,
-    pixelSize,
+    blockSize,
     grid,
+    elapsed: 0,
   };
+  app.ticker.add((ticker) => {
+    cx.elapsed += ticker.deltaTime;
+  });
   const player = new Player(cx, bunnyTexture);
   app.ticker.add((ticker) => player.tick(cx, ticker));
   app.stage.addChild(player);

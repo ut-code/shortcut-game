@@ -18,8 +18,6 @@ export class Player extends Sprite {
   vy: number;
   onGround: boolean;
   jumpingBegin: number | null;
-  // elapsed time (1 = 1/60s?)
-  elapsed: number;
   facing: c.Facing = c.Facing.right;
   ability: AbilityControl;
   constructor(
@@ -41,23 +39,22 @@ export class Player extends Sprite {
     );
 
     // todo: 初期座標をフィールドとともにどこかで決定
-    this.x = 2 * cx.pixelSize;
-    this.y = 2 * cx.pixelSize;
+    this.x = 2 * cx.blockSize;
+    this.y = 2 * cx.blockSize;
 
-    this.width = c.playerWidth * cx.pixelSize;
-    this.height = c.playerHeight * cx.pixelSize;
+    this.width = c.playerWidth * cx.blockSize;
+    this.height = c.playerHeight * cx.blockSize;
 
     this.ability = new AbilityControl(cx, thisOptions?.ability);
     this.vx = 0;
     this.vy = 0;
     this.onGround = false;
     this.jumpingBegin = null;
-    this.elapsed = 0;
     this.holdingKeys = {};
   }
   getCoords(cx: Context) {
-    const x = Math.floor(this.x / cx.pixelSize);
-    const y = Math.floor((this.y - 1) / cx.pixelSize);
+    const x = Math.floor(this.x / cx.blockSize);
+    const y = Math.floor((this.y - 1) / cx.blockSize);
     return { x, y };
   }
   createHighlight(cx: Context) {
@@ -67,14 +64,14 @@ export class Player extends Sprite {
           ? highlightTexture
           : highlightHoldTexture;
       const highlight: Sprite = new Sprite(texture);
-      highlight.width = cx.pixelSize;
-      highlight.height = cx.pixelSize;
+      highlight.width = cx.blockSize;
+      highlight.height = cx.blockSize;
       const highlightCoords = this.ability.highlightCoord(
         this.getCoords(cx),
         this.facing,
       );
-      highlight.x = highlightCoords.x * cx.pixelSize;
-      highlight.y = highlightCoords.y * cx.pixelSize;
+      highlight.x = highlightCoords.x * cx.blockSize;
+      highlight.y = highlightCoords.y * cx.blockSize;
       return highlight;
     }
   }
@@ -115,20 +112,20 @@ export class Player extends Sprite {
   tick(cx: Context, ticker: Ticker) {
     this.vx = 0;
     if (this.holdingKeys[Inputs.Left]) {
-      this.vx -= c.moveVX * cx.pixelSize;
+      this.vx -= c.moveVX * cx.blockSize;
     }
     if (this.holdingKeys[Inputs.Right]) {
-      this.vx += c.moveVX * cx.pixelSize;
+      this.vx += c.moveVX * cx.blockSize;
     }
     if (this.holdingKeys[Inputs.Up]) {
       if (this.onGround) {
-        this.vy = -c.jumpVY * cx.pixelSize;
-        this.jumpingBegin = this.elapsed;
+        this.vy = -c.jumpVY * cx.blockSize;
+        this.jumpingBegin = cx.elapsed;
       } else if (
         this.jumpingBegin &&
-        this.elapsed - this.jumpingBegin < c.jumpFrames
+        cx.elapsed - this.jumpingBegin < c.jumpFrames
       ) {
-        this.vy = -c.jumpVY * cx.pixelSize;
+        this.vy = -c.jumpVY * cx.blockSize;
       } else {
         this.jumpingBegin = null;
       }
@@ -140,20 +137,20 @@ export class Player extends Sprite {
     // 天井
     const hittingCeil =
       isBlock(
-        (this.x + 1) / cx.pixelSize - c.playerWidth / 2,
-        (this.y + this.vy * ticker.deltaTime) / cx.pixelSize - c.playerHeight,
+        (this.x + 1) / cx.blockSize - c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / cx.blockSize - c.playerHeight,
       ) ||
       isBlock(
-        (this.x - 1) / cx.pixelSize + c.playerWidth / 2,
-        (this.y + this.vy * ticker.deltaTime) / cx.pixelSize - c.playerHeight,
+        (this.x - 1) / cx.blockSize + c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / cx.blockSize - c.playerHeight,
       );
     if (this.vy < 0 && hittingCeil) {
       this.y =
         (Math.ceil(
-          (this.y + this.vy * ticker.deltaTime) / cx.pixelSize - c.playerHeight,
+          (this.y + this.vy * ticker.deltaTime) / cx.blockSize - c.playerHeight,
         ) +
           c.playerHeight) *
-        cx.pixelSize;
+        cx.blockSize;
       this.vy = 0;
       this.jumpingBegin = null;
     }
@@ -163,19 +160,19 @@ export class Player extends Sprite {
     this.onGround =
       this.vy >= 0 &&
       (isBlock(
-        (this.x + 1) / cx.pixelSize - c.playerWidth / 2,
-        (this.y + this.vy * ticker.deltaTime) / cx.pixelSize,
+        (this.x + 1) / cx.blockSize - c.playerWidth / 2,
+        (this.y + this.vy * ticker.deltaTime) / cx.blockSize,
       ) ||
         isBlock(
-          (this.x - 1) / cx.pixelSize + c.playerWidth / 2,
-          (this.y + this.vy * ticker.deltaTime) / cx.pixelSize,
+          (this.x - 1) / cx.blockSize + c.playerWidth / 2,
+          (this.y + this.vy * ticker.deltaTime) / cx.blockSize,
         ));
     if (this.onGround) {
       // 自分の位置は衝突したブロックの上
       if (!hittingCeil) {
         this.y =
-          Math.floor((this.y + this.vy * ticker.deltaTime) / cx.pixelSize) *
-          cx.pixelSize;
+          Math.floor((this.y + this.vy * ticker.deltaTime) / cx.blockSize) *
+          cx.blockSize;
       }
       this.vy = 0;
     }
@@ -184,62 +181,61 @@ export class Player extends Sprite {
     if (
       this.vx > 0 &&
       (isBlock(
-        (this.x + this.vx * ticker.deltaTime) / cx.pixelSize +
+        (this.x + this.vx * ticker.deltaTime) / cx.blockSize +
           c.playerWidth / 2,
-        (this.y - 1) / cx.pixelSize,
+        (this.y - 1) / cx.blockSize,
       ) ||
         isBlock(
-          (this.x + this.vx * ticker.deltaTime) / cx.pixelSize +
+          (this.x + this.vx * ticker.deltaTime) / cx.blockSize +
             c.playerWidth / 2,
-          (this.y + 1) / cx.pixelSize - c.playerHeight,
+          (this.y + 1) / cx.blockSize - c.playerHeight,
         ))
     ) {
       console.log("hit right");
       this.x =
         (Math.floor(
-          (this.x + this.vx * ticker.deltaTime) / cx.pixelSize +
+          (this.x + this.vx * ticker.deltaTime) / cx.blockSize +
             c.playerWidth / 2,
         ) -
           c.playerWidth / 2) *
-        cx.pixelSize;
+        cx.blockSize;
       this.vx = 0;
     }
     // 左に動いていて、プレイヤーの左上端または左下端がブロック
     if (
       this.vx < 0 &&
       (isBlock(
-        (this.x + this.vx * ticker.deltaTime) / cx.pixelSize -
+        (this.x + this.vx * ticker.deltaTime) / cx.blockSize -
           c.playerWidth / 2,
-        (this.y - 1) / cx.pixelSize,
+        (this.y - 1) / cx.blockSize,
       ) ||
         isBlock(
-          (this.x + this.vx * ticker.deltaTime) / cx.pixelSize -
+          (this.x + this.vx * ticker.deltaTime) / cx.blockSize -
             c.playerWidth / 2,
-          (this.y + 1) / cx.pixelSize - c.playerHeight,
+          (this.y + 1) / cx.blockSize - c.playerHeight,
         ))
     ) {
       console.log("hit left");
       this.x =
         (Math.ceil(
-          (this.x + this.vx * ticker.deltaTime) / cx.pixelSize -
+          (this.x + this.vx * ticker.deltaTime) / cx.blockSize -
             c.playerWidth / 2,
         ) +
           c.playerWidth / 2) *
-        cx.pixelSize;
+        cx.blockSize;
       this.vx = 0;
     }
     // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
     // Todo: 本当はブロックの移動状況含むステージの状況すべてをリセットすべき
     // Todo: ステージ個別に用意される初期座標に移動させる
-    if (this.y > 6.5 * cx.pixelSize || this.y < -1) {
-      this.x = 2 * cx.pixelSize;
-      this.y = 3 * cx.pixelSize;
+    if (this.y > 6.5 * cx.blockSize || this.y < -1) {
+      this.x = 2 * cx.blockSize;
+      this.y = 3 * cx.blockSize;
     }
 
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
-    this.vy += c.gravity * cx.pixelSize * ticker.deltaTime;
-    this.elapsed += ticker.deltaTime;
+    this.vy += c.gravity * cx.blockSize * ticker.deltaTime;
 
     // if (bunny.x >= app.screen.width / 2 + 200) {
     //   app.stage.removeChild(bunny);
