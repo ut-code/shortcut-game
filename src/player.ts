@@ -81,8 +81,16 @@ export class Player extends Sprite {
     }
     switch (event.key) {
       case "Control":
-      case "Meta":
         this.holdingKeys[Inputs.Ctrl] = eventIsKeyDown;
+        break;
+      case "Meta":
+        if (eventIsKeyDown) {
+          this.holdingKeys[Inputs.Ctrl] = true;
+        } else {
+          // MacではCommand(Meta)を押している間他のキーのkeyupが発動しない仕様らしい
+          // workaroundとしてMetaを離したときに他のすべてのキーも離したものとして扱う
+          this.holdingKeys = {};
+        }
         break;
       case "ArrowLeft":
       case "a":
