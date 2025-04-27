@@ -14,6 +14,7 @@ const config = {
     files: {
       routes: "./routes",
       assets: "./public",
+      appTemplate: "./index.html",
     },
     alias: {
       "@": "src",
