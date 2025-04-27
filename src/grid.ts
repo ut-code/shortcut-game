@@ -1,32 +1,6 @@
 import { Block } from "./constants.ts";
-import createStage from "./createStage.ts";
-import { grid1, grid2, grid3 } from "./stages.ts";
 
-const stage = 1;
-const numGrid = (() => {
-  switch (stage) {
-    case 1:
-      return grid1;
-    case 2:
-      return grid2;
-    case 3:
-      return grid3;
-    default:
-      throw new Error("hoge");
-  }
-})();
-
-export const gridX = numGrid[0].length;
-export const gridY = numGrid.length;
-
-export const grid: Block[][] = createStage(numGrid);
-let pixelSize_ = 1;
-export function getPixelSize() {
-  return pixelSize_;
-}
-export function setPixelSize(pixelSize: number) {
-  pixelSize_ = pixelSize;
-}
+export type Grid = Block[][];
 export function getRandom() {
   switch (Math.floor(Math.random() * 3)) {
     case 0:
@@ -39,9 +13,33 @@ export function getRandom() {
       throw new Error("oops!");
   }
 }
-export function getBlock(x: number, y: number): Block | undefined {
+export function getBlock(grid: Grid, x: number, y: number): Block | undefined {
   return grid[y]?.[x];
 }
-export function setBlock(x: number, y: number, block: Block) {
+export function setBlock(grid: Grid, x: number, y: number, block: Block) {
   grid[y][x] = block;
+}
+
+export default function createStage(numGrid: number[][]): Block[][] {
+  const grid: Block[][] = [];
+  for (const numRow of numGrid) {
+    const row: Block[] = [];
+    for (const num of numRow) {
+      switch (num) {
+        case 0:
+          row.push(Block.air);
+          break;
+        case 1:
+          row.push(Block.block);
+          break;
+        case 2:
+          row.push(Block.movable);
+          break;
+        default:
+          throw new Error("no proper block");
+      }
+    }
+    grid.push(row);
+  }
+  return grid;
 }

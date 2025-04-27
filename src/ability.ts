@@ -1,5 +1,6 @@
 import { Block, Facing } from "./constants.ts";
-import { getBlock, grid, setBlock } from "./grid.ts";
+import type { Context } from "./context.ts";
+import { type Grid, getBlock, setBlock } from "./grid.ts";
 
 export type Coords = {
   x: number;
@@ -24,13 +25,13 @@ export class AbilityControl {
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
   focused: Coords | undefined;
-  constructor(options?: AbilityInit) {
+  constructor(cx: Context, options?: AbilityInit) {
     this.enabled = options?.enabled ?? {
       copy: true,
       paste: true,
       cut: true,
     };
-    this.pushHistory(); // todo: ここ以外でもフィールドをリセットすることがあるならhistoryを初期化する必要がある
+    this.pushHistory(cx.grid); // todo: ここ以外でもフィールドをリセットすることがあるならhistoryを初期化する必要がある
   }
   highlightCoord(playerAt: Coords, facing: Facing) {
     let dx: number;
@@ -50,33 +51,33 @@ export class AbilityControl {
     };
     return this.focused;
   }
-  copy() {
+  copy(grid: Grid) {
     if (!this.focused) return;
-    const target = getBlock(this.focused.x, this.focused.y);
+    const target = getBlock(grid, this.focused.x, this.focused.y);
     if (!target || target !== Block.movable) return;
     this.inventory = target;
   }
-  paste() {
+  paste(grid: Grid) {
     if (!this.focused) return;
     if (!this.inventory || this.inventory === Block.air) return;
-    const target = getBlock(this.focused.x, this.focused.y);
+    const target = getBlock(grid, this.focused.x, this.focused.y);
     if (!target || target !== Block.air) return;
-    setBlock(this.focused.x, this.focused.y, this.inventory);
+    setBlock(grid, this.focused.x, this.focused.y, this.inventory);
     if (!this.inventoryIsInfinite) {
       this.inventory = null;
     }
-    this.pushHistory();
+    this.pushHistory(grid);
   }
-  cut() {
+  cut(grid: Grid) {
     if (!this.focused) return;
-    const target = getBlock(this.focused.x, this.focused.y);
+    const target = getBlock(grid, this.focused.x, this.focused.y);
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
     this.inventory = target;
-    setBlock(this.focused.x, this.focused.y, Block.air);
-    this.pushHistory();
+    setBlock(grid, this.focused.x, this.focused.y, Block.air);
+    this.pushHistory(grid);
   }
-  pushHistory() {
+  pushHistory(grid: Grid) {
     this.history = this.history.slice(0, this.historyIndex + 1);
     this.history.push({
       grid: grid.map((row) => row.slice()),
@@ -85,7 +86,7 @@ export class AbilityControl {
     this.historyIndex = this.history.length - 1;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
-  undo() {
+  undo(grid: Grid) {
     if (this.historyIndex <= 0) return;
     this.historyIndex--;
     grid.splice(
@@ -96,7 +97,7 @@ export class AbilityControl {
     this.inventory = this.history[this.historyIndex].inventory;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
-  redo() {
+  redo(grid: Grid) {
     if (this.historyIndex >= this.history.length - 1) return;
     this.historyIndex++;
     grid.splice(
@@ -107,24 +108,24 @@ export class AbilityControl {
     this.inventory = this.history[this.historyIndex].inventory;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
-  handleKeyDown(e: KeyboardEvent, onGround: boolean) {
+  handleKeyDown(cx: Context, e: KeyboardEvent, onGround: boolean) {
     if (!(e.ctrlKey || e.metaKey)) return;
 
     if (this.enabled.paste && onGround && e.key === "v") {
-      this.paste();
+      this.paste(cx.grid);
     }
     if (this.enabled.copy && onGround && e.key === "c") {
-      this.copy();
+      this.copy(cx.grid);
     }
     if (this.enabled.cut && onGround && e.key === "x") {
-      this.cut();
+      this.cut(cx.grid);
     }
     if (e.key === "z") {
-      this.undo();
+      this.undo(cx.grid);
       e.preventDefault();
     }
     if (e.key === "y") {
-      this.redo();
+      this.redo(cx.grid);
       e.preventDefault();
     }
   }

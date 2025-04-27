@@ -1,8 +1,15 @@
 <script lang="ts">
 import { setup } from "@/main.ts";
-setup();
+import { grid1 } from "@/stages";
+let container: HTMLElement | null = $state(null);
+
+$effect(() => {
+  if (container) {
+    setup(container, grid1);
+  }
+});
 </script>
 
 <div id="app">
-  <div id="pixi-container"></div>
+  <div bind:this={container}></div>
 </div>
