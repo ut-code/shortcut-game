@@ -4,7 +4,7 @@ import { getBlock, getPixelSize, gridX, gridY, setPixelSize } from "./grid.ts";
 import { Player } from "./player.ts";
 import { bunnyTexture, rockTexture } from "./resources.ts";
 
-(async () => {
+export async function setup() {
   function rerender() {
     const rocks: Sprite[] = [];
     for (let y = 0; y < gridY; y++) {
@@ -63,4 +63,4 @@ import { bunnyTexture, rockTexture } from "./resources.ts";
   const player = new Player(bunnyTexture);
   app.ticker.add((ticker) => player.tick(ticker));
   app.stage.addChild(player);
-})().catch(console.error);
+}

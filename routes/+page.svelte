@@ -1,5 +1,6 @@
 <script lang="ts">
-import "@/main.ts";
+import { setup } from "@/main.ts";
+setup();
 </script>
 
 <div id="app">
