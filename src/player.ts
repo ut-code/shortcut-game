@@ -136,6 +136,8 @@ export class Player extends Sprite {
       } else {
         this.jumpingBegin = null;
       }
+    } else {
+      this.jumpingBegin = null;
     }
 
     const isBlock = (x: number, y: number) =>
