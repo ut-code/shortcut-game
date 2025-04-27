@@ -18,7 +18,7 @@ $effect(() => {
     return;
   }
   if (container) {
-    setup(container, grids.grid1);
+    setup(container, grid);
   }
 });
 </script>
