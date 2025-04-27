@@ -170,7 +170,7 @@ export class Player extends Sprite {
     if (hittingCeil && this.onGround) {
       this.vy = 0;
     } else if (hittingCeil) {
-      this.y = Math.ceil(nextBottomY) * cx.blockSize;
+      this.y = (Math.ceil(nextTopY) + c.playerHeight) * cx.blockSize;
       this.vy = 0;
       this.jumpingBegin = null;
     } else if (this.onGround) {
@@ -194,14 +194,10 @@ export class Player extends Sprite {
       // todo: この場合どうするべき?
       this.vx = 0;
     } else if (rightHit) {
-      this.x =
-        (Math.floor(nextX + c.playerWidth / 2) - c.playerWidth / 2) *
-        cx.blockSize;
+      this.x = (Math.floor(nextRightX) - c.playerWidth / 2) * cx.blockSize;
       this.vx = 0;
     } else if (leftHit) {
-      this.x =
-        (Math.ceil(nextX - c.playerWidth / 2) + c.playerWidth / 2) *
-        cx.blockSize;
+      this.x = (Math.ceil(nextLeftX) + c.playerWidth / 2) * cx.blockSize;
       this.vx = 0;
     }
     // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
