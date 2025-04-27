@@ -3,6 +3,9 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [sveltekit()],
+  build: {
+    target: "esnext",
+  },
   server: {
     port: 8080,
   },
