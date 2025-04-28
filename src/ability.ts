@@ -24,7 +24,7 @@ type History = {
 };
 export class AbilityControl {
   history: History[] = [];
-  historyIndex = 1;
+  historyIndex = 0;
   inventory: Block | null = null;
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
@@ -100,6 +100,8 @@ export class AbilityControl {
       },
     });
   }
+
+  // History については、 `docs/history-stack.png` を参照のこと
   pushHistory(h: History) {
     this.history = this.history.slice(0, this.historyIndex);
     this.history.push(h);
