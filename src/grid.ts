@@ -1,18 +1,7 @@
 import { Block } from "./constants.ts";
+import type { StageDefinition } from "./stages.ts";
 
 export type Grid = Block[][];
-export function getRandom() {
-  switch (Math.floor(Math.random() * 3)) {
-    case 0:
-      return Block.air;
-    case 1:
-      return Block.block;
-    case 2:
-      return Block.movable;
-    default:
-      throw new Error("oops!");
-  }
-}
 export function getBlock(grid: Grid, x: number, y: number): Block | undefined {
   return grid[y]?.[x];
 }
@@ -20,23 +9,25 @@ export function setBlock(grid: Grid, x: number, y: number, block: Block) {
   grid[y][x] = block;
 }
 
-export default function createStage(numGrid: number[][]): Block[][] {
+export default function createStage(
+  stageDefinition: StageDefinition,
+): Block[][] {
   const grid: Block[][] = [];
-  for (const numRow of numGrid) {
+  for (const stageRow of stageDefinition) {
     const row: Block[] = [];
-    for (const num of numRow) {
-      switch (num) {
-        case 0:
+    for (const char of stageRow) {
+      switch (char) {
+        case " ":
           row.push(Block.air);
           break;
-        case 1:
+        case "b":
           row.push(Block.block);
           break;
-        case 2:
+        case "m":
           row.push(Block.movable);
           break;
         default:
-          throw new Error("no proper block");
+          throw new Error(`unknown block type: '${char}'`);
       }
     }
     grid.push(row);

@@ -4,8 +4,9 @@ import type { Context } from "./context.ts";
 import createStage, { getBlock, type Grid } from "./grid.ts";
 import { Player } from "./player.ts";
 import { bunnyTexture, rockTexture } from "./resources.ts";
+import type { StageDefinition } from "./stages.ts";
 
-export async function setup(el: HTMLElement, gridDefinition: number[][]) {
+export async function setup(el: HTMLElement, stageDefinition: StageDefinition) {
   const VSpriteOM: ({ type: Block; sprite: Sprite } | null)[][] = [];
   function rerender() {
     for (let y = 0; y < gridY; y++) {
@@ -57,9 +58,12 @@ export async function setup(el: HTMLElement, gridDefinition: number[][]) {
   const stage = new Container();
   app.stage.addChild(stage);
 
-  const gridX = gridDefinition[0].length;
-  const gridY = gridDefinition.length;
-  const grid: Grid = createStage(gridDefinition);
+  const gridX = stageDefinition[0].length;
+  if (stageDefinition.some((row) => row.length !== gridX)) {
+    throw new Error("stage definition is not rectangular");
+  }
+  const gridY = stageDefinition.length;
+  const grid: Grid = createStage(stageDefinition);
 
   // Initialize the application
   await app.init({ background: "white", resizeTo: window });
