@@ -17,7 +17,7 @@ export default function createStage(
     const row: Block[] = [];
     for (const char of stageRow) {
       switch (char) {
-        case " ":
+        case ".": // スペースだと何マス空いているのかわかりにくかったのでピリオドにした
           row.push(Block.air);
           break;
         case "b":
