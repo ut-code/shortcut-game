@@ -53,7 +53,7 @@ export class Player extends Sprite {
   }
   getCoords(cx: Context) {
     const x = Math.floor(this.x / cx.blockSize);
-    const y = Math.floor(this.y / cx.blockSize - 1); // it was not working well so take my patch
+    const y = Math.round(this.y / cx.blockSize) - 1; // it was not working well so take my patch
     return { x, y };
   }
   createHighlight(cx: Context) {
