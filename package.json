@@ -7,23 +7,25 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "prepare": "lefthook install && bun sync",
-    "sync": "svelte-kit sync || true",
+    "prepare": "lefthook install && (bun sync || true)",
+    "sync": "svelte-kit sync",
     "fix": "bun biome check . --fix --unsafe",
     "fix:safe": "bun biome check . --fix",
-    "check": "bun biome check && bun check:svelte",
+    "check": "bun check:biome && bun check:svelte",
+    "check:biome": "bun biome check",
+    "check:tsc": "bun tsc --noEmit",
     "check:svelte": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.16.0",
-    "@sveltejs/vite-plugin-svelte": "^5.0.0",
-    "lefthook": "^1.11.11",
-    "svelte": "^5.0.0",
-    "svelte-check": "^4.0.0",
-    "typescript": "^5.0.0",
-    "vite": "^6.2.6"
+    "@sveltejs/kit": "^2.20.7",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "lefthook": "^1.11.12",
+    "svelte": "^5.28.2",
+    "svelte-check": "^4.1.6",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.3"
   },
   "dependencies": {
     "pixi.js": "^8.9.1"
