@@ -3,7 +3,6 @@ import { AbilityControl, type AbilityInit } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import type { Context } from "./context.ts";
-import { getBlock } from "./grid.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
 
 enum Inputs {
@@ -54,26 +53,23 @@ export class Player extends Sprite {
   }
   getCoords(cx: Context) {
     const x = Math.floor(this.x / cx.blockSize);
-    const y = Math.ceil(this.y / cx.blockSize) - 1;
+    const y = Math.floor(this.y / cx.blockSize - 1); // it was not working well so take my patch
     return { x, y };
   }
   createHighlight(cx: Context) {
-    if (this.holdingKeys[Inputs.Ctrl] && this.onGround) {
-      const texture =
-        this.ability.inventory === null
-          ? highlightTexture
-          : highlightHoldTexture;
-      const highlight: Sprite = new Sprite(texture);
-      highlight.width = cx.blockSize;
-      highlight.height = cx.blockSize;
-      const highlightCoords = this.ability.highlightCoord(
-        this.getCoords(cx),
-        this.facing,
-      );
-      highlight.x = highlightCoords.x * cx.blockSize;
-      highlight.y = highlightCoords.y * cx.blockSize;
-      return highlight;
-    }
+    if (!this.holdingKeys[Inputs.Ctrl] || !this.onGround) return;
+    const texture =
+      this.ability.inventory === null ? highlightTexture : highlightHoldTexture;
+    const highlight: Sprite = new Sprite(texture);
+    highlight.width = cx.blockSize;
+    highlight.height = cx.blockSize;
+    const highlightCoords = this.ability.highlightCoord(
+      this.getCoords(cx),
+      this.facing,
+    );
+    highlight.x = highlightCoords.x * cx.blockSize;
+    highlight.y = highlightCoords.y * cx.blockSize;
+    return highlight;
   }
   handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
@@ -141,8 +137,8 @@ export class Player extends Sprite {
     }
 
     const isBlock = (x: number, y: number) =>
-      getBlock(cx.grid, Math.floor(x), Math.floor(y)) !== Block.air &&
-      getBlock(cx.grid, Math.floor(x), Math.floor(y)) !== undefined;
+      cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== Block.air &&
+      cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== undefined;
     const isOutOfWorldLeft = (x: number) => x < 0;
     const isOutOfWorldRight = (x: number) => x >= cx.gridX;
     const isOutOfWorldBottom = (y: number) => y >= cx.gridY;

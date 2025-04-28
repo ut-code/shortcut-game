@@ -1,6 +1,5 @@
 import { Block, Facing } from "./constants.ts";
 import type { Context } from "./context.ts";
-import { type Grid, getBlock, setBlock } from "./grid.ts";
 
 export type Coords = {
   x: number;
@@ -15,23 +14,27 @@ export type AbilityEnableOptions = {
   cut: boolean;
 };
 type History = {
-  grid: Block[][];
-  inventory: Block | null;
+  at: { x: number; y: number };
+  from: Block;
+  to: Block;
+  inventory: {
+    before: Block | null;
+    after: Block | null;
+  };
 };
 export class AbilityControl {
   history: History[] = [];
-  historyIndex = 0;
+  historyIndex = 1;
   inventory: Block | null = null;
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
   focused: Coords | undefined;
-  constructor(cx: Context, options?: AbilityInit) {
+  constructor(_cx: Context, options?: AbilityInit) {
     this.enabled = options?.enabled ?? {
       copy: true,
       paste: true,
       cut: true,
     };
-    this.pushHistory(cx.grid); // todo: ここ以外でもフィールドをリセットすることがあるならhistoryを初期化する必要がある
   }
   highlightCoord(playerAt: Coords, facing: Facing) {
     let dx: number;
@@ -51,81 +54,92 @@ export class AbilityControl {
     };
     return this.focused;
   }
-  copy(grid: Grid) {
+  copy(cx: Context) {
     if (!this.focused) return;
-    const target = getBlock(grid, this.focused.x, this.focused.y);
+    const target = cx.grid.getBlock(this.focused.x, this.focused.y);
     if (!target || target !== Block.movable) return;
     this.inventory = target;
   }
-  paste(grid: Grid) {
+  paste(cx: Context) {
     if (!this.focused) return;
     if (!this.inventory || this.inventory === Block.air) return;
-    const target = getBlock(grid, this.focused.x, this.focused.y);
+    const target = cx.grid.getBlock(this.focused.x, this.focused.y);
     if (!target || target !== Block.air) return;
-    setBlock(grid, this.focused.x, this.focused.y, this.inventory);
+    const prevInventory = this.inventory;
+    cx.grid.setBlock(cx, this.focused.x, this.focused.y, this.inventory);
     if (!this.inventoryIsInfinite) {
       this.inventory = null;
     }
-    this.pushHistory(grid);
+
+    this.pushHistory({
+      at: { ...this.focused },
+      from: Block.air,
+      to: prevInventory,
+      inventory: {
+        before: prevInventory,
+        after: this.inventory,
+      },
+    });
   }
-  cut(grid: Grid) {
+  cut(cx: Context) {
     if (!this.focused) return;
-    const target = getBlock(grid, this.focused.x, this.focused.y);
+    const target = cx.grid.getBlock(this.focused.x, this.focused.y);
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
+    const prevInventory = this.inventory;
     this.inventory = target;
-    setBlock(grid, this.focused.x, this.focused.y, Block.air);
-    this.pushHistory(grid);
-  }
-  pushHistory(grid: Grid) {
-    this.history = this.history.slice(0, this.historyIndex + 1);
-    this.history.push({
-      grid: grid.map((row) => row.slice()),
-      inventory: this.inventory,
+    cx.grid.setBlock(cx, this.focused.x, this.focused.y, Block.air);
+
+    this.pushHistory({
+      at: { ...this.focused },
+      from: target,
+      to: Block.air,
+      inventory: {
+        before: prevInventory,
+        after: target,
+      },
     });
-    this.historyIndex = this.history.length - 1;
+  }
+  pushHistory(h: History) {
+    this.history = this.history.slice(0, this.historyIndex);
+    this.history.push(h);
+    this.historyIndex = this.history.length;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
-  undo(grid: Grid) {
+  undo(cx: Context) {
     if (this.historyIndex <= 0) return;
-    this.historyIndex--;
-    grid.splice(
-      0,
-      grid.length,
-      ...this.history[this.historyIndex].grid.map((row) => row.slice()),
-    );
-    this.inventory = this.history[this.historyIndex].inventory;
+    this.historyIndex--; // undo は、巻き戻し後の index で計算する
+    const op = this.history[this.historyIndex];
+    cx.grid.setBlock(cx, op.at.x, op.at.y, op.from);
+    this.inventory = op.inventory.before;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
-  redo(grid: Grid) {
-    if (this.historyIndex >= this.history.length - 1) return;
-    this.historyIndex++;
-    grid.splice(
-      0,
-      grid.length,
-      ...this.history[this.historyIndex].grid.map((row) => row.slice()),
-    );
-    this.inventory = this.history[this.historyIndex].inventory;
+  redo(cx: Context) {
+    if (this.historyIndex >= this.history.length) return;
+    const op = this.history[this.historyIndex];
+    this.historyIndex++; // redo は、巻き戻し前の index
+    this.inventory = op.inventory.after;
+    cx.grid.setBlock(cx, op.at.x, op.at.y, op.to);
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
   handleKeyDown(cx: Context, e: KeyboardEvent, onGround: boolean) {
     if (!(e.ctrlKey || e.metaKey)) return;
 
     if (this.enabled.paste && onGround && e.key === "v") {
-      this.paste(cx.grid);
+      this.paste(cx);
     }
     if (this.enabled.copy && onGround && e.key === "c") {
-      this.copy(cx.grid);
+      this.copy(cx);
     }
     if (this.enabled.cut && onGround && e.key === "x") {
-      this.cut(cx.grid);
+      this.cut(cx);
     }
     if (e.key === "z") {
-      this.undo(cx.grid);
+      this.undo(cx);
       e.preventDefault();
     }
     if (e.key === "y") {
-      this.redo(cx.grid);
+      this.redo(cx);
       e.preventDefault();
     }
   }
