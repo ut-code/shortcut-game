@@ -18,7 +18,6 @@
         packages = [
           pkgs.bun
           pkgs.nodejs-slim
-          pkgs.static-web-server
         ];
       };
     });

@@ -8,9 +8,10 @@
 
 ## Develop
 
-### パッケージ
+### インストール
 
 - Bun > v1.2
+- Node.js any recent version
 
 ### 準備
 
