@@ -11,7 +11,8 @@ enum Inputs {
   Up = 2,
   Ctrl = 3,
 }
-export class Player extends Sprite {
+export class Player {
+  sprite: Sprite;
   holdingKeys: { [key in Inputs]?: boolean };
   vx: number;
   vy: number;
@@ -21,14 +22,20 @@ export class Player extends Sprite {
   ability: AbilityControl;
   constructor(
     cx: Context,
-    superOptions?: SpriteOptions | Texture,
+    spriteOptions?: SpriteOptions | Texture,
     thisOptions?: {
       ability?: AbilityInit;
     },
   ) {
-    super(superOptions);
+    this.sprite = new Sprite(spriteOptions);
     // Center the sprite's anchor point
-    this.anchor.set(0.5, 1);
+    this.sprite.anchor.set(0.5, 1);
+    // todo: 初期座標をフィールドとともにどこかで決定
+    this.sprite.x = 2 * cx.blockSize;
+    this.sprite.y = 2 * cx.blockSize;
+    this.sprite.width = c.playerWidth * cx.blockSize;
+    this.sprite.height = c.playerHeight * cx.blockSize;
+
     // Move the sprite to the center of the screen
     document.addEventListener("keydown", (event) =>
       this.handleInput(cx, event, true),
@@ -36,20 +43,24 @@ export class Player extends Sprite {
     document.addEventListener("keyup", (event) =>
       this.handleInput(cx, event, false),
     );
-
-    // todo: 初期座標をフィールドとともにどこかで決定
-    this.x = 2 * cx.blockSize;
-    this.y = 2 * cx.blockSize;
-
-    this.width = c.playerWidth * cx.blockSize;
-    this.height = c.playerHeight * cx.blockSize;
-
     this.ability = new AbilityControl(cx, thisOptions?.ability);
     this.vx = 0;
     this.vy = 0;
     this.onGround = false;
     this.jumpingBegin = null;
     this.holdingKeys = {};
+  }
+  get x() {
+    return this.sprite.x;
+  }
+  set x(v) {
+    this.sprite.x = v;
+  }
+  get y() {
+    return this.sprite.y;
+  }
+  set y(v) {
+    this.sprite.y = v;
   }
   getCoords(cx: Context) {
     const x = Math.floor(this.x / cx.blockSize);

@@ -49,7 +49,7 @@ export async function setup(el: HTMLElement, stageDefinition: StageDefinition) {
   });
   const player = new Player(cx, bunnyTexture);
   app.ticker.add((ticker) => player.tick(cx, ticker));
-  app.stage.addChild(player);
+  app.stage.addChild(player.sprite);
 
   let cleanup: undefined | (() => void) = undefined;
   app.ticker.add(() => {
