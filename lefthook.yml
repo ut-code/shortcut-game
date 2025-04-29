@@ -3,3 +3,4 @@ pre-commit:
   jobs:
     - run: bun fix:safe
       stage_fixed: true
+    - run: bun check
