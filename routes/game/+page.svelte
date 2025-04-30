@@ -1,22 +1,15 @@
 <script lang="ts">
-import { goto } from "$app/navigation";
 import { page } from "$app/state";
-import { setup } from "@/main.ts";
+import GameLoader from "@/components/GameLoader.svelte";
 import { stages } from "@/stages";
-let container: HTMLElement | null = $state(null);
 
-$effect(() => {
-  const stageDefinition = stages.get(page.url.searchParams.get("stage") ?? "");
-  if (!stageDefinition) {
-    goto("/");
-    return;
-  }
-  if (container) {
-    setup(container, stageDefinition);
-  }
-});
+const stageDefinition = $derived(
+  stages.get(page.url.searchParams.get("stage") ?? ""),
+);
 </script>
 
-<div id="app">
-  <div bind:this={container}></div>
-</div>
+<GameLoader stage={stageDefinition}>
+  {#snippet children(loadingState)}
+    {loadingState}...
+  {/snippet}
+</GameLoader>
