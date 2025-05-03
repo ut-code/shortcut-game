@@ -10,6 +10,10 @@ export type Context = {
   grid: Grid;
   blockSize: number;
 
+  // about player
+  initialPlayerX: number; // initial player position in X direction
+  initialPlayerY: number; // initial player position in Y direction
+
   // about time
   elapsed: number;
 };

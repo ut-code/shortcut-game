@@ -30,9 +30,9 @@ export class Player {
     this.sprite = new Sprite(spriteOptions);
     // Center the sprite's anchor point
     this.sprite.anchor.set(0.5, 1);
-    // todo: 初期座標をフィールドとともにどこかで決定
-    this.sprite.x = 2 * cx.blockSize;
-    this.sprite.y = 2 * cx.blockSize;
+
+    this.sprite.x = cx.blockSize * cx.initialPlayerX;
+    this.sprite.y = cx.blockSize * (cx.gridY - cx.initialPlayerY);
     this.sprite.width = c.playerWidth * cx.blockSize;
     this.sprite.height = c.playerHeight * cx.blockSize;
 

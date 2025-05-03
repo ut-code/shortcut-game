@@ -24,8 +24,8 @@ export class Grid {
   ) {
     this.stage = stage;
     const cells: GridCell[][] = [];
-    for (let y = 0; y < stageDefinition.length; y++) {
-      const rowDefinition = stageDefinition[y].split("");
+    for (let y = 0; y < stageDefinition.stage.length; y++) {
+      const rowDefinition = stageDefinition.stage[y].split("");
       const row: GridCell[] = [];
       for (let x = 0; x < rowDefinition.length; x++) {
         const cellDef = rowDefinition[x];
@@ -58,6 +58,13 @@ export class Grid {
   }
   getBlock(x: number, y: number): Block | undefined {
     return this.cells[y]?.[x]?.block;
+  }
+  getMovableBlock(x: number, y: number): Block.movable | undefined {
+    const cell = this.cells[y]?.[x];
+    if (!cell) return undefined;
+    if (cell.block === Block.movable) {
+      return cell.block;
+    }
   }
   setBlock(cx: Context, x: number, y: number, block: Block) {
     const prev = this.cells[y][x];
