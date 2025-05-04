@@ -32,7 +32,7 @@ export class Player {
     this.sprite.anchor.set(0.5, 1);
     // todo: 初期座標をフィールドとともにどこかで決定
     this.sprite.x = 2 * cx.blockSize;
-    this.sprite.y = 2 * cx.blockSize;
+    this.sprite.y = 2 * cx.blockSize + cx.marginY;
     this.sprite.width = c.playerWidth * cx.blockSize;
     this.sprite.height = c.playerHeight * cx.blockSize;
 
@@ -64,7 +64,7 @@ export class Player {
   }
   getCoords(cx: Context) {
     const x = Math.floor(this.x / cx.blockSize);
-    const y = Math.round(this.y / cx.blockSize) - 1; // it was not working well so take my patch
+    const y = Math.round((this.y - cx.marginY) / cx.blockSize) - 1; // it was not working well so take my patch
     return { x, y };
   }
   createHighlight(cx: Context) {
@@ -79,10 +79,13 @@ export class Player {
       this.facing,
     );
     highlight.x = highlightCoords.x * cx.blockSize;
-    highlight.y = highlightCoords.y * cx.blockSize;
+    highlight.y = highlightCoords.y * cx.blockSize + cx.marginY;
     return highlight;
   }
   handleInput(_cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
+    if (eventIsKeyDown) {
+      this.ability.handleKeyDown(_cx, event /*, this.onGround*/);
+    }
     switch (event.key) {
       case "Control":
         this.holdingKeys[Inputs.Ctrl] = eventIsKeyDown;
@@ -153,12 +156,13 @@ export class Player {
 
     // next〜 は次フレームの座標、inner〜 は前フレームでかつ1px内側の座標
     const nextX = (this.x + this.vx * ticker.deltaTime) / cx.blockSize;
-    const nextBottomY = (this.y + this.vy * ticker.deltaTime) / cx.blockSize;
+    const nextBottomY =
+      (this.y - cx.marginY + this.vy * ticker.deltaTime) / cx.blockSize;
     const nextTopY = nextBottomY - c.playerHeight;
     const nextLeftX = nextX - c.playerWidth / 2;
     const nextRightX = nextX + c.playerWidth / 2;
-    const innerBottomY = (this.y - 1) / cx.blockSize;
-    const innerTopY = (this.y + 1) / cx.blockSize - c.playerHeight;
+    const innerBottomY = (this.y - cx.marginY - 1) / cx.blockSize;
+    const innerTopY = (this.y - cx.marginY + 1) / cx.blockSize - c.playerHeight;
     const innerLeftX = (this.x + 1) / cx.blockSize - c.playerWidth / 2;
     const innerRightX = (this.x - 1) / cx.blockSize + c.playerWidth / 2;
 
@@ -174,12 +178,13 @@ export class Player {
     if (hittingCeil && this.onGround) {
       this.vy = 0;
     } else if (hittingCeil) {
-      this.y = (Math.ceil(nextTopY) + c.playerHeight) * cx.blockSize;
+      this.y =
+        (Math.ceil(nextTopY) + c.playerHeight) * cx.blockSize + cx.marginY;
       this.vy = 0;
       this.jumpingBegin = null;
     } else if (this.onGround) {
       // 自分の位置は衝突したブロックの上
-      this.y = Math.floor(nextBottomY) * cx.blockSize;
+      this.y = Math.floor(nextBottomY) * cx.blockSize + cx.marginY;
       this.vy = 0;
     }
     // プレイヤーの右上端または右下端がブロック または右画面端
@@ -210,7 +215,7 @@ export class Player {
     // Todo: 直接移動させるのではなく、ゲームオーバー処理を切り分ける
     if (isOutOfWorldBottom(innerTopY)) {
       this.x = 2 * cx.blockSize;
-      this.y = 3 * cx.blockSize;
+      this.y = 3 * cx.blockSize + cx.marginY;
       this.vx = 0;
       this.vy = 0;
     }
@@ -219,5 +224,13 @@ export class Player {
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
     this.vy += c.gravity * cx.blockSize * ticker.deltaTime;
+  }
+  rerender(prevCx: Context, cx: Context) {
+    this.sprite.width = c.playerWidth * cx.blockSize;
+    this.sprite.height = c.playerHeight * cx.blockSize;
+    this.x = (this.x / prevCx.blockSize) * cx.blockSize;
+    this.y =
+      ((this.y - prevCx.marginY) / prevCx.blockSize) * cx.blockSize +
+      cx.marginY;
   }
 }
