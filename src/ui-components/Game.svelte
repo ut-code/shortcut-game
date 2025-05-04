@@ -1,10 +1,12 @@
 <script lang="ts">
+import { goto } from "$app/navigation";
 // client-only.
 import { Block } from "@/constants.ts";
 import type { UIContext } from "@/context.ts";
 import { setup } from "@/main.ts";
 import type { StageDefinition } from "@/stages.ts";
 import Ability from "@/ui-components/Ability.svelte";
+import Key from "@/ui-components/Key.svelte";
 import { writable } from "svelte/store";
 
 type Props = { stageNum: string; stage: StageDefinition };
@@ -18,11 +20,23 @@ const uiContext = writable<UIContext>({
   paste: 0,
   undo: 0,
   redo: 0,
+  paused: false,
 });
 $effect(() => {
   if (container) {
     setup(container, stage, uiContext);
   }
+});
+
+$effect(() => {
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      uiContext.update((prev) => ({ ...prev, paused: !prev.paused }));
+    }
+  };
+  document.addEventListener("keydown", onKeyDown);
+  return () => document.removeEventListener("keydown", onKeyDown);
 });
 </script>
 
@@ -32,7 +46,9 @@ $effect(() => {
     style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: baseline;"
   >
     <span style="font-size: 2rem; margin-right:0.5rem;">Stage:</span>
-    <span style="font-size: 2.5rem">{stageNum}</span>
+    <span style="font-size: 2.5rem; margin-right: 1.5rem;">{stageNum}</span>
+    <Key key="Esc" enabled />
+    <span style="font-size: 1.5rem; margin-left: 0.5rem;">to pause</span>
     <span style="flex-grow: 1"></span>
     <span style="font-size: 1.5rem;">Clipboard:</span>
     <div class="inventory">
@@ -62,6 +78,24 @@ $effect(() => {
     <Ability key="Z" name="Undo" num={$uiContext.undo} />
     <Ability key="Y" name="Redo" num={$uiContext.redo} />
   </div>
+  {#if $uiContext.paused}
+    <div class="uiBackground menu">
+      <span style="font-size: 2rem;">Paused</span>
+      <!-- todo: ボタンのスタイル -->
+      <button
+        style="font-size: 1.5rem;"
+        onclick={() => uiContext.update((prev) => ({ ...prev, paused: false }))}
+        >Resume</button
+      >
+      <button
+        style="font-size: 1.5rem;"
+        onclick={() => window.location.reload()}>Restart</button
+      >
+      <button style="font-size: 1.5rem;" onclick={() => goto("/")}
+        >Back to Stage Select</button
+      >
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -84,5 +118,20 @@ $effect(() => {
     border-width: 0.3rem;
     border-radius: 0.5rem;
     border-color: oklch(87.9% 0.169 91.605);
+  }
+  .menu {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    align-items: center;
+    width: max-content;
+    height: max-content;
+    gap: 0.5rem;
+    border-radius: 1rem;
   }
 </style>

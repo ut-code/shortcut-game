@@ -27,4 +27,5 @@ export type UIContext = {
   cut: number;
   undo: number;
   redo: number;
+  paused: boolean;
 };
