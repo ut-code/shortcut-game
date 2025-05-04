@@ -13,7 +13,7 @@ $effect(() => {
   .key{
     display: inline-block;
     font-size: 1rem;
-    padding: 0.5rem;
+    padding: 0.3rem;
     border-style: solid;
     border-width: 0.2rem;
     border-radius: 0.3rem;
