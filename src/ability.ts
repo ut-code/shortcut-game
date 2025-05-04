@@ -29,12 +29,24 @@ export class AbilityControl {
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
   focused: Coords | undefined;
-  constructor(_cx: Context, options?: AbilityInit) {
+  constructor(cx: Context, options?: AbilityInit) {
     this.enabled = options?.enabled ?? {
       copy: true,
       paste: true,
       cut: true,
     };
+    document.addEventListener("copy", (e) => {
+      e.preventDefault();
+      if (this.enabled.copy) this.copy(cx);
+    });
+    document.addEventListener("cut", (e) => {
+      e.preventDefault();
+      if (this.enabled.cut) this.cut(cx);
+    });
+    document.addEventListener("paste", (e) => {
+      e.preventDefault();
+      if (this.enabled.paste) this.paste(cx);
+    });
   }
   highlightCoord(playerAt: Coords, facing: Facing) {
     let dx: number;

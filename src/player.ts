@@ -82,10 +82,7 @@ export class Player {
     highlight.y = highlightCoords.y * cx.blockSize;
     return highlight;
   }
-  handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
-    if (eventIsKeyDown) {
-      this.ability.handleKeyDown(cx, event, this.onGround);
-    }
+  handleInput(_cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
     switch (event.key) {
       case "Control":
         this.holdingKeys[Inputs.Ctrl] = eventIsKeyDown;
