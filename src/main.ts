@@ -33,13 +33,13 @@ export async function setup(el: HTMLElement, stageDefinition: StageDefinition) {
     app.screen.width / gridX,
     app.screen.height / gridY,
   );
-
-  const grid = new Grid(stage, blockSize, stageDefinition);
+  const grid = new Grid(stage, app.screen.height, blockSize, stageDefinition);
 
   const cx: Context = {
     stage,
     gridX,
     gridY,
+    marginY: grid.marginY,
     blockSize,
     grid,
     elapsed: 0,
@@ -47,6 +47,7 @@ export async function setup(el: HTMLElement, stageDefinition: StageDefinition) {
   app.ticker.add((ticker) => {
     cx.elapsed += ticker.deltaTime;
   });
+
   const player = new Player(cx, bunnyTexture);
   app.ticker.add((ticker) => player.tick(cx, ticker));
   app.stage.addChild(player.sprite);
@@ -59,4 +60,17 @@ export async function setup(el: HTMLElement, stageDefinition: StageDefinition) {
 
   // Append the application canvas to the document body
   el.appendChild(app.canvas);
+
+  window.addEventListener("resize", () => {
+    const prevCx = { ...cx };
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    const blockSize = Math.min(
+      app.screen.width / gridX,
+      app.screen.height / gridY,
+    );
+    cx.grid.rerender(app.screen.height, blockSize);
+    cx.blockSize = blockSize;
+    cx.marginY = grid.marginY;
+    player.rerender(prevCx, cx);
+  });
 }

@@ -14,6 +14,5 @@ $effect(() => {
 });
 </script>
 
-<div id="app">
-  <div bind:this={container}></div>
+<div id="app" bind:this={container} style="width: 100dvw; height: 100dvh; overflow: hidden;">
 </div>
