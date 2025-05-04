@@ -25,7 +25,7 @@ export const stages = new Map<string, StageDefinition>([
         "bbbbbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 1,
-      initialPlayerY: 1,
+      initialPlayerY: 5,
       movableBlocks: [
         {
           x: 9,
@@ -49,8 +49,8 @@ export const stages = new Map<string, StageDefinition>([
         "bb.....m.....bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
-      initialPlayerX: 1,
-      initialPlayerY: 1,
+      initialPlayerX: 3,
+      initialPlayerY: 6,
       movableBlocks: [
         {
           x: 0,
@@ -82,7 +82,7 @@ export const stages = new Map<string, StageDefinition>([
         "bbbbbbbbbbb....bbb",
       ],
       initialPlayerX: 1,
-      initialPlayerY: 1,
+      initialPlayerY: 6,
       movableBlocks: [
         {
           x: 3,

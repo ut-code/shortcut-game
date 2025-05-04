@@ -32,7 +32,7 @@ export class Player {
     this.sprite.anchor.set(0.5, 1);
 
     this.sprite.x = cx.blockSize * cx.initialPlayerX;
-    this.sprite.y = cx.blockSize * (cx.gridY - cx.initialPlayerY);
+    this.sprite.y = cx.blockSize * cx.initialPlayerY;
     this.sprite.width = c.playerWidth * cx.blockSize;
     this.sprite.height = c.playerHeight * cx.blockSize;
 

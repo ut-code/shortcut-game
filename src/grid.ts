@@ -133,12 +133,6 @@ export class Grid {
       return retrievedObject;
     }
   }
-  // setAirBlock(cx: Context, x: number, y: number) {
-  //   this.cells[y][x] = {
-  //     block: Block.air,
-  //     sprite: null,
-  //   }
-  // }
   setBlock(cx: Context, x: number, y: number, block: Block) {
     const prev = this.cells[y][x];
     if (block === prev.block) return;
@@ -151,14 +145,6 @@ export class Grid {
         sprite: null,
       };
     }
-    //  else {
-    //   const sprite = createSprite(cx.blockSize, block, x, y);
-    //   this.stage.addChild(sprite);
-    //   this.cells[y][x] = {
-    //     block,
-    //     sprite,
-    //   };
-    // }
   }
   setMovableObject(cx: Context, x: number, y: number, object: MovableObject) {
     console.log("1");
