@@ -118,6 +118,7 @@ export class Grid {
     const retrievedBlocks = this.movableBlocks.filter(
       (block) => block.objectId === objectId,
     );
+    if (!retrievedBlocks) return;
     const retrievedObject: MovableObject = {
       objectId,
       x: retrievedBlocks.filter(
