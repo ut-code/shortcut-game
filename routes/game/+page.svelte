@@ -3,12 +3,11 @@ import { page } from "$app/state";
 import GameLoader from "@/components/GameLoader.svelte";
 import { stages } from "@/stages";
 
-const stageDefinition = $derived(
-  stages.get(page.url.searchParams.get("stage") ?? ""),
-);
+const stageNum = page.url.searchParams.get("stage") ?? "";
+const stageDefinition = $derived(stages.get(stageNum));
 </script>
 
-<GameLoader stage={stageDefinition}>
+<GameLoader stage={stageDefinition} {stageNum}>
   {#snippet children(loadingState)}
     {loadingState}...
   {/snippet}

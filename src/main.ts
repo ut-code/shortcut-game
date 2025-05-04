@@ -1,11 +1,16 @@
 import { Application, Container } from "pixi.js";
-import type { Context } from "./context.ts";
+import type { Writable } from "svelte/store";
+import type { Context, UIContext } from "./context.ts";
 import { Grid } from "./grid.ts";
 import { Player } from "./player.ts";
 import { bunnyTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
-export async function setup(el: HTMLElement, stageDefinition: StageDefinition) {
+export async function setup(
+  el: HTMLElement,
+  stageDefinition: StageDefinition,
+  uiContext: Writable<UIContext>,
+) {
   function tick() {
     // highlight is re-rendered every tick
     const highlight = player.createHighlight(cx);
@@ -43,6 +48,7 @@ export async function setup(el: HTMLElement, stageDefinition: StageDefinition) {
     blockSize,
     grid,
     elapsed: 0,
+    uiContext,
   };
   app.ticker.add((ticker) => {
     cx.elapsed += ticker.deltaTime;

@@ -7,6 +7,7 @@ export type Coords = {
 };
 export type AbilityInit = {
   enabled?: AbilityEnableOptions;
+  inventoryIsInfinite?: boolean;
 };
 export type AbilityEnableOptions = {
   copy: boolean;
@@ -26,7 +27,7 @@ export class AbilityControl {
   history: History[] = [];
   historyIndex = 0;
   inventory: Block | null = null;
-  inventoryIsInfinite = false;
+  inventoryIsInfinite: boolean;
   enabled: AbilityEnableOptions;
   focused: Coords | undefined;
   constructor(cx: Context, options?: AbilityInit) {
@@ -35,6 +36,12 @@ export class AbilityControl {
       paste: true,
       cut: true,
     };
+    this.inventoryIsInfinite = options?.inventoryIsInfinite ?? false;
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      inventory: this.inventory,
+      inventoryIsInfinite: this.inventoryIsInfinite,
+    }));
     document.addEventListener("copy", (e) => {
       e.preventDefault();
       if (this.enabled.copy) this.copy(cx);
@@ -47,6 +54,13 @@ export class AbilityControl {
       e.preventDefault();
       if (this.enabled.paste) this.paste(cx);
     });
+  }
+  setInventory(cx: Context, inventory: Block | null) {
+    this.inventory = inventory;
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      inventory,
+    }));
   }
   highlightCoord(playerAt: Coords, facing: Facing) {
     let dx: number;
@@ -70,7 +84,7 @@ export class AbilityControl {
     if (!this.focused) return;
     const target = cx.grid.getBlock(this.focused.x, this.focused.y);
     if (!target || target !== Block.movable) return;
-    this.inventory = target;
+    this.setInventory(cx, target);
   }
   paste(cx: Context) {
     if (!this.focused) return;
@@ -80,7 +94,7 @@ export class AbilityControl {
     const prevInventory = this.inventory;
     cx.grid.setBlock(cx, this.focused.x, this.focused.y, this.inventory);
     if (!this.inventoryIsInfinite) {
-      this.inventory = null;
+      this.setInventory(cx, null);
     }
 
     this.pushHistory({
@@ -99,7 +113,7 @@ export class AbilityControl {
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
     const prevInventory = this.inventory;
-    this.inventory = target;
+    this.setInventory(cx, target);
     cx.grid.setBlock(cx, this.focused.x, this.focused.y, Block.air);
 
     this.pushHistory({
@@ -125,14 +139,14 @@ export class AbilityControl {
     this.historyIndex--; // undo は、巻き戻し後の index で計算する
     const op = this.history[this.historyIndex];
     cx.grid.setBlock(cx, op.at.x, op.at.y, op.from);
-    this.inventory = op.inventory.before;
+    this.setInventory(cx, op.inventory.before);
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
   redo(cx: Context) {
     if (this.historyIndex >= this.history.length) return;
     const op = this.history[this.historyIndex];
     this.historyIndex++; // redo は、巻き戻し前の index
-    this.inventory = op.inventory.after;
+    this.setInventory(cx, op.inventory.after);
     cx.grid.setBlock(cx, op.at.x, op.at.y, op.to);
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }

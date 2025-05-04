@@ -1,4 +1,6 @@
 import type { Container } from "pixi.js";
+import type { Writable } from "svelte/store";
+import type { Block } from "./constants.ts";
 import type { Grid } from "./grid.ts";
 
 export type Context = {
@@ -13,4 +15,11 @@ export type Context = {
 
   // about time
   elapsed: number;
+
+  uiContext: Writable<UIContext>;
+};
+
+export type UIContext = {
+  inventory: Block | null;
+  inventoryIsInfinite: boolean;
 };
