@@ -2,7 +2,16 @@ export type StageDefinition = {
   stage: string[];
   initialPlayerX: number;
   initialPlayerY: number;
+  movableBlocks: {
+    x: number;
+    y: number;
+    objectId: number;
+    // 基準ブロックからの相対位置
+    relativeX: number;
+    relativeY: number;
+  }[];
 };
+
 export const stages = new Map<string, StageDefinition>([
   [
     "1",
@@ -17,6 +26,15 @@ export const stages = new Map<string, StageDefinition>([
       ],
       initialPlayerX: 1,
       initialPlayerY: 1,
+      movableBlocks: [
+        {
+          x: 9,
+          y: 4,
+          objectId: 1,
+          relativeX: 0,
+          relativeY: 0,
+        },
+      ],
     },
   ],
   [
@@ -24,14 +42,31 @@ export const stages = new Map<string, StageDefinition>([
     {
       stage: [
         "bbbbbbbbbbbbbbbbbb",
-        ".........b........",
-        ".........b........",
-        ".........b...bbbbb",
-        ".........m...bbbbb",
+        "..................",
+        "..................",
+        "m............bbbbb",
+        "bb...........bbbbb",
+        "bb.....m.....bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 1,
       initialPlayerY: 1,
+      movableBlocks: [
+        {
+          x: 0,
+          y: 3,
+          objectId: 1,
+          relativeX: 0,
+          relativeY: 0,
+        },
+        {
+          x: 7,
+          y: 5,
+          objectId: 2,
+          relativeX: 0,
+          relativeY: 0,
+        },
+      ],
     },
   ],
   [
@@ -40,7 +75,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "...b..............",
-        "...b.....m.....bbb",
+        "...b....m......bbb",
         "...bm..........bbb",
         "...bbb.........bbb",
         "...mm..........bbb",
@@ -48,6 +83,36 @@ export const stages = new Map<string, StageDefinition>([
       ],
       initialPlayerX: 1,
       initialPlayerY: 1,
+      movableBlocks: [
+        {
+          x: 3,
+          y: 5,
+          objectId: 1,
+          relativeX: 0,
+          relativeY: 0,
+        },
+        {
+          x: 4,
+          y: 5,
+          objectId: 1,
+          relativeX: 1,
+          relativeY: 0,
+        },
+        {
+          x: 4,
+          y: 3,
+          objectId: 2,
+          relativeX: 0,
+          relativeY: 0,
+        },
+        {
+          x: 8,
+          y: 2,
+          objectId: 3,
+          relativeX: 0,
+          relativeY: 0,
+        },
+      ],
     },
   ],
 ]);

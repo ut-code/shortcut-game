@@ -1,5 +1,6 @@
-import { Block, Facing } from "./constants.ts";
+import { Block, Facing, type MovableBlock } from "./constants.ts";
 import type { Context } from "./context.ts";
+import type { MovableBlocks, MovableObject } from "./grid.ts";
 
 export type Coords = {
   x: number;
@@ -15,17 +16,22 @@ export type AbilityEnableOptions = {
 };
 type History = {
   at: { x: number; y: number };
-  from: Block;
-  to: Block;
+  from: MovableObject | Block;
+  to: MovableObject | Block;
   inventory: {
-    before: Block | null;
-    after: Block | null;
+    before: MovableObject | null;
+    after: MovableObject | null;
   };
 };
+
+function isMovableObject(obj: MovableObject | Block): obj is MovableObject {
+  return (obj as MovableObject).objectId !== undefined;
+}
+
 export class AbilityControl {
   history: History[] = [];
   historyIndex = 0;
-  inventory: Block | null = null;
+  inventory: MovableObject | null = null;
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
   focused: Coords | undefined;
@@ -56,17 +62,25 @@ export class AbilityControl {
   }
   copy(cx: Context) {
     if (!this.focused) return;
-    const target = cx.grid.getBlock(this.focused.x, this.focused.y);
+    const x = this.focused.x;
+    const y = this.focused.y;
+    const target = cx.grid.getBlock(x, y);
     if (!target || target !== Block.movable) return;
-    this.inventory = target;
+    const movableObject = cx.grid.getMovableObject(x, y);
+    if (!movableObject) return;
+    this.inventory = movableObject;
   }
   paste(cx: Context) {
     if (!this.focused) return;
-    if (!this.inventory || this.inventory === Block.air) return;
+    if (!this.inventory /*|| this.inventory === Block.air*/) return;
+    const x = this.focused.x;
+    const y = this.focused.y;
     const target = cx.grid.getBlock(this.focused.x, this.focused.y);
     if (!target || target !== Block.air) return;
     const prevInventory = this.inventory;
-    cx.grid.setBlock(cx, this.focused.x, this.focused.y, this.inventory);
+
+    cx.grid.setMovableObject(cx, x, y, this.inventory);
+
     if (!this.inventoryIsInfinite) {
       this.inventory = null;
     }
@@ -83,12 +97,23 @@ export class AbilityControl {
   }
   cut(cx: Context) {
     if (!this.focused) return;
-    const target = cx.grid.getBlock(this.focused.x, this.focused.y);
+    const x = this.focused.x;
+    const y = this.focused.y;
+    const target = cx.grid.getBlock(x, y);
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
+    const movableObject = cx.grid.getMovableObject(x, y);
+    if (!movableObject) return;
     const prevInventory = this.inventory;
-    this.inventory = target;
-    cx.grid.setBlock(cx, this.focused.x, this.focused.y, Block.air);
+    this.inventory = movableObject;
+
+    for (const i of movableObject.relativePositions) {
+      const positionX = movableObject.x + i.x;
+      const positionY = movableObject.y + i.y;
+      cx.grid.setBlock(cx, positionX, positionY, Block.air);
+    }
+
+    // cx.grid.setBlock(cx, this.focused.x, this.focused.y, Block.air);
 
     this.pushHistory({
       at: { ...this.focused },
@@ -96,7 +121,7 @@ export class AbilityControl {
       to: Block.air,
       inventory: {
         before: prevInventory,
-        after: target,
+        after: movableObject,
       },
     });
   }
@@ -112,7 +137,11 @@ export class AbilityControl {
     if (this.historyIndex <= 0) return;
     this.historyIndex--; // undo は、巻き戻し後の index で計算する
     const op = this.history[this.historyIndex];
-    cx.grid.setBlock(cx, op.at.x, op.at.y, op.from);
+    if (!isMovableObject(op.from)) {
+      cx.grid.setBlock(cx, op.at.x, op.at.y, op.from);
+    } else {
+      cx.grid.setMovableObject(cx, op.at.x, op.at.y, op.from);
+    }
     this.inventory = op.inventory.before;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
@@ -121,7 +150,11 @@ export class AbilityControl {
     const op = this.history[this.historyIndex];
     this.historyIndex++; // redo は、巻き戻し前の index
     this.inventory = op.inventory.after;
-    cx.grid.setBlock(cx, op.at.x, op.at.y, op.to);
+    if (!isMovableObject(op.to)) {
+      cx.grid.setBlock(cx, op.at.x, op.at.y, op.to);
+    } else {
+      cx.grid.setMovableObject(cx, op.at.x, op.at.y, op.to);
+    }
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
   handleKeyDown(cx: Context, e: KeyboardEvent, onGround: boolean) {
