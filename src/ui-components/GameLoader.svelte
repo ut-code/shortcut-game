@@ -13,7 +13,7 @@ const { children, stageNum, stage }: Props = $props();
 </script>
 
 {#if browser}
-  {#await import("@/components/Game.svelte")}
+  {#await import("@/ui-components/Game.svelte")}
     {@render children("Downloading")}
   {:then { default: Game }}
     {#if stage}
