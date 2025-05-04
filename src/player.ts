@@ -152,7 +152,8 @@ export class Player {
       cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== undefined;
     const isOutOfWorldLeft = (x: number) => x < 0;
     const isOutOfWorldRight = (x: number) => x >= cx.gridX;
-    const isOutOfWorldBottom = (y: number) => y >= cx.gridY;
+    const isOutOfWorldBottom = (y: number) =>
+      y >= cx.gridY + cx.marginY / cx.blockSize;
 
     // next〜 は次フレームの座標、inner〜 は前フレームでかつ1px内側の座標
     const nextX = (this.x + this.vx * ticker.deltaTime) / cx.blockSize;
