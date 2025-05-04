@@ -76,7 +76,7 @@ export class Grid {
             block,
             sprite,
             objectId: movableBlock.objectId,
-            // 同グループの基準ブロックに対する相対位置
+            // 同オブジェクトの基準ブロックに対する相対位置
             relativePosition: {
               x: movableBlock.relativeX,
               y: movableBlock.relativeY,
@@ -106,34 +106,35 @@ export class Grid {
   getBlock(x: number, y: number): Block | undefined {
     return this.cells[y]?.[x]?.block;
   }
-  getMovableObject(x: number, y: number): MovableObject | undefined {
+  getMovableObject(
+    x: number,
+    y: number,
+    cx: Context,
+  ): MovableObject | undefined {
     const cell = this.cells[y]?.[x];
     if (!cell) return undefined;
-    if (cell.block === Block.movable) {
-      const objectId = cell.objectId;
-      const retrievedBlocks = this.movableBlocks.filter(
-        (block) => block.objectId === objectId,
-      );
-      const retrievedObject: MovableObject = {
-        objectId,
-        x: retrievedBlocks.filter(
-          (block) => block.relativeX === 0 && block.relativeY === 0,
-        )[0].x,
-        y: retrievedBlocks.filter(
-          (block) => block.relativeX === 0 && block.relativeY === 0,
-        )[0].y,
-        relativePositions: retrievedBlocks.map((block) => ({
-          x: block.relativeX,
-          y: block.relativeY,
-        })),
-      };
+    if (cell.block !== Block.movable) return undefined;
+    const objectId = cell.objectId;
+    const retrievedBlocks = this.movableBlocks.filter(
+      (block) => block.objectId === objectId,
+    );
+    const retrievedObject: MovableObject = {
+      objectId,
+      x: retrievedBlocks.filter(
+        (block) => block.relativeX === 0 && block.relativeY === 0,
+      )[0].x,
+      y: retrievedBlocks.filter(
+        (block) => block.relativeX === 0 && block.relativeY === 0,
+      )[0].y,
+      relativePositions: retrievedBlocks.map((block) => ({
+        x: block.relativeX,
+        y: block.relativeY,
+      })),
+    };
 
-      console.log(retrievedObject);
-
-      return retrievedObject;
-    }
+    return retrievedObject;
   }
-  setBlock(cx: Context, x: number, y: number, block: Block) {
+  setBlock(x: number, y: number, block: Block) {
     const prev = this.cells[y][x];
     if (block === prev.block) return;
     if (prev.block !== Block.air) {
@@ -147,9 +148,6 @@ export class Grid {
     }
   }
   setMovableObject(cx: Context, x: number, y: number, object: MovableObject) {
-    console.log("1");
-    console.log(object.relativePositions);
-    console.log(object, object);
     const prev = this.cells[y][x];
     if (prev.block !== Block.air) {
       this.stage.removeChild(prev.sprite);
@@ -174,20 +172,61 @@ export class Grid {
           y: i.y,
         },
       };
+      this.movableBlocks.push({
+        x: positionX,
+        y: positionY,
+        objectId: object.objectId,
+        relativeX: i.x,
+        relativeY: i.y,
+      });
     }
+
+    // 座標基準で重複を削除
+    this.movableBlocks = Array.from(
+      new Map(this.movableBlocks.map((b) => [`${b.x},${b.y}`, b])).values(),
+    );
+
     // オブジェクトの座標を更新
     object.x = x;
     object.y = y;
-    this.movableBlocks = this.movableBlocks.map((block) => {
-      if (block.objectId === object.objectId) {
-        return {
-          ...block,
-          x,
-          y,
-        };
+  }
+  clearAllMovableBlocks() {
+    for (const i of this.movableBlocks) {
+      const prev = this.cells[i.y][i.x];
+      if (prev.block !== Block.air) {
+        this.stage.removeChild(prev.sprite);
       }
-      return block;
-    });
+      this.setBlock(i.x, i.y, Block.air);
+    }
+  }
+  setAllMovableBlocks(cx: Context) {
+    const objectIds = Array.from(
+      new Set(this.movableBlocks.map((block) => block.objectId)),
+    );
+    for (const objectId of objectIds) {
+      const retrievedBlocks = this.movableBlocks.filter(
+        (block) => block.objectId === objectId,
+      );
+      const movableObject: MovableObject = {
+        objectId,
+        x: retrievedBlocks.filter(
+          (block) => block.relativeX === 0 && block.relativeY === 0,
+        )[0].x,
+        y: retrievedBlocks.filter(
+          (block) => block.relativeX === 0 && block.relativeY === 0,
+        )[0].y,
+        relativePositions: retrievedBlocks.map((block) => ({
+          x: block.relativeX,
+          y: block.relativeY,
+        })),
+      };
+      cx.grid.setMovableObject(
+        cx,
+        movableObject.x,
+        movableObject.y,
+        movableObject,
+      );
+    }
   }
 }
 

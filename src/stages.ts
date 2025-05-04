@@ -7,6 +7,8 @@ export type StageDefinition = {
     y: number;
     objectId: number;
     // 基準ブロックからの相対位置
+    // 基準ブロックは原則オブジェクトの左下で
+    // 右を向くときに目の前に来るブロック
     relativeX: number;
     relativeY: number;
   }[];

@@ -15,13 +15,18 @@ export type AbilityEnableOptions = {
   cut: boolean;
 };
 type History = {
-  at: { x: number; y: number };
-  from: MovableObject | Block;
-  to: MovableObject | Block;
-  inventory: {
-    before: MovableObject | null;
-    after: MovableObject | null;
-  };
+  playerX: number;
+  playerY: number;
+  playerFacing: Facing;
+  inventory: MovableObject | null;
+  movableBlocks: {
+    x: number;
+    y: number;
+    objectId: number;
+    // 基準ブロックからの相対位置
+    relativeX: number;
+    relativeY: number;
+  }[];
 };
 
 function isMovableObject(obj: MovableObject | Block): obj is MovableObject {
@@ -66,13 +71,28 @@ export class AbilityControl {
     const y = this.focused.y;
     const target = cx.grid.getBlock(x, y);
     if (!target || target !== Block.movable) return;
-    const movableObject = cx.grid.getMovableObject(x, y);
+    const movableObject = cx.grid.getMovableObject(x, y, cx);
     if (!movableObject) return;
     this.inventory = movableObject;
+    // cx.gridとinventryは重複しないように
+    cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
+      (block) => block.objectId !== movableObject.objectId,
+    );
   }
-  paste(cx: Context, facing: Facing) {
+  paste(cx: Context, facing: Facing, playerAt: Coords) {
     if (!this.focused) return;
     if (!this.inventory /*|| this.inventory === Block.air*/) return;
+    const objectId = this.inventory.objectId;
+
+    this.pushHistory({
+      playerX: playerAt.x,
+      playerY: playerAt.y,
+      inventory: this.inventory ? this.inventory : null,
+      playerFacing: facing,
+      movableBlocks: cx.grid.movableBlocks,
+    });
+
+    // 左向きのときにブロックを配置する位置を変更するのに使用
     const width =
       this.inventory.relativePositions.reduce(
         (acc, i) => Math.max(acc, i.x),
@@ -107,50 +127,57 @@ export class AbilityControl {
     }
 
     this.pushHistory({
-      at: { ...this.focused },
-      from: Block.air,
-      to: prevInventory,
-      inventory: {
-        before: prevInventory,
-        after: this.inventory,
-      },
+      playerX: playerAt.x,
+      playerY: playerAt.y,
+      inventory: this.inventory ? this.inventory : null,
+      playerFacing: facing,
+      movableBlocks: cx.grid.movableBlocks,
     });
   }
-  cut(cx: Context) {
+  cut(cx: Context, facing: Facing, playerAt: Coords) {
     if (!this.focused) return;
+
+    this.pushHistory({
+      playerX: playerAt.x,
+      playerY: playerAt.y,
+      inventory: this.inventory ? this.inventory : null,
+      playerFacing: facing,
+      movableBlocks: cx.grid.movableBlocks,
+    });
+    console.log(this.history);
+
     const x = this.focused.x;
     const y = this.focused.y;
     const target = cx.grid.getBlock(x, y);
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
-    const movableObject = cx.grid.getMovableObject(x, y);
+    const movableObject = cx.grid.getMovableObject(x, y, cx);
     if (!movableObject) return;
-    const prevInventory = this.inventory;
+    // const prevInventory = this.inventory;
     this.inventory = movableObject;
-
+    // cx.gridとinventryは重複しないように
+    cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
+      (block) => block.objectId !== movableObject.objectId,
+    );
     for (const i of movableObject.relativePositions) {
       const positionX = movableObject.x + i.x;
       const positionY = movableObject.y + i.y;
-      cx.grid.setBlock(cx, positionX, positionY, Block.air);
+      cx.grid.setBlock(positionX, positionY, Block.air);
     }
 
-    // cx.grid.setBlock(cx, this.focused.x, this.focused.y, Block.air);
-
     this.pushHistory({
-      at: { ...this.focused },
-      from: target,
-      to: Block.air,
-      inventory: {
-        before: prevInventory,
-        after: movableObject,
-      },
+      playerX: playerAt.x,
+      playerY: playerAt.y,
+      inventory: this.inventory ? this.inventory : null,
+      playerFacing: facing,
+      movableBlocks: cx.grid.movableBlocks,
     });
   }
 
   // History については、 `docs/history-stack.png` を参照のこと
   pushHistory(h: History) {
     this.history = this.history.slice(0, this.historyIndex);
-    this.history.push(h);
+    this.history.push(JSON.parse(JSON.stringify(h)));
     this.historyIndex = this.history.length;
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
@@ -158,24 +185,34 @@ export class AbilityControl {
     if (this.historyIndex <= 0) return;
     this.historyIndex--; // undo は、巻き戻し後の index で計算する
     const op = this.history[this.historyIndex];
-    if (!isMovableObject(op.from)) {
-      cx.grid.setBlock(cx, op.at.x, op.at.y, op.from);
-    } else {
-      cx.grid.setMovableObject(cx, op.at.x, op.at.y, op.from);
-    }
-    this.inventory = op.inventory.before;
+
+    // すべてのオブジェクトを削除
+    cx.grid.clearAllMovableBlocks();
+
+    // オブジェクトを配置
+    this.inventory = op.inventory
+      ? JSON.parse(JSON.stringify(op.inventory))
+      : null;
+    cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
+    cx.grid.setAllMovableBlocks(cx);
+
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
   redo(cx: Context) {
     if (this.historyIndex >= this.history.length) return;
     const op = this.history[this.historyIndex];
     this.historyIndex++; // redo は、巻き戻し前の index
-    this.inventory = op.inventory.after;
-    if (!isMovableObject(op.to)) {
-      cx.grid.setBlock(cx, op.at.x, op.at.y, op.to);
-    } else {
-      cx.grid.setMovableObject(cx, op.at.x, op.at.y, op.to);
-    }
+
+    // すべてのオブジェクトを削除
+    cx.grid.clearAllMovableBlocks();
+
+    // オブジェクトを配置
+    this.inventory = op.inventory
+      ? JSON.parse(JSON.stringify(op.inventory))
+      : null;
+    cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
+    cx.grid.setAllMovableBlocks(cx);
+
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
   handleKeyDown(
@@ -183,17 +220,19 @@ export class AbilityControl {
     e: KeyboardEvent,
     onGround: boolean,
     facing: Facing,
+    history: History[],
+    playerAt: Coords,
   ) {
     if (!(e.ctrlKey || e.metaKey)) return;
 
     if (this.enabled.paste && onGround && e.key === "v") {
-      this.paste(cx, facing);
+      this.paste(cx, facing, playerAt);
     }
     if (this.enabled.copy && onGround && e.key === "c") {
       this.copy(cx);
     }
     if (this.enabled.cut && onGround && e.key === "x") {
-      this.cut(cx);
+      this.cut(cx, facing, playerAt);
     }
     if (e.key === "z") {
       this.undo(cx);

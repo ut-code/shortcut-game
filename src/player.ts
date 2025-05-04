@@ -3,7 +3,23 @@ import { AbilityControl, type AbilityInit } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import type { Context } from "./context.ts";
+import type { MovableObject } from "./grid.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
+
+type History = {
+  playerX: number;
+  playerY: number;
+  playerFacing: c.Facing;
+  inventory: MovableObject | null;
+  movableBlocks: {
+    x: number;
+    y: number;
+    objectId: number;
+    // 基準ブロックからの相対位置
+    relativeX: number;
+    relativeY: number;
+  }[];
+};
 
 enum Inputs {
   Left = 0,
@@ -20,6 +36,7 @@ export class Player {
   jumpingBegin: number | null;
   facing: c.Facing = c.Facing.right;
   ability: AbilityControl;
+  history: History[] = [];
   constructor(
     cx: Context,
     spriteOptions?: SpriteOptions | Texture,
@@ -84,7 +101,14 @@ export class Player {
   }
   handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
-      this.ability.handleKeyDown(cx, event, this.onGround, this.facing);
+      this.ability.handleKeyDown(
+        cx,
+        event,
+        this.onGround,
+        this.facing,
+        this.history,
+        { x: this.x, y: this.y },
+      );
     }
     switch (event.key) {
       case "Control":
