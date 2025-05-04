@@ -1,13 +1,9 @@
 <script lang="ts">
 type Props = { key: string; enabled: boolean };
 const { key, enabled }: Props = $props();
-let isMacOS: boolean = $state(false);
-$effect(() => {
-  isMacOS = navigator.userAgent.includes("Mac OS X");
-});
 </script>
 <span class="key" style="border-color: {enabled ? "black" : "gray"}; background: {enabled ? "white" : "lightgray"};">
-  {isMacOS ? "⌘+" + key : "Ctrl+" + key}
+  {key}
 </span>
 <style>
   .key{
