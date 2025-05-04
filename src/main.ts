@@ -1,4 +1,4 @@
-import { Application, Container } from "pixi.js";
+import { Application, Container, type Ticker } from "pixi.js";
 import type { Writable } from "svelte/store";
 import type { Context, UIContext } from "./context.ts";
 import { Grid } from "./grid.ts";
@@ -11,6 +11,16 @@ export async function setup(
   stageDefinition: StageDefinition,
   uiContext: Writable<UIContext>,
 ) {
+  let paused = false;
+  uiContext.subscribe((v) => {
+    paused = v.paused;
+  });
+  const unlessPaused = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
+    if (!paused) {
+      f(ticker);
+    }
+  };
+
   function tick() {
     // highlight is re-rendered every tick
     const highlight = player.createHighlight(cx);
@@ -50,19 +60,23 @@ export async function setup(
     elapsed: 0,
     uiContext,
   };
-  app.ticker.add((ticker) => {
-    cx.elapsed += ticker.deltaTime;
-  });
+  app.ticker.add(
+    unlessPaused((ticker) => {
+      cx.elapsed += ticker.deltaTime;
+    }),
+  );
 
   const player = new Player(cx, bunnyTexture);
-  app.ticker.add((ticker) => player.tick(cx, ticker));
+  app.ticker.add(unlessPaused((ticker) => player.tick(cx, ticker)));
   app.stage.addChild(player.sprite);
 
   let cleanup: undefined | (() => void) = undefined;
-  app.ticker.add(() => {
-    if (cleanup) cleanup();
-    cleanup = tick();
-  });
+  app.ticker.add(
+    unlessPaused(() => {
+      if (cleanup) cleanup();
+      cleanup = tick();
+    }),
+  );
 
   // Append the application canvas to the document body
   el.appendChild(app.canvas);
