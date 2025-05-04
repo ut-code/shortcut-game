@@ -84,7 +84,7 @@ export class Player {
   }
   handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
-      this.ability.handleKeyDown(cx, event, this.onGround);
+      this.ability.handleKeyDown(cx, event, this.onGround, this.facing);
     }
     switch (event.key) {
       case "Control":

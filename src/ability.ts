@@ -70,13 +70,34 @@ export class AbilityControl {
     if (!movableObject) return;
     this.inventory = movableObject;
   }
-  paste(cx: Context) {
+  paste(cx: Context, facing: Facing) {
     if (!this.focused) return;
     if (!this.inventory /*|| this.inventory === Block.air*/) return;
-    const x = this.focused.x;
+    const width =
+      this.inventory.relativePositions.reduce(
+        (acc, i) => Math.max(acc, i.x),
+        0,
+      ) -
+      this.inventory.relativePositions.reduce(
+        (acc, i) => Math.min(acc, i.x),
+        1000,
+      ) +
+      1;
+
+    const x = this.focused.x - (facing === Facing.left ? width - 1 : 0);
     const y = this.focused.y;
-    const target = cx.grid.getBlock(this.focused.x, this.focused.y);
-    if (!target || target !== Block.air) return;
+
+    for (const i of this.inventory.relativePositions) {
+      const positionX = x + i.x;
+      const positionY = y + i.y;
+      const target = cx.grid.getBlock(positionX, positionY);
+      if (target !== Block.air) {
+        // すでに何かある場合は、ペーストできない
+        return;
+      }
+    }
+    // const target = cx.grid.getBlock(this.focused.x, this.focused.y);
+    // if (!target || target !== Block.air) return;
     const prevInventory = this.inventory;
 
     cx.grid.setMovableObject(cx, x, y, this.inventory);
@@ -157,11 +178,16 @@ export class AbilityControl {
     }
     console.log(`history: ${this.historyIndex} / ${this.history.length}`);
   }
-  handleKeyDown(cx: Context, e: KeyboardEvent, onGround: boolean) {
+  handleKeyDown(
+    cx: Context,
+    e: KeyboardEvent,
+    onGround: boolean,
+    facing: Facing,
+  ) {
     if (!(e.ctrlKey || e.metaKey)) return;
 
     if (this.enabled.paste && onGround && e.key === "v") {
-      this.paste(cx);
+      this.paste(cx, facing);
     }
     if (this.enabled.copy && onGround && e.key === "c") {
       this.copy(cx);
