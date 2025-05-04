@@ -22,4 +22,9 @@ export type Context = {
 export type UIContext = {
   inventory: Block | null;
   inventoryIsInfinite: boolean;
+  copy: number;
+  paste: number;
+  cut: number;
+  undo: number;
+  redo: number;
 };
