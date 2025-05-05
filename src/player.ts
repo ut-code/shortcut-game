@@ -69,6 +69,13 @@ export class Player {
     this.onGround = false;
     this.jumpingBegin = null;
     this.holdingKeys = {};
+    this.history.list.push({
+      playerX: this.x,
+      playerY: this.y,
+      playerFacing: this.facing,
+      inventory: null,
+      movableBlocks: cx.grid.movableBlocks,
+    });
   }
   get x() {
     return this.sprite.x;

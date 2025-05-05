@@ -29,13 +29,7 @@ type History = {
   }[];
 };
 
-function isMovableObject(obj: MovableObject | Block): obj is MovableObject {
-  return (obj as MovableObject).objectId !== undefined;
-}
-
 export class AbilityControl {
-  // history: History[] = [];
-  // historyIndex = 0;
   inventory: MovableObject | null = null;
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
@@ -74,10 +68,6 @@ export class AbilityControl {
     const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
     this.inventory = movableObject;
-    // cx.gridとinventryは重複しないように
-    // cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
-    //   (block) => block.objectId !== movableObject.objectId,
-    // );
   }
   paste(cx: Context, facing: Facing) {
     if (!this.focused) return;
@@ -124,10 +114,7 @@ export class AbilityControl {
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
     const movableObject = cx.grid.getMovableObject(x, y);
-    if (!movableObject) {
-      console.log("aaaaaa");
-      return;
-    }
+    if (!movableObject) return;
     this.inventory = movableObject;
     // cx.gridとinventryは重複しないように
     // 取得したオブジェクトは削除する
@@ -142,6 +129,7 @@ export class AbilityControl {
   }
 
   // History については、 `docs/history-stack.png` を参照のこと
+  // すべての状態を保存
   pushHistory(
     h: History,
     history: {
@@ -149,11 +137,11 @@ export class AbilityControl {
       index: number;
     },
   ) {
-    history.list = history.list.slice(0, history.index);
+    // history.listの先頭（初期状態）は残す
+    history.list = history.list.slice(0, Math.max(history.index, 1));
     history.list.push(JSON.parse(JSON.stringify(h)));
     history.index = history.list.length;
     console.log(`history: ${history.index} / ${history.list.length}`);
-    console.log(history);
   }
   undo(
     cx: Context,
@@ -162,12 +150,9 @@ export class AbilityControl {
       index: number;
     },
   ) {
-    console.log(history.index);
     if (history.index <= 0) return;
     history.index--; // undo は、巻き戻し後の index で計算する
     const op = history.list[history.index];
-
-    console.log("bbb");
 
     // すべてのオブジェクトを削除
     cx.grid.clearAllMovableBlocks();
@@ -285,7 +270,6 @@ export class AbilityControl {
         },
         history,
       );
-      console.log("x", history);
     }
     if (e.key === "z") {
       this.undo(cx, history);
