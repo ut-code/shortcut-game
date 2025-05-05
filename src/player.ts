@@ -104,7 +104,7 @@ export class Player {
   }
   handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
-      this.ability.handleKeyDown(
+      const playerPosition = this.ability.handleKeyDown(
         cx,
         event,
         this.onGround,
@@ -112,6 +112,10 @@ export class Player {
         this.history,
         { x: this.x, y: this.y },
       );
+      if (playerPosition) {
+        this.x = playerPosition.x;
+        this.y = playerPosition.y;
+      }
     }
     switch (event.key) {
       case "Control":

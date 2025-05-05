@@ -215,7 +215,7 @@ export class AbilityControl {
     },
     playerAt: Coords,
   ) {
-    if (!(e.ctrlKey || e.metaKey)) return;
+    if (!(e.ctrlKey || e.metaKey)) return undefined;
 
     if (this.enabled.paste && onGround && e.key === "v") {
       this.pushHistory(
@@ -290,10 +290,19 @@ export class AbilityControl {
     if (e.key === "z") {
       this.undo(cx, history);
       e.preventDefault();
+      return {
+        x: history.list[history.index].playerX,
+        y: history.list[history.index].playerY,
+      };
     }
     if (e.key === "y") {
       this.redo(cx, history);
       e.preventDefault();
+      if (history.index >= history.list.length) return;
+      return {
+        x: history.list[history.index].playerX,
+        y: history.list[history.index].playerY,
+      };
     }
   }
 }
