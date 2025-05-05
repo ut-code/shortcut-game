@@ -7,7 +7,7 @@ import type { Context } from "./context.ts";
 import type { MovableObject } from "./grid.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
 
-type History = {
+export type History = {
   playerX: number;
   playerY: number;
   playerFacing: c.Facing;
@@ -20,10 +20,7 @@ type History = {
     relativeX: number;
     relativeY: number;
   }[];
-  enabled: {
-    before: AbilityEnableOptions;
-    after: AbilityEnableOptions;
-  };
+  enabledAbilities: AbilityEnableOptions;
 };
 
 enum Inputs {
@@ -43,7 +40,7 @@ export class Player {
   ability: AbilityControl;
   history = {
     list: [] as History[],
-    index: 0,
+    index: 1,
   };
   constructor(
     cx: Context,
@@ -80,10 +77,7 @@ export class Player {
       playerFacing: this.facing,
       inventory: null,
       movableBlocks: cx.grid.movableBlocks,
-      enabled: {
-        before: this.ability.enabled,
-        after: this.ability.enabled,
-      },
+      enabledAbilities: this.ability.enabledAbilities,
     });
   }
   get x() {
