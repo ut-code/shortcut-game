@@ -36,7 +36,10 @@ export class Player {
   jumpingBegin: number | null;
   facing: c.Facing = c.Facing.right;
   ability: AbilityControl;
-  history: History[] = [];
+  history = {
+    list: [] as History[],
+    index: 0,
+  };
   constructor(
     cx: Context,
     spriteOptions?: SpriteOptions | Texture,

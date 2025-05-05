@@ -34,8 +34,8 @@ function isMovableObject(obj: MovableObject | Block): obj is MovableObject {
 }
 
 export class AbilityControl {
-  history: History[] = [];
-  historyIndex = 0;
+  // history: History[] = [];
+  // historyIndex = 0;
   inventory: MovableObject | null = null;
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
@@ -142,16 +142,32 @@ export class AbilityControl {
   }
 
   // History については、 `docs/history-stack.png` を参照のこと
-  pushHistory(h: History) {
-    this.history = this.history.slice(0, this.historyIndex);
-    this.history.push(JSON.parse(JSON.stringify(h)));
-    this.historyIndex = this.history.length;
-    console.log(`history: ${this.historyIndex} / ${this.history.length}`);
+  pushHistory(
+    h: History,
+    history: {
+      list: History[];
+      index: number;
+    },
+  ) {
+    history.list = history.list.slice(0, history.index);
+    history.list.push(JSON.parse(JSON.stringify(h)));
+    history.index = history.list.length;
+    console.log(`history: ${history.index} / ${history.list.length}`);
+    console.log(history);
   }
-  undo(cx: Context) {
-    if (this.historyIndex <= 0) return;
-    this.historyIndex--; // undo は、巻き戻し後の index で計算する
-    const op = this.history[this.historyIndex];
+  undo(
+    cx: Context,
+    history: {
+      list: History[];
+      index: number;
+    },
+  ) {
+    console.log(history.index);
+    if (history.index <= 0) return;
+    history.index--; // undo は、巻き戻し後の index で計算する
+    const op = history.list[history.index];
+
+    console.log("bbb");
 
     // すべてのオブジェクトを削除
     cx.grid.clearAllMovableBlocks();
@@ -163,12 +179,18 @@ export class AbilityControl {
     cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
     cx.grid.setAllMovableBlocks(cx);
 
-    console.log(`history: ${this.historyIndex} / ${this.history.length}`);
+    console.log(`history: ${history.index} / ${history.list.length}`);
   }
-  redo(cx: Context) {
-    if (this.historyIndex >= this.history.length) return;
-    const op = this.history[this.historyIndex];
-    this.historyIndex++; // redo は、巻き戻し前の index
+  redo(
+    cx: Context,
+    history: {
+      list: History[];
+      index: number;
+    },
+  ) {
+    if (history.index >= history.list.length) return;
+    const op = history.list[history.index];
+    history.index++; // redo は、巻き戻し前の index
 
     // すべてのオブジェクトを削除
     cx.grid.clearAllMovableBlocks();
@@ -180,75 +202,97 @@ export class AbilityControl {
     cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
     cx.grid.setAllMovableBlocks(cx);
 
-    console.log(`history: ${this.historyIndex} / ${this.history.length}`);
+    console.log(`history: ${history.index} / ${history.list.length}`);
   }
   handleKeyDown(
     cx: Context,
     e: KeyboardEvent,
     onGround: boolean,
     facing: Facing,
-    history: History[],
+    history: {
+      list: History[];
+      index: number;
+    },
     playerAt: Coords,
   ) {
     if (!(e.ctrlKey || e.metaKey)) return;
 
     if (this.enabled.paste && onGround && e.key === "v") {
-      this.pushHistory({
-        playerX: playerAt.x,
-        playerY: playerAt.y,
-        inventory: this.inventory ? this.inventory : null,
-        playerFacing: facing,
-        movableBlocks: cx.grid.movableBlocks,
-      });
+      this.pushHistory(
+        {
+          playerX: playerAt.x,
+          playerY: playerAt.y,
+          inventory: this.inventory ? this.inventory : null,
+          playerFacing: facing,
+          movableBlocks: cx.grid.movableBlocks,
+        },
+        history,
+      );
       this.paste(cx, facing);
-      this.pushHistory({
-        playerX: playerAt.x,
-        playerY: playerAt.y,
-        inventory: this.inventory ? this.inventory : null,
-        playerFacing: facing,
-        movableBlocks: cx.grid.movableBlocks,
-      });
+      this.pushHistory(
+        {
+          playerX: playerAt.x,
+          playerY: playerAt.y,
+          inventory: this.inventory ? this.inventory : null,
+          playerFacing: facing,
+          movableBlocks: cx.grid.movableBlocks,
+        },
+        history,
+      );
     }
     if (this.enabled.copy && onGround && e.key === "c") {
-      this.pushHistory({
-        playerX: playerAt.x,
-        playerY: playerAt.y,
-        inventory: this.inventory ? this.inventory : null,
-        playerFacing: facing,
-        movableBlocks: cx.grid.movableBlocks,
-      });
+      this.pushHistory(
+        {
+          playerX: playerAt.x,
+          playerY: playerAt.y,
+          inventory: this.inventory ? this.inventory : null,
+          playerFacing: facing,
+          movableBlocks: cx.grid.movableBlocks,
+        },
+        history,
+      );
       this.copy(cx);
-      this.pushHistory({
-        playerX: playerAt.x,
-        playerY: playerAt.y,
-        inventory: this.inventory ? this.inventory : null,
-        playerFacing: facing,
-        movableBlocks: cx.grid.movableBlocks,
-      });
+      this.pushHistory(
+        {
+          playerX: playerAt.x,
+          playerY: playerAt.y,
+          inventory: this.inventory ? this.inventory : null,
+          playerFacing: facing,
+          movableBlocks: cx.grid.movableBlocks,
+        },
+        history,
+      );
     }
     if (this.enabled.cut && onGround && e.key === "x") {
-      this.pushHistory({
-        playerX: playerAt.x,
-        playerY: playerAt.y,
-        inventory: this.inventory ? this.inventory : null,
-        playerFacing: facing,
-        movableBlocks: cx.grid.movableBlocks,
-      });
+      this.pushHistory(
+        {
+          playerX: playerAt.x,
+          playerY: playerAt.y,
+          inventory: this.inventory ? this.inventory : null,
+          playerFacing: facing,
+          movableBlocks: cx.grid.movableBlocks,
+        },
+        history,
+      );
       this.cut(cx);
-      this.pushHistory({
-        playerX: playerAt.x,
-        playerY: playerAt.y,
-        inventory: this.inventory ? this.inventory : null,
-        playerFacing: facing,
-        movableBlocks: cx.grid.movableBlocks,
-      });
+      this.pushHistory(
+        {
+          playerX: playerAt.x,
+          playerY: playerAt.y,
+          inventory: this.inventory ? this.inventory : null,
+          playerFacing: facing,
+          movableBlocks: cx.grid.movableBlocks,
+        },
+        history,
+      );
+      console.log("x", history);
     }
     if (e.key === "z") {
-      this.undo(cx);
+      this.undo(cx, history);
       e.preventDefault();
     }
     if (e.key === "y") {
-      this.redo(cx);
+      this.redo(cx, history);
       e.preventDefault();
     }
   }
