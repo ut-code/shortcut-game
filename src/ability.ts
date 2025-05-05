@@ -52,7 +52,7 @@ export class AbilityControl {
     // });
   }
   setInventory(cx: Context, inventory: MovableObject | null) {
-    this.inventory = inventory;
+    this.inventory = JSON.parse(JSON.stringify(inventory));
     cx.uiContext.update((prev) => ({
       ...prev,
       inventory,
@@ -131,19 +131,6 @@ export class AbilityControl {
       ...prev,
       paste: --this.enabledAbilities.paste,
     }));
-    // this.pushHistory(cx, {
-    //   at: { ...this.focused },
-    //   from: Block.air,
-    //   to: prevInventory,
-    //   inventory: {
-    //     before: prevInventory,
-    //     after: this.inventory,
-    //   },
-    //   enabled: {
-    //     before: prevEnabled,
-    //     after: this.enabled,
-    //   },
-    // });
   }
   cut(cx: Context) {
     if (!this.focused) return;
@@ -173,16 +160,6 @@ export class AbilityControl {
       ...prev,
       cut: --this.enabledAbilities.cut,
     }));
-
-    // this.pushHistory({
-    //   at: { ...this.focused },
-    //   from: target,
-    //   to: Block.air,
-    //   inventory: {
-    //     before: prevInventory,
-    //     after: target,
-    //   },
-    // });
   }
 
   // History については、 `docs/history-stack.png` を参照のこと
@@ -197,14 +174,23 @@ export class AbilityControl {
     // history.listの先頭（初期状態）は残す
     history.list = history.list.slice(0, Math.max(history.index, 1));
     // Infinityはnullにならないように置換してDeepCopy
-    history.list.push(
-      JSON.parse(
-        JSON.stringify(h, (k, v) =>
-          v === Number.POSITIVE_INFINITY ? "Infinity" : v,
-        ),
-        (k, v) => (v === "Infinity" ? Number.POSITIVE_INFINITY : v),
+    const newHistory = JSON.parse(
+      JSON.stringify(h, (k, v) =>
+        v === Number.POSITIVE_INFINITY ? "Infinity" : v,
       ),
+      (k, v) => (v === "Infinity" ? Number.POSITIVE_INFINITY : v),
     );
+
+    // オブジェクトの状態について直前と一致するなら記録しない
+    if (
+      history.list.length > 0 &&
+      JSON.stringify(history.list[history.list.length - 1].movableBlocks) ===
+        JSON.stringify(newHistory.movableBlocks)
+    ) {
+      return;
+    }
+
+    history.list.push(newHistory);
 
     history.index = history.list.length;
     console.log(`history: ${history.index} / ${history.list.length}`);
@@ -235,8 +221,6 @@ export class AbilityControl {
     cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
     cx.grid.setAllMovableBlocks(cx);
 
-    // console.log(op.enabledAbilities)
-
     this.enabledAbilities = op.enabledAbilities;
     cx.uiContext.update((prev) => ({
       ...prev,
@@ -244,8 +228,6 @@ export class AbilityControl {
       undo: history.index,
       redo: history.list.length - history.index,
     }));
-
-    // console.log(this.enabledAbilities)
 
     console.log(`history: ${history.index} / ${history.list.length}`);
   }
@@ -393,7 +375,6 @@ export class AbilityControl {
     }
     if (e.key === "z") {
       console.log(history);
-      console.log(this.enabledAbilities);
       this.undo(cx, history);
       e.preventDefault();
       return {
