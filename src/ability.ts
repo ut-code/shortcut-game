@@ -124,7 +124,10 @@ export class AbilityControl {
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
     const movableObject = cx.grid.getMovableObject(x, y);
-    if (!movableObject) return;
+    if (!movableObject) {
+      console.log("aaaaaa");
+      return;
+    }
     this.inventory = movableObject;
     // cx.gridとinventryは重複しないように
     // 取得したオブジェクトは削除する

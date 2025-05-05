@@ -128,7 +128,7 @@ export class Grid {
         y: block.relativeY,
       })),
     };
-    if (!retrievedObject.x || !retrievedObject.y) return undefined;
+    if (!retrievedObject) return undefined;
 
     return retrievedObject;
   }
