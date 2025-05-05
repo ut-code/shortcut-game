@@ -8,11 +8,13 @@ export type Coords = {
 };
 export type AbilityInit = {
   enabled?: AbilityEnableOptions;
+  inventoryIsInfinite?: boolean;
 };
 export type AbilityEnableOptions = {
-  copy: boolean;
-  paste: boolean;
-  cut: boolean;
+  // 回数 or Number.POSITIVE_INFINITY
+  copy: number;
+  paste: number;
+  cut: number;
 };
 type History = {
   playerX: number;
@@ -27,6 +29,10 @@ type History = {
     relativeX: number;
     relativeY: number;
   }[];
+  enabled: {
+    before: AbilityEnableOptions;
+    after: AbilityEnableOptions;
+  };
 };
 
 export class AbilityControl {
@@ -34,12 +40,40 @@ export class AbilityControl {
   inventoryIsInfinite = false;
   enabled: AbilityEnableOptions;
   focused: Coords | undefined;
-  constructor(_cx: Context, options?: AbilityInit) {
+  constructor(cx: Context, options?: AbilityInit) {
     this.enabled = options?.enabled ?? {
-      copy: true,
-      paste: true,
-      cut: true,
+      copy: Number.POSITIVE_INFINITY,
+      paste: Number.POSITIVE_INFINITY,
+      cut: Number.POSITIVE_INFINITY,
     };
+    this.inventoryIsInfinite = options?.inventoryIsInfinite ?? false;
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      inventory: this.inventory,
+      inventoryIsInfinite: this.inventoryIsInfinite,
+      ...this.enabled,
+      undo: 0,
+      redo: 0,
+    }));
+    // document.addEventListener("copy", (e) => {
+    //   e.preventDefault();
+    //   if (this.enabled.copy > 0) this.copy(cx);
+    // });
+    // document.addEventListener("cut", (e) => {
+    //   e.preventDefault();
+    //   if (this.enabled.cut > 0) this.cut(cx);
+    // });
+    // document.addEventListener("paste", (e) => {
+    //   e.preventDefault();
+    //   if (this.enabled.paste > 0) this.paste(cx, facing);
+    // });
+  }
+  setInventory(cx: Context, inventory: MovableObject | null) {
+    this.inventory = inventory;
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      inventory,
+    }));
   }
   highlightCoord(playerAt: Coords, facing: Facing) {
     let dx: number;
@@ -67,7 +101,12 @@ export class AbilityControl {
     if (!target || target !== Block.movable) return;
     const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
-    this.inventory = movableObject;
+    // this.inventory = movableObject;
+    this.setInventory(cx, movableObject);
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      copy: --this.enabled.copy,
+    }));
   }
   paste(cx: Context, facing: Facing) {
     if (!this.focused) return;
@@ -102,8 +141,26 @@ export class AbilityControl {
     cx.grid.setMovableObject(cx, x, y, this.inventory);
 
     if (!this.inventoryIsInfinite) {
-      this.inventory = null;
+      this.setInventory(cx, null);
     }
+    const prevEnabled = { ...this.enabled };
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      paste: --this.enabled.paste,
+    }));
+    // this.pushHistory(cx, {
+    //   at: { ...this.focused },
+    //   from: Block.air,
+    //   to: prevInventory,
+    //   inventory: {
+    //     before: prevInventory,
+    //     after: this.inventory,
+    //   },
+    //   enabled: {
+    //     before: prevEnabled,
+    //     after: this.enabled,
+    //   },
+    // });
   }
   cut(cx: Context) {
     if (!this.focused) return;
@@ -113,9 +170,11 @@ export class AbilityControl {
     const target = cx.grid.getBlock(x, y);
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
+    const prevInventory = this.inventory;
     const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
-    this.inventory = movableObject;
+    // this.inventory = movableObject;
+    this.setInventory(cx, movableObject);
     // cx.gridとinventryは重複しないように
     // 取得したオブジェクトは削除する
     cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
@@ -126,11 +185,26 @@ export class AbilityControl {
       const positionY = movableObject.y + i.y;
       cx.grid.setBlock(positionX, positionY, Block.air);
     }
+    const prevEnabled = { ...this.enabled };
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      cut: --this.enabled.cut,
+    }));
+
+    // this.pushHistory({
+    //   at: { ...this.focused },
+    //   from: target,
+    //   to: Block.air,
+    //   inventory: {
+    //     before: prevInventory,
+    //     after: target,
+    //   },
+    // });
   }
 
   // History については、 `docs/history-stack.png` を参照のこと
-  // すべての状態を保存
   pushHistory(
+    cx: Context,
     h: History,
     history: {
       list: History[];
@@ -142,6 +216,11 @@ export class AbilityControl {
     history.list.push(JSON.parse(JSON.stringify(h)));
     history.index = history.list.length;
     console.log(`history: ${history.index} / ${history.list.length}`);
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      undo: history.index,
+      redo: 0,
+    }));
   }
   undo(
     cx: Context,
@@ -158,11 +237,20 @@ export class AbilityControl {
     cx.grid.clearAllMovableBlocks();
 
     // オブジェクトを配置
-    this.inventory = op.inventory
-      ? JSON.parse(JSON.stringify(op.inventory))
-      : null;
+    // this.inventory = op.inventory
+    //   ? JSON.parse(JSON.stringify(op.inventory))
+    //   : null;
+    this.setInventory(cx, op.inventory);
     cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
     cx.grid.setAllMovableBlocks(cx);
+
+    this.enabled = op.enabled.before;
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      ...this.enabled,
+      undo: history.index,
+      redo: history.list.length - history.index,
+    }));
 
     console.log(`history: ${history.index} / ${history.list.length}`);
   }
@@ -181,11 +269,21 @@ export class AbilityControl {
     cx.grid.clearAllMovableBlocks();
 
     // オブジェクトを配置
-    this.inventory = op.inventory
-      ? JSON.parse(JSON.stringify(op.inventory))
-      : null;
+    // this.inventory = op.inventory
+    //   ? JSON.parse(JSON.stringify(op.inventory))
+    //   : null;
+    this.setInventory(cx, op.inventory);
+
     cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
     cx.grid.setAllMovableBlocks(cx);
+
+    this.enabled = op.enabled.after;
+    cx.uiContext.update((prev) => ({
+      ...prev,
+      ...this.enabled,
+      undo: history.index,
+      redo: history.list.length - history.index,
+    }));
 
     console.log(`history: ${history.index} / ${history.list.length}`);
   }
@@ -204,69 +302,99 @@ export class AbilityControl {
 
     if (this.enabled.paste && onGround && e.key === "v") {
       this.pushHistory(
+        cx,
         {
           playerX: playerAt.x,
           playerY: playerAt.y,
           inventory: this.inventory ? this.inventory : null,
           playerFacing: facing,
           movableBlocks: cx.grid.movableBlocks,
+          enabled: {
+            before: this.enabled,
+            after: { ...this.enabled, paste: this.enabled.paste - 1 },
+          },
         },
         history,
       );
       this.paste(cx, facing);
       this.pushHistory(
+        cx,
         {
           playerX: playerAt.x,
           playerY: playerAt.y,
           inventory: this.inventory ? this.inventory : null,
           playerFacing: facing,
           movableBlocks: cx.grid.movableBlocks,
+          enabled: {
+            before: this.enabled,
+            after: { ...this.enabled, paste: this.enabled.paste - 1 },
+          },
         },
         history,
       );
     }
     if (this.enabled.copy && onGround && e.key === "c") {
       this.pushHistory(
+        cx,
         {
           playerX: playerAt.x,
           playerY: playerAt.y,
           inventory: this.inventory ? this.inventory : null,
           playerFacing: facing,
           movableBlocks: cx.grid.movableBlocks,
+          enabled: {
+            before: this.enabled,
+            after: { ...this.enabled, copy: this.enabled.copy - 1 },
+          },
         },
         history,
       );
       this.copy(cx);
       this.pushHistory(
+        cx,
         {
           playerX: playerAt.x,
           playerY: playerAt.y,
           inventory: this.inventory ? this.inventory : null,
           playerFacing: facing,
           movableBlocks: cx.grid.movableBlocks,
+          enabled: {
+            before: this.enabled,
+            after: { ...this.enabled, copy: this.enabled.copy - 1 },
+          },
         },
         history,
       );
     }
     if (this.enabled.cut && onGround && e.key === "x") {
       this.pushHistory(
+        cx,
         {
           playerX: playerAt.x,
           playerY: playerAt.y,
           inventory: this.inventory ? this.inventory : null,
           playerFacing: facing,
           movableBlocks: cx.grid.movableBlocks,
+          enabled: {
+            before: this.enabled,
+            after: { ...this.enabled, cut: this.enabled.cut - 1 },
+          },
         },
         history,
       );
       this.cut(cx);
       this.pushHistory(
+        cx,
         {
           playerX: playerAt.x,
           playerY: playerAt.y,
           inventory: this.inventory ? this.inventory : null,
           playerFacing: facing,
           movableBlocks: cx.grid.movableBlocks,
+          enabled: {
+            before: this.enabled,
+            after: { ...this.enabled, cut: this.enabled.cut - 1 },
+          },
         },
         history,
       );

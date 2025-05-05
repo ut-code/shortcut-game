@@ -1,5 +1,6 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
 import { AbilityControl, type AbilityInit } from "./ability.ts";
+import type { AbilityEnableOptions } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import type { Context } from "./context.ts";
@@ -19,6 +20,10 @@ type History = {
     relativeX: number;
     relativeY: number;
   }[];
+  enabled: {
+    before: AbilityEnableOptions;
+    after: AbilityEnableOptions;
+  };
 };
 
 enum Inputs {
@@ -52,7 +57,7 @@ export class Player {
     this.sprite.anchor.set(0.5, 1);
 
     this.sprite.x = cx.blockSize * cx.initialPlayerX;
-    this.sprite.y = cx.blockSize * cx.initialPlayerY;
+    this.sprite.y = cx.blockSize * cx.initialPlayerY + cx.marginY;
     this.sprite.width = c.playerWidth * cx.blockSize;
     this.sprite.height = c.playerHeight * cx.blockSize;
 
@@ -75,6 +80,10 @@ export class Player {
       playerFacing: this.facing,
       inventory: null,
       movableBlocks: cx.grid.movableBlocks,
+      enabled: {
+        before: this.ability.enabled,
+        after: this.ability.enabled,
+      },
     });
   }
   get x() {
@@ -91,7 +100,7 @@ export class Player {
   }
   getCoords(cx: Context) {
     const x = Math.floor(this.x / cx.blockSize);
-    const y = Math.round(this.y / cx.blockSize) - 1; // it was not working well so take my patch
+    const y = Math.round((this.y - cx.marginY) / cx.blockSize) - 1; // it was not working well so take my patch
     return { x, y };
   }
   createHighlight(cx: Context) {
@@ -106,13 +115,13 @@ export class Player {
       this.facing,
     );
     highlight.x = highlightCoords.x * cx.blockSize;
-    highlight.y = highlightCoords.y * cx.blockSize;
+    highlight.y = highlightCoords.y * cx.blockSize + cx.marginY;
     return highlight;
   }
-  handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
+  handleInput(_cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
       const playerPosition = this.ability.handleKeyDown(
-        cx,
+        _cx,
         event,
         this.onGround,
         this.facing,
@@ -190,16 +199,18 @@ export class Player {
       cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== undefined;
     const isOutOfWorldLeft = (x: number) => x < 0;
     const isOutOfWorldRight = (x: number) => x >= cx.gridX;
-    const isOutOfWorldBottom = (y: number) => y >= cx.gridY;
+    const isOutOfWorldBottom = (y: number) =>
+      y >= cx.gridY + cx.marginY / cx.blockSize;
 
     // next〜 は次フレームの座標、inner〜 は前フレームでかつ1px内側の座標
     const nextX = (this.x + this.vx * ticker.deltaTime) / cx.blockSize;
-    const nextBottomY = (this.y + this.vy * ticker.deltaTime) / cx.blockSize;
+    const nextBottomY =
+      (this.y - cx.marginY + this.vy * ticker.deltaTime) / cx.blockSize;
     const nextTopY = nextBottomY - c.playerHeight;
     const nextLeftX = nextX - c.playerWidth / 2;
     const nextRightX = nextX + c.playerWidth / 2;
-    const innerBottomY = (this.y - 1) / cx.blockSize;
-    const innerTopY = (this.y + 1) / cx.blockSize - c.playerHeight;
+    const innerBottomY = (this.y - cx.marginY - 1) / cx.blockSize;
+    const innerTopY = (this.y - cx.marginY + 1) / cx.blockSize - c.playerHeight;
     const innerLeftX = (this.x + 1) / cx.blockSize - c.playerWidth / 2;
     const innerRightX = (this.x - 1) / cx.blockSize + c.playerWidth / 2;
 
@@ -215,12 +226,13 @@ export class Player {
     if (hittingCeil && this.onGround) {
       this.vy = 0;
     } else if (hittingCeil) {
-      this.y = (Math.ceil(nextTopY) + c.playerHeight) * cx.blockSize;
+      this.y =
+        (Math.ceil(nextTopY) + c.playerHeight) * cx.blockSize + cx.marginY;
       this.vy = 0;
       this.jumpingBegin = null;
     } else if (this.onGround) {
       // 自分の位置は衝突したブロックの上
-      this.y = Math.floor(nextBottomY) * cx.blockSize;
+      this.y = Math.floor(nextBottomY) * cx.blockSize + cx.marginY;
       this.vy = 0;
     }
     // プレイヤーの右上端または右下端がブロック または右画面端
@@ -251,7 +263,7 @@ export class Player {
     // Todo: 直接移動させるのではなく、ゲームオーバー処理を切り分ける
     if (isOutOfWorldBottom(innerTopY)) {
       this.x = 2 * cx.blockSize;
-      this.y = 3 * cx.blockSize;
+      this.y = 3 * cx.blockSize + cx.marginY;
       this.vx = 0;
       this.vy = 0;
     }
@@ -260,5 +272,13 @@ export class Player {
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
     this.vy += c.gravity * cx.blockSize * ticker.deltaTime;
+  }
+  rerender(prevCx: Context, cx: Context) {
+    this.sprite.width = c.playerWidth * cx.blockSize;
+    this.sprite.height = c.playerHeight * cx.blockSize;
+    this.x = (this.x / prevCx.blockSize) * cx.blockSize;
+    this.y =
+      ((this.y - prevCx.marginY) / prevCx.blockSize) * cx.blockSize +
+      cx.marginY;
   }
 }

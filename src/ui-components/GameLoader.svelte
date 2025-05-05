@@ -6,17 +6,18 @@ import type { Snippet } from "svelte";
 
 type Props = {
   children: Snippet<[string]>;
+  stageNum: string;
   stage: StageDefinition | undefined;
 };
-const { children, stage }: Props = $props();
+const { children, stageNum, stage }: Props = $props();
 </script>
 
 {#if browser}
-  {#await import("@/components/Game.svelte")}
+  {#await import("@/ui-components/Game.svelte")}
     {@render children("Downloading")}
   {:then { default: Game }}
     {#if stage}
-      <Game {stage} />
+      <Game {stageNum} {stage} />
     {:else}
       Stage not found! <a href="/">Go Back</a>
     {/if}

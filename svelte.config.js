@@ -7,7 +7,7 @@ const config = {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter({
-      fallback: "index.html",
+      fallback: "404.html",
       assets: "dist",
       pages: "dist",
     }),
