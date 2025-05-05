@@ -22,7 +22,7 @@ type History = {
   movableBlocks: {
     x: number;
     y: number;
-    objectId: number;
+    objectId: string;
     // 基準ブロックからの相対位置
     relativeX: number;
     relativeY: number;
@@ -71,26 +71,18 @@ export class AbilityControl {
     const y = this.focused.y;
     const target = cx.grid.getBlock(x, y);
     if (!target || target !== Block.movable) return;
-    const movableObject = cx.grid.getMovableObject(x, y, cx);
+    const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
     this.inventory = movableObject;
     // cx.gridとinventryは重複しないように
-    cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
-      (block) => block.objectId !== movableObject.objectId,
-    );
+    // cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
+    //   (block) => block.objectId !== movableObject.objectId,
+    // );
   }
-  paste(cx: Context, facing: Facing, playerAt: Coords) {
+  paste(cx: Context, facing: Facing) {
     if (!this.focused) return;
     if (!this.inventory /*|| this.inventory === Block.air*/) return;
     const objectId = this.inventory.objectId;
-
-    this.pushHistory({
-      playerX: playerAt.x,
-      playerY: playerAt.y,
-      inventory: this.inventory ? this.inventory : null,
-      playerFacing: facing,
-      movableBlocks: cx.grid.movableBlocks,
-    });
 
     // 左向きのときにブロックを配置する位置を変更するのに使用
     const width =
@@ -116,46 +108,26 @@ export class AbilityControl {
         return;
       }
     }
-    // const target = cx.grid.getBlock(this.focused.x, this.focused.y);
-    // if (!target || target !== Block.air) return;
-    const prevInventory = this.inventory;
 
     cx.grid.setMovableObject(cx, x, y, this.inventory);
 
     if (!this.inventoryIsInfinite) {
       this.inventory = null;
     }
-
-    this.pushHistory({
-      playerX: playerAt.x,
-      playerY: playerAt.y,
-      inventory: this.inventory ? this.inventory : null,
-      playerFacing: facing,
-      movableBlocks: cx.grid.movableBlocks,
-    });
   }
-  cut(cx: Context, facing: Facing, playerAt: Coords) {
+  cut(cx: Context) {
     if (!this.focused) return;
-
-    this.pushHistory({
-      playerX: playerAt.x,
-      playerY: playerAt.y,
-      inventory: this.inventory ? this.inventory : null,
-      playerFacing: facing,
-      movableBlocks: cx.grid.movableBlocks,
-    });
-    console.log(this.history);
 
     const x = this.focused.x;
     const y = this.focused.y;
     const target = cx.grid.getBlock(x, y);
     // removable 以外はカットできない
     if (!target || target !== Block.movable) return;
-    const movableObject = cx.grid.getMovableObject(x, y, cx);
+    const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
-    // const prevInventory = this.inventory;
     this.inventory = movableObject;
     // cx.gridとinventryは重複しないように
+    // 取得したオブジェクトは削除する
     cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
       (block) => block.objectId !== movableObject.objectId,
     );
@@ -164,14 +136,6 @@ export class AbilityControl {
       const positionY = movableObject.y + i.y;
       cx.grid.setBlock(positionX, positionY, Block.air);
     }
-
-    this.pushHistory({
-      playerX: playerAt.x,
-      playerY: playerAt.y,
-      inventory: this.inventory ? this.inventory : null,
-      playerFacing: facing,
-      movableBlocks: cx.grid.movableBlocks,
-    });
   }
 
   // History については、 `docs/history-stack.png` を参照のこと
@@ -226,13 +190,55 @@ export class AbilityControl {
     if (!(e.ctrlKey || e.metaKey)) return;
 
     if (this.enabled.paste && onGround && e.key === "v") {
-      this.paste(cx, facing, playerAt);
+      this.pushHistory({
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+      });
+      this.paste(cx, facing);
+      this.pushHistory({
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+      });
     }
     if (this.enabled.copy && onGround && e.key === "c") {
+      this.pushHistory({
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+      });
       this.copy(cx);
+      this.pushHistory({
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+      });
     }
     if (this.enabled.cut && onGround && e.key === "x") {
-      this.cut(cx, facing, playerAt);
+      this.pushHistory({
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+      });
+      this.cut(cx);
+      this.pushHistory({
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+      });
     }
     if (e.key === "z") {
       this.undo(cx);

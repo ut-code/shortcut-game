@@ -12,7 +12,7 @@ type GridCell =
   | {
       block: Block.movable;
       sprite: Sprite;
-      objectId: number;
+      objectId: string;
       relativePosition: {
         x: number;
         y: number;
@@ -26,14 +26,14 @@ type GridCell =
 export type MovableBlocks = {
   x: number;
   y: number;
-  objectId: number;
+  objectId: string;
   // 基準ブロックからの相対位置
   relativeX: number;
   relativeY: number;
 }[];
 
 export type MovableObject = {
-  objectId: number;
+  objectId: string;
   x: number;
   y: number;
   relativePositions: {
@@ -106,11 +106,7 @@ export class Grid {
   getBlock(x: number, y: number): Block | undefined {
     return this.cells[y]?.[x]?.block;
   }
-  getMovableObject(
-    x: number,
-    y: number,
-    cx: Context,
-  ): MovableObject | undefined {
+  getMovableObject(x: number, y: number): MovableObject | undefined {
     const cell = this.cells[y]?.[x];
     if (!cell) return undefined;
     if (cell.block !== Block.movable) return undefined;
@@ -118,7 +114,7 @@ export class Grid {
     const retrievedBlocks = this.movableBlocks.filter(
       (block) => block.objectId === objectId,
     );
-    if (!retrievedBlocks) return;
+    if (!retrievedBlocks) return undefined;
     const retrievedObject: MovableObject = {
       objectId,
       x: retrievedBlocks.filter(
@@ -132,6 +128,7 @@ export class Grid {
         y: block.relativeY,
       })),
     };
+    if (!retrievedObject.x || !retrievedObject.y) return undefined;
 
     return retrievedObject;
   }
@@ -153,8 +150,13 @@ export class Grid {
     if (prev.block !== Block.air) {
       this.stage.removeChild(prev.sprite);
     }
+    // 既に同じobjectIdのオブジェクトが設置済みのとき、objectIdを変更して設置する
+    // copy使用時に対応
+    if (this.movableBlocks.filter((b) => b.objectId === object.objectId)) {
+      object.objectId = self.crypto.randomUUID();
+    }
+
     for (const i of object.relativePositions) {
-      console.log(i);
       const positionX = x + i.x;
       const positionY = y + i.y;
       const sprite = createSprite(

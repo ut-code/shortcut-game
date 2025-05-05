@@ -5,7 +5,7 @@ export type StageDefinition = {
   movableBlocks: {
     x: number;
     y: number;
-    objectId: number;
+    objectId: string;
     // 基準ブロックからの相対位置
     // 基準ブロックは原則オブジェクトの左下で
     // 右を向くときに目の前に来るブロック
@@ -32,7 +32,7 @@ export const stages = new Map<string, StageDefinition>([
         {
           x: 9,
           y: 4,
-          objectId: 1,
+          objectId: "1",
           relativeX: 0,
           relativeY: 0,
         },
@@ -57,14 +57,14 @@ export const stages = new Map<string, StageDefinition>([
         {
           x: 0,
           y: 3,
-          objectId: 1,
+          objectId: "1",
           relativeX: 0,
           relativeY: 0,
         },
         {
           x: 7,
           y: 5,
-          objectId: 2,
+          objectId: "2",
           relativeX: 0,
           relativeY: 0,
         },
@@ -89,28 +89,28 @@ export const stages = new Map<string, StageDefinition>([
         {
           x: 3,
           y: 5,
-          objectId: 1,
+          objectId: "1",
           relativeX: 0,
           relativeY: 0,
         },
         {
           x: 4,
           y: 5,
-          objectId: 1,
+          objectId: "1",
           relativeX: 1,
           relativeY: 0,
         },
         {
           x: 4,
           y: 3,
-          objectId: 2,
+          objectId: "2",
           relativeX: 0,
           relativeY: 0,
         },
         {
           x: 8,
           y: 2,
-          objectId: 3,
+          objectId: "3",
           relativeX: 0,
           relativeY: 0,
         },

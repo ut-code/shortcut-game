@@ -14,7 +14,7 @@ type History = {
   movableBlocks: {
     x: number;
     y: number;
-    objectId: number;
+    objectId: string;
     // 基準ブロックからの相対位置
     relativeX: number;
     relativeY: number;
