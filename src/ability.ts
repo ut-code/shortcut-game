@@ -76,7 +76,11 @@ export class AbilityControl {
     };
     return this.focused;
   }
-  copy(cx: Context) {
+  copy(
+    cx: Context,
+    newHistory: History,
+    history: { list: History[]; index: number },
+  ) {
     if (!this.focused) return;
     const x = this.focused.x;
     const y = this.focused.y;
@@ -84,6 +88,8 @@ export class AbilityControl {
     if (!target || target !== Block.movable) return;
     const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
+
+    this.pushHistory(cx, newHistory, history);
 
     // コピー元とは別のオブジェクトとして管理する
     movableObject.objectId = self.crypto.randomUUID();
@@ -93,8 +99,23 @@ export class AbilityControl {
       ...prev,
       copy: --this.enabledAbilities.copy,
     }));
+
+    this.pushHistory(
+      cx,
+      {
+        ...newHistory,
+        inventory: this.inventory,
+        enabledAbilities: this.enabledAbilities,
+      },
+      history,
+    );
   }
-  paste(cx: Context, facing: Facing) {
+  paste(
+    cx: Context,
+    facing: Facing,
+    newHistory: History,
+    history: { list: History[]; index: number },
+  ) {
     if (!this.focused) return;
     if (!this.inventory /*|| this.inventory === Block.air*/) return;
 
@@ -123,18 +144,36 @@ export class AbilityControl {
       }
     }
 
+    this.pushHistory(cx, newHistory, history);
+
     cx.grid.setMovableObject(cx, x, y, this.inventory);
 
     if (!this.inventoryIsInfinite) {
       this.setInventory(cx, null);
     }
+
     // const prevEnabled = { ...this.enabledAbilities };
     cx.uiContext.update((prev) => ({
       ...prev,
       paste: --this.enabledAbilities.paste,
     }));
+
+    this.pushHistory(
+      cx,
+      {
+        ...newHistory,
+        inventory: this.inventory,
+        movableBlocks: cx.grid.movableBlocks,
+        enabledAbilities: this.enabledAbilities,
+      },
+      history,
+    );
   }
-  cut(cx: Context) {
+  cut(
+    cx: Context,
+    newHistory: History,
+    history: { list: History[]; index: number },
+  ) {
     if (!this.focused) return;
 
     const x = this.focused.x;
@@ -145,9 +184,12 @@ export class AbilityControl {
     const prevInventory = this.inventory;
     const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
+
+    this.pushHistory(cx, newHistory, history);
+
     this.setInventory(cx, movableObject);
-    // cx.grid.movableBlocksとthis.inventryは重複しないように
-    // 取得したオブジェクトはcs.grid.movableBlocksから削除する
+
+    // cx.movableBlocks を更新
     cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
       (block) => block.objectId !== movableObject.objectId,
     );
@@ -161,6 +203,17 @@ export class AbilityControl {
       ...prev,
       cut: --this.enabledAbilities.cut,
     }));
+
+    this.pushHistory(
+      cx,
+      {
+        ...newHistory,
+        inventory: this.inventory,
+        movableBlocks: cx.grid.movableBlocks,
+        enabledAbilities: this.enabledAbilities,
+      },
+      history,
+    );
   }
 
   // History については、 `docs/history-stack.png` を参照のこと
@@ -188,10 +241,10 @@ export class AbilityControl {
     // オブジェクトの状態について直前と一致するなら記録しない
     if (
       (history.index < history.list.length &&
-        JSON.stringify(history.list[history.index].movableBlocks) ===
-          JSON.stringify(newHistory.movableBlocks)) ||
-      JSON.stringify(history.list[history.list.length - 1].movableBlocks) ===
-        JSON.stringify(newHistory.movableBlocks)
+        JSON.stringify(history.list[history.index]) ===
+          JSON.stringify(newHistory)) ||
+      JSON.stringify(history.list[history.list.length - 1]) ===
+        JSON.stringify(newHistory)
     ) {
       return;
     }
@@ -276,103 +329,37 @@ export class AbilityControl {
     if (!(e.ctrlKey || e.metaKey)) return undefined;
 
     if (this.enabledAbilities.paste > 0 && onGround && e.key === "v") {
-      this.pushHistory(
-        cx,
-        {
-          playerX: playerAt.x,
-          playerY: playerAt.y,
-          inventory: this.inventory ? this.inventory : null,
-          playerFacing: facing,
-          movableBlocks: cx.grid.movableBlocks,
-          enabledAbilities: {
-            ...this.enabledAbilities,
-            paste: this.enabledAbilities.paste - 1,
-          },
-        },
-        history,
-      );
-      this.paste(cx, facing);
-      this.pushHistory(
-        cx,
-        {
-          playerX: playerAt.x,
-          playerY: playerAt.y,
-          inventory: this.inventory ? this.inventory : null,
-          playerFacing: facing,
-          movableBlocks: cx.grid.movableBlocks,
-          enabledAbilities: {
-            ...this.enabledAbilities,
-            paste: this.enabledAbilities.paste - 1,
-          },
-        },
-        history,
-      );
+      const newHistory = {
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+        enabledAbilities: this.enabledAbilities,
+      };
+      this.paste(cx, facing, newHistory, history);
     }
     if (this.enabledAbilities.copy > 0 && onGround && e.key === "c") {
-      this.pushHistory(
-        cx,
-        {
-          playerX: playerAt.x,
-          playerY: playerAt.y,
-          inventory: this.inventory ? this.inventory : null,
-          playerFacing: facing,
-          movableBlocks: cx.grid.movableBlocks,
-          enabledAbilities: {
-            ...this.enabledAbilities,
-            copy: this.enabledAbilities.copy - 1,
-          },
-        },
-        history,
-      );
-      this.copy(cx);
-      this.pushHistory(
-        cx,
-        {
-          playerX: playerAt.x,
-          playerY: playerAt.y,
-          inventory: this.inventory ? this.inventory : null,
-          playerFacing: facing,
-          movableBlocks: cx.grid.movableBlocks,
-          enabledAbilities: {
-            ...this.enabledAbilities,
-            copy: this.enabledAbilities.copy - 1,
-          },
-        },
-        history,
-      );
+      const newHistory = {
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+        enabledAbilities: this.enabledAbilities,
+      };
+      this.copy(cx, newHistory, history);
     }
     if (this.enabledAbilities.cut > 0 && onGround && e.key === "x") {
-      this.pushHistory(
-        cx,
-        {
-          playerX: playerAt.x,
-          playerY: playerAt.y,
-          inventory: this.inventory ? this.inventory : null,
-          playerFacing: facing,
-          movableBlocks: cx.grid.movableBlocks,
-          enabledAbilities: {
-            ...this.enabledAbilities,
-            cut: this.enabledAbilities.cut - 1,
-          },
-        },
-        history,
-      );
-      this.cut(cx);
-      this.pushHistory(
-        cx,
-        {
-          playerX: playerAt.x,
-          playerY: playerAt.y,
-          inventory: this.inventory ? this.inventory : null,
-          playerFacing: facing,
-          movableBlocks: cx.grid.movableBlocks,
-          enabledAbilities: {
-            ...this.enabledAbilities,
-            cut: this.enabledAbilities.cut - 1,
-          },
-        },
-        history,
-      );
+      const newHistory = {
+        playerX: playerAt.x,
+        playerY: playerAt.y,
+        inventory: this.inventory ? this.inventory : null,
+        playerFacing: facing,
+        movableBlocks: cx.grid.movableBlocks,
+        enabledAbilities: this.enabledAbilities,
+      };
+      this.cut(cx, newHistory, history);
     }
     if (e.key === "z") {
       console.log(history);
