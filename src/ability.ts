@@ -84,7 +84,10 @@ export class AbilityControl {
     if (!target || target !== Block.movable) return;
     const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
-    // this.inventory = movableObject;
+
+    // コピー元とは別のオブジェクトとして管理する
+    movableObject.objectId = self.crypto.randomUUID();
+
     this.setInventory(cx, movableObject);
     cx.uiContext.update((prev) => ({
       ...prev,
@@ -94,7 +97,6 @@ export class AbilityControl {
   paste(cx: Context, facing: Facing) {
     if (!this.focused) return;
     if (!this.inventory /*|| this.inventory === Block.air*/) return;
-    const objectId = this.inventory.objectId;
 
     // 左向きのときにブロックを配置する位置を変更するのに使用
     const width =
@@ -126,7 +128,7 @@ export class AbilityControl {
     if (!this.inventoryIsInfinite) {
       this.setInventory(cx, null);
     }
-    const prevEnabled = { ...this.enabledAbilities };
+    // const prevEnabled = { ...this.enabledAbilities };
     cx.uiContext.update((prev) => ({
       ...prev,
       paste: --this.enabledAbilities.paste,
@@ -143,10 +145,9 @@ export class AbilityControl {
     const prevInventory = this.inventory;
     const movableObject = cx.grid.getMovableObject(x, y);
     if (!movableObject) return;
-    // this.inventory = movableObject;
     this.setInventory(cx, movableObject);
-    // cx.gridとinventryは重複しないように
-    // 取得したオブジェクトは削除する
+    // cx.grid.movableBlocksとthis.inventryは重複しないように
+    // 取得したオブジェクトはcs.grid.movableBlocksから削除する
     cx.grid.movableBlocks = cx.grid.movableBlocks.filter(
       (block) => block.objectId !== movableObject.objectId,
     );
@@ -181,9 +182,14 @@ export class AbilityControl {
       (k, v) => (v === "Infinity" ? Number.POSITIVE_INFINITY : v),
     );
 
+    console.log(history);
+    console.log(newHistory);
+
     // オブジェクトの状態について直前と一致するなら記録しない
     if (
-      history.list.length > 0 &&
+      (history.index < history.list.length &&
+        JSON.stringify(history.list[history.index].movableBlocks) ===
+          JSON.stringify(newHistory.movableBlocks)) ||
       JSON.stringify(history.list[history.list.length - 1].movableBlocks) ===
         JSON.stringify(newHistory.movableBlocks)
     ) {
@@ -214,12 +220,9 @@ export class AbilityControl {
     // すべてのオブジェクトを削除
     cx.grid.clearAllMovableBlocks();
 
-    // オブジェクトを配置    // this.inventory = op.inventory
-    //   ? JSON.parse(JSON.stringify(op.inventory))
-    //   : null;
+    // オブジェクトを配置
     this.setInventory(cx, op.inventory);
-    cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
-    cx.grid.setAllMovableBlocks(cx);
+    cx.grid.setAllMovableBlocks(cx, op.movableBlocks);
 
     this.enabledAbilities = op.enabledAbilities;
     cx.uiContext.update((prev) => ({
@@ -247,9 +250,7 @@ export class AbilityControl {
 
     // オブジェクトを配置
     this.setInventory(cx, op.inventory);
-
-    cx.grid.movableBlocks = JSON.parse(JSON.stringify(op.movableBlocks));
-    cx.grid.setAllMovableBlocks(cx);
+    cx.grid.setAllMovableBlocks(cx, op.movableBlocks);
 
     this.enabledAbilities = op.enabledAbilities;
     cx.uiContext.update((prev) => ({

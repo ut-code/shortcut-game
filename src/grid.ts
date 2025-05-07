@@ -198,15 +198,11 @@ export class Grid {
       };
     }
   }
+  // 指定された座標にオブジェクトを配置し、this.movableBlocksを更新する
   setMovableObject(cx: Context, x: number, y: number, object: MovableObject) {
     const prev = this.cells[y][x];
     if (prev.block !== Block.air) {
       this.stage.removeChild(prev.sprite);
-    }
-    // 既に同じobjectIdのオブジェクトが設置済みのとき、objectIdを変更して設置する
-    // copy使用時に対応
-    if (this.movableBlocks.filter((b) => b.objectId === object.objectId)) {
-      object.objectId = self.crypto.randomUUID();
     }
 
     for (const i of object.relativePositions) {
@@ -239,9 +235,9 @@ export class Grid {
     }
 
     // 座標基準で重複を削除
-    this.movableBlocks = Array.from(
-      new Map(this.movableBlocks.map((b) => [`${b.x},${b.y}`, b])).values(),
-    );
+    // this.movableBlocks = Array.from(
+    //   new Map(this.movableBlocks.map((b) => [`${b.x},${b.y}`, b])).values(),
+    // );
 
     // オブジェクトの座標を更新
     object.x = x;
@@ -256,12 +252,13 @@ export class Grid {
       this.setBlock(i.x, i.y, Block.air);
     }
   }
-  setAllMovableBlocks(cx: Context) {
+  setAllMovableBlocks(cx: Context, newMovableBlocks: MovableBlocks) {
+    this.movableBlocks = [];
     const objectIds = Array.from(
-      new Set(this.movableBlocks.map((block) => block.objectId)),
+      new Set(newMovableBlocks.map((block) => block.objectId)),
     );
     for (const objectId of objectIds) {
-      const retrievedBlocks = this.movableBlocks.filter(
+      const retrievedBlocks = newMovableBlocks.filter(
         (block) => block.objectId === objectId,
       );
       const movableObject: MovableObject = {
