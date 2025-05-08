@@ -39,8 +39,8 @@ export async function setup(
   const stage = new Container();
   app.stage.addChild(stage);
 
-  const gridX = stageDefinition[0].length;
-  const gridY = stageDefinition.length;
+  const gridX = stageDefinition.stage[0].length;
+  const gridY = stageDefinition.stage.length;
 
   // Initialize the application
   await app.init({ background: "white", resizeTo: window });
@@ -56,6 +56,8 @@ export async function setup(
     gridY,
     marginY: grid.marginY,
     blockSize,
+    initialPlayerX: stageDefinition.initialPlayerX,
+    initialPlayerY: stageDefinition.initialPlayerY,
     grid,
     elapsed: 0,
     uiContext,

@@ -1,9 +1,27 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
 import { AbilityControl, type AbilityInit } from "./ability.ts";
+import type { AbilityEnableOptions } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
 import type { Context } from "./context.ts";
+import type { MovableObject } from "./grid.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
+
+export type History = {
+  playerX: number;
+  playerY: number;
+  playerFacing: c.Facing;
+  inventory: MovableObject | null;
+  movableBlocks: {
+    x: number;
+    y: number;
+    objectId: string;
+    // 基準ブロックからの相対位置
+    relativeX: number;
+    relativeY: number;
+  }[];
+  enabledAbilities: AbilityEnableOptions;
+};
 
 enum Inputs {
   Left = 0,
@@ -20,6 +38,10 @@ export class Player {
   jumpingBegin: number | null;
   facing: c.Facing = c.Facing.right;
   ability: AbilityControl;
+  history = {
+    list: [] as History[],
+    index: 1,
+  };
   constructor(
     cx: Context,
     spriteOptions?: SpriteOptions | Texture,
@@ -30,9 +52,9 @@ export class Player {
     this.sprite = new Sprite(spriteOptions);
     // Center the sprite's anchor point
     this.sprite.anchor.set(0.5, 1);
-    // todo: 初期座標をフィールドとともにどこかで決定
-    this.sprite.x = 2 * cx.blockSize;
-    this.sprite.y = 2 * cx.blockSize + cx.marginY;
+
+    this.sprite.x = cx.blockSize * cx.initialPlayerX;
+    this.sprite.y = cx.blockSize * cx.initialPlayerY + cx.marginY;
     this.sprite.width = c.playerWidth * cx.blockSize;
     this.sprite.height = c.playerHeight * cx.blockSize;
 
@@ -49,6 +71,14 @@ export class Player {
     this.onGround = false;
     this.jumpingBegin = null;
     this.holdingKeys = {};
+    this.history.list.push({
+      playerX: this.x,
+      playerY: this.y,
+      playerFacing: this.facing,
+      inventory: null,
+      movableBlocks: cx.grid.movableBlocks,
+      enabledAbilities: this.ability.enabledAbilities,
+    });
   }
   get x() {
     return this.sprite.x;
@@ -84,7 +114,18 @@ export class Player {
   }
   handleInput(_cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
     if (eventIsKeyDown) {
-      this.ability.handleKeyDown(_cx, event /*, this.onGround*/);
+      const playerPosition = this.ability.handleKeyDown(
+        _cx,
+        event,
+        this.onGround,
+        this.facing,
+        this.history,
+        { x: this.x, y: this.y },
+      );
+      if (playerPosition) {
+        this.x = playerPosition.x;
+        this.y = playerPosition.y;
+      }
     }
     switch (event.key) {
       case "Control":

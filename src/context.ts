@@ -1,7 +1,7 @@
 import type { Container } from "pixi.js";
 import type { Writable } from "svelte/store";
 import type { Block } from "./constants.ts";
-import type { Grid } from "./grid.ts";
+import type { Grid, MovableObject } from "./grid.ts";
 
 export type Context = {
   stage: Container;
@@ -13,6 +13,10 @@ export type Context = {
   grid: Grid;
   blockSize: number;
 
+  // about player
+  initialPlayerX: number; // initial player position in X direction
+  initialPlayerY: number; // initial player position in Y direction
+
   // about time
   elapsed: number;
 
@@ -20,7 +24,7 @@ export type Context = {
 };
 
 export type UIContext = {
-  inventory: Block | null;
+  inventory: MovableObject | null;
   inventoryIsInfinite: boolean;
   copy: number;
   paste: number;

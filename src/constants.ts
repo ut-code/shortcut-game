@@ -15,3 +15,6 @@ export enum Facing {
   left = "left",
   right = "right",
 }
+export type MovableBlock = {
+  block: Block.movable;
+};

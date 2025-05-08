@@ -52,7 +52,7 @@ $effect(() => {
     <span style="flex-grow: 1"></span>
     <span style="font-size: 1.5rem;">Clipboard:</span>
     <div class="inventory">
-      {#if $uiContext.inventory === Block.movable}
+      {#if $uiContext.inventory !== null}
         <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
         <img
           src="/assets/block.png"
