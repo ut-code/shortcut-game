@@ -1,27 +1,9 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
-import { AbilityControl, type AbilityInit } from "./ability.ts";
-import type { AbilityEnableOptions } from "./ability.ts";
+import { AbilityControl } from "./ability.ts";
 import * as c from "./constants.ts";
 import { Block } from "./constants.ts";
-import type { Context } from "./context.ts";
-import type { MovableObject } from "./grid.ts";
+import type { AbilityInit, Context, GameHistory } from "./public-types.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
-
-export type History = {
-  playerX: number;
-  playerY: number;
-  playerFacing: c.Facing;
-  inventory: MovableObject | null;
-  movableBlocks: {
-    x: number;
-    y: number;
-    objectId: string;
-    // 基準ブロックからの相対位置
-    relativeX: number;
-    relativeY: number;
-  }[];
-  enabledAbilities: AbilityEnableOptions;
-};
 
 enum Inputs {
   Left = 0,
@@ -38,9 +20,9 @@ export class Player {
   jumpingBegin: number | null;
   facing: c.Facing = c.Facing.right;
   ability: AbilityControl;
-  history = {
-    list: [] as History[],
-    index: 1,
+  history: GameHistory = {
+    tree: [],
+    index: 0,
   };
   constructor(
     cx: Context,
@@ -71,13 +53,9 @@ export class Player {
     this.onGround = false;
     this.jumpingBegin = null;
     this.holdingKeys = {};
-    this.history.list.push({
-      playerX: this.x,
-      playerY: this.y,
-      playerFacing: this.facing,
+    this.history.tree.push({
       inventory: null,
-      movableBlocks: cx.grid.movableBlocks,
-      enabledAbilities: this.ability.enabledAbilities,
+      abilities: this.ability.usage,
     });
   }
   get x() {

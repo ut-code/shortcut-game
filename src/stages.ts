@@ -2,15 +2,10 @@ export type StageDefinition = {
   stage: string[];
   initialPlayerX: number;
   initialPlayerY: number;
-  movableBlocks: {
+  blockGroups: {
     x: number;
     y: number;
     objectId: string;
-    // 基準ブロックからの相対位置
-    // 基準ブロックは原則オブジェクトの左下で
-    // 右を向くときに目の前に来るブロック
-    relativeX: number;
-    relativeY: number;
   }[];
 };
 
@@ -28,15 +23,7 @@ export const stages = new Map<string, StageDefinition>([
       ],
       initialPlayerX: 1,
       initialPlayerY: 5,
-      movableBlocks: [
-        {
-          x: 9,
-          y: 4,
-          objectId: "1",
-          relativeX: 0,
-          relativeY: 0,
-        },
-      ],
+      blockGroups: [],
     },
   ],
   [
@@ -53,22 +40,7 @@ export const stages = new Map<string, StageDefinition>([
       ],
       initialPlayerX: 3,
       initialPlayerY: 6,
-      movableBlocks: [
-        {
-          x: 0,
-          y: 3,
-          objectId: "1",
-          relativeX: 0,
-          relativeY: 0,
-        },
-        {
-          x: 7,
-          y: 5,
-          objectId: "2",
-          relativeX: 0,
-          relativeY: 0,
-        },
-      ],
+      blockGroups: [],
     },
   ],
   [
@@ -85,34 +57,16 @@ export const stages = new Map<string, StageDefinition>([
       ],
       initialPlayerX: 1,
       initialPlayerY: 6,
-      movableBlocks: [
+      blockGroups: [
         {
           x: 3,
           y: 5,
           objectId: "1",
-          relativeX: 0,
-          relativeY: 0,
         },
         {
           x: 4,
           y: 5,
           objectId: "1",
-          relativeX: 1,
-          relativeY: 0,
-        },
-        {
-          x: 4,
-          y: 3,
-          objectId: "2",
-          relativeX: 0,
-          relativeY: 0,
-        },
-        {
-          x: 8,
-          y: 2,
-          objectId: "3",
-          relativeX: 0,
-          relativeY: 0,
         },
       ],
     },
@@ -135,41 +89,21 @@ export const stages = new Map<string, StageDefinition>([
       ],
       initialPlayerX: 5,
       initialPlayerY: 6,
-      movableBlocks: [
-        {
-          x: 0,
-          y: 3,
-          objectId: "1",
-          relativeX: 0,
-          relativeY: 0,
-        },
-        {
-          x: 10,
-          y: 9,
-          objectId: "2",
-          relativeX: 0,
-          relativeY: 0,
-        },
+      blockGroups: [
         {
           x: 11,
           y: 6,
-          objectId: "3",
-          relativeX: 0,
-          relativeY: 0,
+          objectId: "1",
         },
         {
           x: 12,
           y: 6,
-          objectId: "3",
-          relativeX: 1,
-          relativeY: 0,
+          objectId: "1",
         },
         {
           x: 12,
           y: 5,
-          objectId: "3",
-          relativeX: 1,
-          relativeY: -1,
+          objectId: "1",
         },
       ],
     },

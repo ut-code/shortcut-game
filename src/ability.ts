@@ -1,30 +1,20 @@
-import { Block, Facing, type MovableBlock } from "./constants.ts";
-import type { Context } from "./context.ts";
-import type { MovableBlocks, MovableObject } from "./grid.ts";
-import type { History } from "./player.ts";
-
-export type Coords = {
-  x: number;
-  y: number;
-};
-export type AbilityInit = {
-  enabled?: AbilityEnableOptions;
-  inventoryIsInfinite?: boolean;
-};
-export type AbilityEnableOptions = {
-  // 回数 or Number.POSITIVE_INFINITY
-  copy: number;
-  paste: number;
-  cut: number;
-};
+import { Block, Facing } from "./constants.ts";
+import type {
+  AbilityInit,
+  AbilityUsage,
+  Context,
+  Coords,
+  MovableObject,
+} from "./public-types.ts";
+import type { StateSnapshot } from "./public-types.ts";
 
 export class AbilityControl {
   inventory: MovableObject | null = null;
   inventoryIsInfinite = false;
-  enabledAbilities: AbilityEnableOptions;
+  usage: AbilityUsage;
   focused: Coords | undefined;
   constructor(cx: Context, options?: AbilityInit) {
-    this.enabledAbilities = options?.enabled ?? {
+    this.usage = options?.enabled ?? {
       copy: Number.POSITIVE_INFINITY,
       paste: Number.POSITIVE_INFINITY,
       cut: Number.POSITIVE_INFINITY,
@@ -34,8 +24,8 @@ export class AbilityControl {
       ...prev,
       inventory: this.inventory,
       inventoryIsInfinite: this.inventoryIsInfinite,
-      ...this.enabledAbilities,
-      undo: 1,
+      ...this.usage,
+      undo: 0,
       redo: 0,
     }));
     // document.addEventListener("copy", (e) => {
@@ -78,8 +68,8 @@ export class AbilityControl {
   }
   copy(
     cx: Context,
-    newHistory: History,
-    history: { list: History[]; index: number },
+    newHistory: StateSnapshot,
+    history: { list: StateSnapshot[]; index: number },
   ) {
     if (!this.focused) return;
     const x = this.focused.x;
@@ -97,7 +87,7 @@ export class AbilityControl {
     this.setInventory(cx, movableObject);
     cx.uiContext.update((prev) => ({
       ...prev,
-      copy: --this.enabledAbilities.copy,
+      copy: --this.usage.copy,
     }));
 
     this.pushHistory(
@@ -105,7 +95,7 @@ export class AbilityControl {
       {
         ...newHistory,
         inventory: this.inventory,
-        enabledAbilities: this.enabledAbilities,
+        abilities: this.usage,
       },
       history,
     );
@@ -113,8 +103,8 @@ export class AbilityControl {
   paste(
     cx: Context,
     facing: Facing,
-    newHistory: History,
-    history: { list: History[]; index: number },
+    newHistory: StateSnapshot,
+    history: { list: StateSnapshot[]; index: number },
   ) {
     if (!this.focused) return;
     if (!this.inventory /*|| this.inventory === Block.air*/) return;
@@ -155,7 +145,7 @@ export class AbilityControl {
     // const prevEnabled = { ...this.enabledAbilities };
     cx.uiContext.update((prev) => ({
       ...prev,
-      paste: --this.enabledAbilities.paste,
+      paste: --this.usage.paste,
     }));
 
     this.pushHistory(
@@ -164,15 +154,15 @@ export class AbilityControl {
         ...newHistory,
         inventory: this.inventory,
         movableBlocks: cx.grid.movableBlocks,
-        enabledAbilities: this.enabledAbilities,
+        abilities: this.usage,
       },
       history,
     );
   }
   cut(
     cx: Context,
-    newHistory: History,
-    history: { list: History[]; index: number },
+    newHistory: StateSnapshot,
+    history: { list: StateSnapshot[]; index: number },
   ) {
     if (!this.focused) return;
 
@@ -198,10 +188,10 @@ export class AbilityControl {
       const positionY = movableObject.y + i.y;
       cx.grid.setBlock(positionX, positionY, Block.air);
     }
-    const prevEnabled = { ...this.enabledAbilities };
+    const prevEnabled = { ...this.usage };
     cx.uiContext.update((prev) => ({
       ...prev,
-      cut: --this.enabledAbilities.cut,
+      cut: --this.usage.cut,
     }));
 
     this.pushHistory(
@@ -210,7 +200,7 @@ export class AbilityControl {
         ...newHistory,
         inventory: this.inventory,
         movableBlocks: cx.grid.movableBlocks,
-        enabledAbilities: this.enabledAbilities,
+        abilities: this.usage,
       },
       history,
     );
@@ -219,9 +209,9 @@ export class AbilityControl {
   // History については、 `docs/history-stack.png` を参照のこと
   pushHistory(
     cx: Context,
-    h: History,
+    h: StateSnapshot,
     history: {
-      list: History[];
+      list: StateSnapshot[];
       index: number;
     },
   ) {
@@ -262,7 +252,7 @@ export class AbilityControl {
   undo(
     cx: Context,
     history: {
-      list: History[];
+      list: StateSnapshot[];
       index: number;
     },
   ) {
@@ -277,10 +267,10 @@ export class AbilityControl {
     this.setInventory(cx, op.inventory);
     cx.grid.setAllMovableBlocks(cx, op.movableBlocks);
 
-    this.enabledAbilities = op.enabledAbilities;
+    this.usage = op.abilities;
     cx.uiContext.update((prev) => ({
       ...prev,
-      ...this.enabledAbilities,
+      ...this.usage,
       undo: history.index,
       redo: history.list.length - history.index,
     }));
@@ -290,7 +280,7 @@ export class AbilityControl {
   redo(
     cx: Context,
     history: {
-      list: History[];
+      list: StateSnapshot[];
       index: number;
     },
   ) {
@@ -305,10 +295,10 @@ export class AbilityControl {
     this.setInventory(cx, op.inventory);
     cx.grid.setAllMovableBlocks(cx, op.movableBlocks);
 
-    this.enabledAbilities = op.enabledAbilities;
+    this.usage = op.abilities;
     cx.uiContext.update((prev) => ({
       ...prev,
-      ...this.enabledAbilities,
+      ...this.usage,
       undo: history.index,
       redo: history.list.length - history.index,
     }));
@@ -321,43 +311,43 @@ export class AbilityControl {
     onGround: boolean,
     facing: Facing,
     history: {
-      list: History[];
+      list: StateSnapshot[];
       index: number;
     },
     playerAt: Coords,
   ) {
     if (!(e.ctrlKey || e.metaKey)) return undefined;
 
-    if (this.enabledAbilities.paste > 0 && onGround && e.key === "v") {
+    if (this.usage.paste > 0 && onGround && e.key === "v") {
       const newHistory = {
         playerX: playerAt.x,
         playerY: playerAt.y,
         inventory: this.inventory ? this.inventory : null,
         playerFacing: facing,
         movableBlocks: cx.grid.movableBlocks,
-        enabledAbilities: this.enabledAbilities,
+        enabledAbilities: this.usage,
       };
       this.paste(cx, facing, newHistory, history);
     }
-    if (this.enabledAbilities.copy > 0 && onGround && e.key === "c") {
+    if (this.usage.copy > 0 && onGround && e.key === "c") {
       const newHistory = {
         playerX: playerAt.x,
         playerY: playerAt.y,
         inventory: this.inventory ? this.inventory : null,
         playerFacing: facing,
         movableBlocks: cx.grid.movableBlocks,
-        enabledAbilities: this.enabledAbilities,
+        enabledAbilities: this.usage,
       };
       this.copy(cx, newHistory, history);
     }
-    if (this.enabledAbilities.cut > 0 && onGround && e.key === "x") {
+    if (this.usage.cut > 0 && onGround && e.key === "x") {
       const newHistory = {
         playerX: playerAt.x,
         playerY: playerAt.y,
         inventory: this.inventory ? this.inventory : null,
         playerFacing: facing,
         movableBlocks: cx.grid.movableBlocks,
-        enabledAbilities: this.enabledAbilities,
+        enabledAbilities: this.usage,
       };
       this.cut(cx, newHistory, history);
     }

@@ -1,8 +1,8 @@
 import { Application, Container, type Ticker } from "pixi.js";
 import type { Writable } from "svelte/store";
-import type { Context, UIContext } from "./context.ts";
 import { Grid } from "./grid.ts";
 import { Player } from "./player.ts";
+import type { Context, UIContext } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
