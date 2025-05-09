@@ -1,5 +1,4 @@
 import { get } from "svelte/store";
-import { printCells } from "./grid.ts";
 import type { Context, StateSnapshot } from "./public-types.ts";
 
 // History については、 `docs/history-stack.png` を参照のこと
@@ -15,22 +14,21 @@ export function record(cx: Context) {
     return prev;
   });
 }
+
 export function undo(cx: Context): { x: number; y: number } | undefined {
   const history = get(cx.history);
-  if (history.index <= 0) return undefined;
   const grid = cx.grid;
-  history.index--;
-  const snapshot = history.tree[history.index];
 
-  printCells(snapshot.game.cells, "undo");
-  if (history.index === 0) {
-    console.log("undo to last", snapshot);
-  }
+  // {*記録* -> Action -> *記録*} -> 移動 -> {*記録* -> Action -> *記録*}
+  //                                           ^ Snapshot はここのを使いたい
+  //                       ^ index は整合性のためここに置きたい    ^ 最新の index はここ
+  const snapshot = history.tree[history.index - 1];
+  if (!snapshot) return undefined; // ゲームが開始する前
+  history.index -= 2;
 
   // 状態を巻き戻す
   cx.state.set(snapshot.game);
   grid.diffAndUpdateTo(cx, snapshot.game.cells);
-
   cx.dynamic.player.x = snapshot.playerX;
   cx.dynamic.player.y = snapshot.playerY;
 
@@ -43,17 +41,23 @@ export function undo(cx: Context): { x: number; y: number } | undefined {
 }
 
 export function redo(cx: Context): { x: number; y: number } | undefined {
-  // TODO: プレイヤーの座標の履歴を「いい感じ」にするため、 history を二重管理する
   const history = get(cx.history);
-  if (history.index >= history.tree.length - 1) return undefined;
-  history.index++; // redo は、巻き戻し前の index
-  const snapshot = history.tree[history.index];
-  printCells(snapshot.game.cells, "redo");
+
+  // {*記録* -> Action -> *記録*} -> 移動 -> {*記録* -> Action -> *記録*}
+  //                                                               ^ Snapshot はここのを使いたい
+  //                       ^ 現在の index はここ                   ^ 最新の index はここ
+  // ちなみにこの実装だと ctrl + Z でスタート地点に戻れない
+  const snapshot = history.tree[history.index + 2];
+  if (!snapshot) return undefined; // 最新の先;
+  history.index += 2;
+
   const grid = cx.grid;
 
   // 状態を巻き戻す
   cx.state.set(snapshot.game);
   grid.diffAndUpdateTo(cx, snapshot.game.cells);
+  cx.dynamic.player.x = snapshot.playerX;
+  cx.dynamic.player.y = snapshot.playerY;
 
   console.log(`history: ${history.index} / ${history.tree.length - 1}`);
   cx.history.set(history);
