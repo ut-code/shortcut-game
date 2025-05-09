@@ -1,8 +1,9 @@
 import { Application, Container, type Ticker } from "pixi.js";
-import type { Writable } from "svelte/store";
+import { type Writable, get, writable } from "svelte/store";
+import { Facing } from "./constants.ts";
 import { Grid } from "./grid.ts";
 import { Player } from "./player.ts";
-import type { Context, UIContext } from "./public-types.ts";
+import type { Context, GameState, UIContext } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
@@ -51,20 +52,44 @@ export async function setup(
   const grid = new Grid(stage, app.screen.height, blockSize, stageDefinition);
 
   const cx: Context = {
-    stage,
-    gridX,
-    gridY,
-    marginY: grid.marginY,
-    blockSize,
-    initialPlayerX: stageDefinition.initialPlayerX,
-    initialPlayerY: stageDefinition.initialPlayerY,
+    _stage: stage,
     grid,
-    elapsed: 0,
+    dynamic: {
+      focus: null,
+      playerX: stageDefinition.initialPlayerX,
+      playerY: stageDefinition.initialPlayerY,
+      playerFacing: Facing.right,
+    },
+
+    state: writable<GameState>({
+      inventory: null,
+      inventoryIsInfinite: false,
+      usage: {
+        // TODO
+        copy: Number.POSITIVE_INFINITY,
+        paste: Number.POSITIVE_INFINITY,
+        cut: Number.POSITIVE_INFINITY,
+      },
+      cells: grid.snapshot(),
+    }),
+    config: writable({
+      gridX,
+      gridY,
+      marginY: grid.marginY,
+      blockSize,
+      initialPlayerX: stageDefinition.initialPlayerX,
+      initialPlayerY: stageDefinition.initialPlayerY,
+    }),
+    history: writable({
+      index: 0,
+      tree: [],
+    }),
+    elapsed: writable(0),
     uiContext,
   };
   app.ticker.add(
     unlessPaused((ticker) => {
-      cx.elapsed += ticker.deltaTime;
+      cx.elapsed.update((prev) => prev + ticker.deltaTime);
     }),
   );
 
@@ -84,15 +109,17 @@ export async function setup(
   el.appendChild(app.canvas);
 
   window.addEventListener("resize", () => {
-    const prevCx = { ...cx };
     app.renderer.resize(window.innerWidth, window.innerHeight);
     const blockSize = Math.min(
       app.screen.width / gridX,
       app.screen.height / gridY,
     );
+    cx.config.update((prev) => {
+      prev.blockSize = blockSize;
+      prev.marginY = grid.marginY;
+      return prev;
+    });
     cx.grid.rerender(app.screen.height, blockSize);
-    cx.blockSize = blockSize;
-    cx.marginY = grid.marginY;
-    player.rerender(prevCx, cx);
+    player.resize(cx);
   });
 }

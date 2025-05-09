@@ -2,8 +2,8 @@
 // client-only.
 import { goto } from "$app/navigation";
 import { Block } from "@/constants.ts";
-import type { UIContext } from "@/context.ts";
 import { setup } from "@/main.ts";
+import type { UIContext } from "@/public-types.ts";
 import type { StageDefinition } from "@/stages.ts";
 import Ability from "@/ui-components/Ability.svelte";
 import Key from "@/ui-components/Key.svelte";

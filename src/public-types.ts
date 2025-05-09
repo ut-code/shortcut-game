@@ -1,36 +1,57 @@
 import type { Container } from "pixi.js";
 import type { Writable } from "svelte/store";
-import type { Block } from "./constants.ts";
-import type { Grid } from "./grid.ts";
+import type { Block, Facing } from "./constants.ts";
+import type { Grid, GridCell } from "./grid.ts";
 
+// GameState must be serializable
+// because it is used in undo/redo
 export type GameState = {
+  // about the player
   inventory: MovableObject | null;
-  abilities: AbilityUsage;
+  inventoryIsInfinite: boolean;
+  usage: AbilityUsage;
+  cells: GridCell[][];
 };
 
-export type StateSnapshot = GameState;
+// config - things that won't update very often
+export type GameConfig = {
+  gridX: number; // total grid in X direction, NOT width of single grid
+  gridY: number; // total grid in Y direction
+  marginY: number; // windowの上端とy=0上端の距離(px)
+  blockSize: number;
+  initialPlayerX: number; // initial player position in X direction
+  initialPlayerY: number; // initial player position in Y direction
+};
+
+export type StateSnapshot = {
+  game: GameState;
+  playerX: number; // player position at the time of snapshot
+  playerY: number; // player position at the time of snapshot
+  playerFacing: Facing; // player facing direction at the time of snapshot
+};
 export type GameHistory = {
   tree: StateSnapshot[];
   index: number;
 };
 
 export type Context = {
-  stage: Container;
-
-  // about grid system
-  gridX: number; // total grid in X direction, NOT width of single glid
-  gridY: number; // total grid in Y direction
-  marginY: number; // windowの上端とy=0上端の距離(px)
+  _stage: Container;
   grid: Grid;
-  blockSize: number;
 
-  // about player
-  initialPlayerX: number; // initial player position in X direction
-  initialPlayerY: number; // initial player position in Y direction
+  // Game State
+  state: Writable<GameState>; // state that changes frequently (but not every frame)
+  config: Writable<GameConfig>; // not-so-dynamic data
+  history: Writable<GameHistory>;
 
+  // dynamic data used for communication between modules
+  dynamic: {
+    focus: Coords | null; // current focus coordinates
+    playerX: number;
+    playerY: number;
+    playerFacing: Facing;
+  };
   // about time
-  elapsed: number;
-
+  elapsed: Writable<number>;
   uiContext: Writable<UIContext>;
 };
 

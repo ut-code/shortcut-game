@@ -1,29 +1,33 @@
 import { type Container, Sprite } from "pixi.js";
+import { get } from "svelte/store";
 import { Block } from "./constants.ts";
+import { assert } from "./lib.ts";
 import type { Context, MovableObject } from "./public-types.ts";
 import { rockTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
-type GridCell =
+// structuredClone cannot clone Sprite so we need to store it separately
+type SpriteCell = {
+  sprite: Sprite | null;
+};
+export type GridCell =
   | {
       block: Block.block;
-      sprite: Sprite;
-      objectId?: undefined;
+      objectId?: unknown;
     }
   | {
       block: Block.movable;
-      sprite: Sprite;
       objectId: string;
     }
   | {
       block: Block.air;
-      sprite?: undefined;
-      objectId?: undefined;
+      objectId?: unknown;
     };
 
 export class Grid {
   private stage: Container;
   cells: GridCell[][];
+  sprites: SpriteCell[][];
   marginY: number; // windowの上端とy=0上端の距離(px)
   oobSprites: Sprite[]; // 画面外にあるやつ (ブラーがかかってるブロックのこと？)
   constructor(
@@ -37,9 +41,12 @@ export class Grid {
     this.oobSprites = [];
     this.marginY = (height - cellSize * stageDefinition.stage.length) / 2;
     const cells: GridCell[][] = [];
+    const sprites: SpriteCell[][] = [];
+
     for (let y = 0; y < stageDefinition.stage.length; y++) {
       const rowDefinition = stageDefinition.stage[y].split("");
       const row: GridCell[] = [];
+      const spriteRow: SpriteCell[] = [];
       for (let x = 0; x < rowDefinition.length; x++) {
         const cellDef = rowDefinition[x];
         const block = blockFromDefinition(cellDef);
@@ -48,6 +55,7 @@ export class Grid {
             row.push({
               block,
             });
+            spriteRow.push({ sprite: null });
             break;
           case Block.movable: {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
@@ -58,10 +66,11 @@ export class Grid {
             const objectId = group ? group.objectId : Math.random().toString();
             const cell: GridCell = {
               block,
-              sprite,
               objectId,
             };
             row.push(cell);
+            spriteRow.push({ sprite });
+
             break;
           }
           case Block.block: {
@@ -69,9 +78,9 @@ export class Grid {
             stage.addChild(sprite);
             const cell: GridCell = {
               block,
-              sprite,
             };
             row.push(cell);
+            spriteRow.push({ sprite });
             break;
           }
           default:
@@ -79,14 +88,32 @@ export class Grid {
         }
       }
       cells.push(row);
+      sprites.push(spriteRow);
     }
     this.cells = cells;
+    this.sprites = sprites;
 
     this.initOOBSprites(cellSize);
   }
   diffAndUpdateTo(newGrid: GridCell[][]) {
     // TODO
     console.log("TODO: implement diffing alg");
+  }
+  update(cx: Context, fn: (cell: GridCell, x: number, y: number) => GridCell) {
+    const { blockSize } = get(cx.config);
+    for (let y = 0; y < this.cells.length; y++) {
+      for (let x = 0; x < this.cells[y].length; x++) {
+        const cell = this.cells[y][x];
+        const newCell = fn(cell, x, y);
+        if (cell !== newCell) {
+          this.setBlock(cx, x, y, newCell);
+        }
+      }
+    }
+  }
+  snapshot(): GridCell[][] {
+    console.log(this.cells);
+    return structuredClone(this.cells);
   }
   initOOBSprites(cellSize: number) {
     this.oobSprites = [];
@@ -124,7 +151,7 @@ export class Grid {
       this.stage.removeChild(sprite);
     }
     for (let y = 0; y < this.cells.length; y++) {
-      const row = this.cells[y];
+      const row = this.sprites[y];
       for (let x = 0; x < row.length; x++) {
         const cell = row[x];
         if (cell.sprite) {
@@ -163,14 +190,67 @@ export class Grid {
     return retrievedObject;
   }
   setBlock(cx: Context, x: number, y: number, cell: GridCell) {
+    console.log("setBlock called at", x, y);
+    const prevSprite = this.sprites[y][x];
+    const { blockSize, marginY } = get(cx.config);
     const prev = this.cells[y][x];
-    if (prev.block !== Block.air) {
-      this.stage.removeChild(prev.sprite);
+    if (prev.block === cell.block) return;
+    if (prevSprite.sprite) {
+      console.log("removing child at", x, y);
+      cx._stage.removeChild(prevSprite.sprite);
     }
-    this.cells[y][x] = cell;
-    if (cell.block !== Block.air) {
-      const sprite = createSprite(cx.blockSize, cell.block, x, y, cx.marginY);
-      this.stage.addChild(sprite);
+    if (prev.block === Block.air && prevSprite.sprite) {
+      console.warn(
+        "sprites is out of sync with cells: expected null, got sprite",
+      );
+    }
+    if (prev.block !== Block.air && prevSprite.sprite === null) {
+      console.warn(
+        "sprites is out of sync with cells: expected sprite, got null",
+      );
+    }
+
+    if (cell.block !== Block.movable && cell.objectId) {
+      console.warn("Cell is not movable but has an objectId");
+    }
+
+    switch (cell.block) {
+      case Block.air:
+        this.cells[y][x] = {
+          block: cell.block,
+          objectId: undefined,
+        };
+        prevSprite.sprite = null;
+        break;
+      case Block.block: {
+        const blockSprite = createSprite(blockSize, cell.block, x, y, marginY);
+        this.stage.addChild(blockSprite);
+        this.cells[y][x] = {
+          block: cell.block,
+          objectId: undefined,
+        };
+        prevSprite.sprite = blockSprite;
+        break;
+      }
+      case Block.movable: {
+        const movableSprite = createSprite(
+          blockSize,
+          cell.block,
+          x,
+          y,
+          marginY,
+        );
+        this.stage.addChild(movableSprite);
+        assert(cell.objectId !== undefined, "movable block must have objectId");
+        this.cells[y][x] = {
+          block: cell.block,
+          objectId: cell.objectId,
+        };
+        prevSprite.sprite = movableSprite;
+        break;
+      }
+      default:
+        cell satisfies never;
     }
   }
 }
