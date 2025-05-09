@@ -7,7 +7,7 @@ export function createSnapshot(cx: Context): StateSnapshot {
   const playerY = cx.dynamic.playerY;
   const playerFacing = cx.dynamic.playerFacing;
   return {
-    game,
+    game: structuredClone(game),
     playerX,
     playerY,
     playerFacing,

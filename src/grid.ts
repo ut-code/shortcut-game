@@ -95,9 +95,16 @@ export class Grid {
 
     this.initOOBSprites(cellSize);
   }
-  diffAndUpdateTo(newGrid: GridCell[][]) {
-    // TODO
-    console.log("TODO: implement diffing alg");
+  diffAndUpdateTo(cx: Context, newGrid: GridCell[][]) {
+    for (let y = 0; y < this.cells.length; y++) {
+      for (let x = 0; x < this.cells[y].length; x++) {
+        const cell = this.cells[y][x];
+        const newCell = newGrid[y][x];
+        if (cell.block !== newCell.block) {
+          this.setBlock(cx, x, y, newCell);
+        }
+      }
+    }
   }
   update(cx: Context, fn: (cell: GridCell, x: number, y: number) => GridCell) {
     const { blockSize } = get(cx.config);
@@ -112,7 +119,6 @@ export class Grid {
     }
   }
   snapshot(): GridCell[][] {
-    console.log(this.cells);
     return structuredClone(this.cells);
   }
   initOOBSprites(cellSize: number) {
@@ -174,9 +180,10 @@ export class Grid {
     const objectId = cell.objectId;
     const retrievedBlocks: { x: number; y: number }[] = [];
     for (let y = 0; y < this.cells.length; y++) {
-      for (let x = 0; x < this.cells[y].length; x++) {}
-      if (this.cells[y][x].objectId === cell.objectId) {
-        retrievedBlocks.push({ x, y });
+      for (let x = 0; x < this.cells[y].length; x++) {
+        if (this.cells[y][x].objectId === cell.objectId) {
+          retrievedBlocks.push({ x, y });
+        }
       }
     }
     const retrievedObject: MovableObject = {
@@ -190,13 +197,11 @@ export class Grid {
     return retrievedObject;
   }
   setBlock(cx: Context, x: number, y: number, cell: GridCell) {
-    console.log("setBlock called at", x, y);
     const prevSprite = this.sprites[y][x];
     const { blockSize, marginY } = get(cx.config);
     const prev = this.cells[y][x];
     if (prev.block === cell.block) return;
     if (prevSprite.sprite) {
-      console.log("removing child at", x, y);
       cx._stage.removeChild(prevSprite.sprite);
     }
     if (prev.block === Block.air && prevSprite.sprite) {
@@ -252,6 +257,10 @@ export class Grid {
       default:
         cell satisfies never;
     }
+    cx.state.update((prev) => ({
+      ...prev,
+      cells: this.cells,
+    }));
   }
 }
 
@@ -290,4 +299,28 @@ function updateSprite(
   sprite.height = blockSize;
   sprite.x = x * blockSize;
   sprite.y = y * blockSize + marginY;
+}
+
+export function printCells(cells: GridCell[][], context?: string) {
+  console.log(
+    `${context ? context : "Grid"}:
+     ${cells
+       .map((row) =>
+         row
+           .map((cell) => {
+             switch (cell.block) {
+               case Block.air:
+                 return ".";
+               case Block.block:
+                 return "b";
+               case Block.movable:
+                 return "m";
+               default:
+                 cell satisfies never;
+             }
+           })
+           .join(""),
+       )
+       .join("\n")}`,
+  );
 }

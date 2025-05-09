@@ -95,7 +95,6 @@ export class Player {
         event,
         this.onGround,
         this.facing,
-        get(_cx.history),
         { x: this.x, y: this.y },
       );
       if (playerPosition) {
@@ -244,6 +243,11 @@ export class Player {
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
     this.vy += consts.gravity * blockSize * ticker.deltaTime;
+
+    cx.dynamic.playerX = this.x;
+    cx.dynamic.playerY = this.y;
+    cx.dynamic.playerFacing = this.facing;
+    cx.dynamic.focus = this.getCoords(cx); // TODO: これをやると、focusがplayerの位置に移動してしまう。修正する。
   }
   resize(cx: Context) {
     const state = get(cx.state);

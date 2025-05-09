@@ -81,7 +81,7 @@ export async function setup(
       initialPlayerY: stageDefinition.initialPlayerY,
     }),
     history: writable({
-      index: 0,
+      index: -1,
       tree: [],
     }),
     elapsed: writable(0),
