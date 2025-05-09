@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  /* biome-ignore lint: daisyui prop */
+  themes: "light";
+}

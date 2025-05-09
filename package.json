@@ -21,6 +21,8 @@
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.20.7",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tailwindcss/vite": "^4.1.6",
+    "daisyui": "^5.0.35",
     "lefthook": "^1.11.12",
     "svelte": "^5.28.2",
     "svelte-check": "^4.1.6",

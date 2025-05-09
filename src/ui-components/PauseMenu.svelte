@@ -23,18 +23,26 @@ document.addEventListener("keydown", (ev) => {
 });
 </script>
 
-<dialog bind:this={el} onclose={onresume}>
-  <div class="uiBackground menu">
-    <span style="font-size: 2rem;">Paused</span>
+<dialog bind:this={el} onclose={onresume} class="modal">
+  <div class="uiBackground modal-box flex flex-col gap-1">
+    <h1 class="text-4xl text-center">Paused</h1>
     <!-- todo: ボタンのスタイル -->
-    <form method="dialog">
-      <button style="font-size: 1.5rem;" type="submit"> Resume </button>
+    <form method="dialog" class="w-full">
+      <button style="font-size: 1.5rem;" class="btn btn-block" type="submit">
+        Resume
+      </button>
     </form>
     <!-- TODO; これもうちょいパフォーマンスいいやつにしたい -->
-    <button style="font-size: 1.5rem;" onclick={() => window.location.reload()}>
+    <button
+      style="font-size: 1.5rem;"
+      class="btn btn-block"
+      onclick={() => window.location.reload()}
+    >
       Restart
     </button>
-    <a style="font-size: 1.5rem;" href="/"> Back to Stage Select </a>
+    <a style="font-size: 1.5rem;" class="btn btn-block" href="/">
+      Back to Stage Select
+    </a>
   </div>
 </dialog>
 
@@ -43,20 +51,5 @@ document.addEventListener("keydown", (ev) => {
     background: oklch(82.8% 0.189 84.429 / 40%);
     backdrop-filter: blur(2px);
     padding: 0.75rem 1rem;
-  }
-  .menu {
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    margin: auto;
-    align-items: center;
-    width: max-content;
-    height: max-content;
-    gap: 0.5rem;
-    border-radius: 1rem;
   }
 </style>

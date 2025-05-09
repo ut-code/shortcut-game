@@ -38,7 +38,7 @@ $effect(() => {
 onDestroy(() => bindings.ondestroy());
 </script>
 
-<div bind:this={container} class="container">
+<div bind:this={container} id="container">
   <PauseMenu
     paused={uiContext.paused}
     onpause={() => bindings.onpause()}
@@ -84,7 +84,7 @@ onDestroy(() => bindings.ondestroy());
 </div>
 
 <style>
-  .container {
+  #container {
     width: 100dvw;
     height: 100dvh;
     overflow: hidden;
