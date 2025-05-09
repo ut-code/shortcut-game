@@ -1,12 +1,12 @@
 <script lang="ts">
-// client-only.
-import { goto } from "$app/navigation";
 import { setup } from "@/main.ts";
 import type { UIInfo } from "@/public-types.ts";
 import type { StageDefinition } from "@/stages.ts";
 import Ability from "@/ui-components/Ability.svelte";
 import Key from "@/ui-components/Key.svelte";
 import { onDestroy } from "svelte";
+// client-only.
+import PauseMenu from "./PauseMenu.svelte";
 
 type Props = { stageNum: string; stage: StageDefinition };
 const { stageNum, stage }: Props = $props();
@@ -39,6 +39,11 @@ onDestroy(() => bindings.ondestroy());
 </script>
 
 <div bind:this={container} class="container">
+  <PauseMenu
+    paused={uiContext.paused}
+    onpause={() => bindings.onpause()}
+    onresume={() => bindings.onresume()}
+  />
   <div
     class="uiBackground"
     style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: baseline;"
@@ -76,22 +81,6 @@ onDestroy(() => bindings.ondestroy());
     <Ability key="Z" name="Undo" count={uiContext.undo} />
     <Ability key="Y" name="Redo" count={uiContext.redo} />
   </div>
-  {#if uiContext.paused}
-    <div class="uiBackground menu">
-      <span style="font-size: 2rem;">Paused</span>
-      <!-- todo: ボタンのスタイル -->
-      <button style="font-size: 1.5rem;" onclick={bindings.onresume}>
-        Resume
-      </button>
-      <button
-        style="font-size: 1.5rem;"
-        onclick={() => window.location.reload()}>Restart</button
-      >
-      <button style="font-size: 1.5rem;" onclick={() => goto("/")}
-        >Back to Stage Select</button
-      >
-    </div>
-  {/if}
 </div>
 
 <style>
@@ -114,20 +103,5 @@ onDestroy(() => bindings.ondestroy());
     border-width: 0.3rem;
     border-radius: 0.5rem;
     border-color: oklch(87.9% 0.169 91.605);
-  }
-  .menu {
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    margin: auto;
-    align-items: center;
-    width: max-content;
-    height: max-content;
-    gap: 0.5rem;
-    border-radius: 1rem;
   }
 </style>
