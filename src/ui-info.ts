@@ -1,4 +1,3 @@
-import { get } from "svelte/store";
 import type { GameHistory, GameState, UIInfo } from "./public-types.ts";
 
 export function useUI(state: GameState, history: GameHistory): UIInfo {
@@ -8,8 +7,8 @@ export function useUI(state: GameState, history: GameHistory): UIInfo {
     copy: state.usage.copy,
     paste: state.usage.paste,
     cut: state.usage.cut,
-    undo: history.tree.length - 1 - history.index,
-    redo: history.index,
+    undo: history.index / 2,
+    redo: (history.tree.length - 1 - history.index) / 2,
     paused: state.paused,
   };
 }
