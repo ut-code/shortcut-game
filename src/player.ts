@@ -1,27 +1,10 @@
 import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
-import { AbilityControl, type AbilityInit } from "./ability.ts";
-import type { AbilityEnableOptions } from "./ability.ts";
-import * as c from "./constants.ts";
+import { get } from "svelte/store";
+import { AbilityControl } from "./ability.ts";
+import * as consts from "./constants.ts";
 import { Block } from "./constants.ts";
-import type { Context } from "./context.ts";
-import type { MovableObject } from "./grid.ts";
+import type { AbilityInit, Context } from "./public-types.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
-
-export type History = {
-  playerX: number;
-  playerY: number;
-  playerFacing: c.Facing;
-  inventory: MovableObject | null;
-  movableBlocks: {
-    x: number;
-    y: number;
-    objectId: string;
-    // 基準ブロックからの相対位置
-    relativeX: number;
-    relativeY: number;
-  }[];
-  enabledAbilities: AbilityEnableOptions;
-};
 
 enum Inputs {
   Left = 0,
@@ -36,27 +19,26 @@ export class Player {
   vy: number;
   onGround: boolean;
   jumpingBegin: number | null;
-  facing: c.Facing = c.Facing.right;
+  facing: consts.Facing = consts.Facing.right;
   ability: AbilityControl;
-  history = {
-    list: [] as History[],
-    index: 1,
-  };
   constructor(
     cx: Context,
     spriteOptions?: SpriteOptions | Texture,
-    thisOptions?: {
+    options?: {
       ability?: AbilityInit;
     },
   ) {
     this.sprite = new Sprite(spriteOptions);
     // Center the sprite's anchor point
     this.sprite.anchor.set(0.5, 1);
+    const { blockSize, initialPlayerX, initialPlayerY, marginY } = get(
+      cx.config,
+    );
 
-    this.sprite.x = cx.blockSize * cx.initialPlayerX;
-    this.sprite.y = cx.blockSize * cx.initialPlayerY + cx.marginY;
-    this.sprite.width = c.playerWidth * cx.blockSize;
-    this.sprite.height = c.playerHeight * cx.blockSize;
+    this.sprite.x = blockSize * initialPlayerX;
+    this.sprite.y = blockSize * initialPlayerY + marginY;
+    this.sprite.width = consts.playerWidth * blockSize;
+    this.sprite.height = consts.playerHeight * blockSize;
 
     // Move the sprite to the center of the screen
     document.addEventListener("keydown", (event) =>
@@ -65,20 +47,12 @@ export class Player {
     document.addEventListener("keyup", (event) =>
       this.handleInput(cx, event, false),
     );
-    this.ability = new AbilityControl(cx, thisOptions?.ability);
+    this.ability = new AbilityControl(cx, this, options?.ability);
     this.vx = 0;
     this.vy = 0;
     this.onGround = false;
     this.jumpingBegin = null;
     this.holdingKeys = {};
-    this.history.list.push({
-      playerX: this.x,
-      playerY: this.y,
-      playerFacing: this.facing,
-      inventory: null,
-      movableBlocks: cx.grid.movableBlocks,
-      enabledAbilities: this.ability.enabledAbilities,
-    });
   }
   get x() {
     return this.sprite.x;
@@ -93,23 +67,25 @@ export class Player {
     this.sprite.y = v;
   }
   getCoords(cx: Context) {
-    const x = Math.floor(this.x / cx.blockSize);
-    const y = Math.round((this.y - cx.marginY) / cx.blockSize) - 1; // it was not working well so take my patch
+    const { blockSize, marginY } = get(cx.config);
+    const x = Math.floor(this.x / blockSize);
+    const y = Math.round((this.y - marginY) / blockSize) - 1; // it was not working well so take my patch
     return { x, y };
   }
   createHighlight(cx: Context) {
+    const { blockSize, marginY } = get(cx.config);
     if (!this.holdingKeys[Inputs.Ctrl] || !this.onGround) return;
     const texture =
       this.ability.inventory === null ? highlightTexture : highlightHoldTexture;
     const highlight: Sprite = new Sprite(texture);
-    highlight.width = cx.blockSize;
-    highlight.height = cx.blockSize;
+    highlight.width = blockSize;
+    highlight.height = blockSize;
     const highlightCoords = this.ability.highlightCoord(
       this.getCoords(cx),
       this.facing,
     );
-    highlight.x = highlightCoords.x * cx.blockSize;
-    highlight.y = highlightCoords.y * cx.blockSize + cx.marginY;
+    highlight.x = highlightCoords.x * blockSize;
+    highlight.y = highlightCoords.y * blockSize + marginY;
     return highlight;
   }
   handleInput(_cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
@@ -119,7 +95,6 @@ export class Player {
         event,
         this.onGround,
         this.facing,
-        this.history,
         { x: this.x, y: this.y },
       );
       if (playerPosition) {
@@ -145,7 +120,7 @@ export class Player {
         this.holdingKeys[Inputs.Left] = eventIsKeyDown;
         event.preventDefault();
         if (eventIsKeyDown) {
-          this.facing = c.Facing.left;
+          this.facing = consts.Facing.left;
         }
         break;
       case "ArrowRight":
@@ -153,7 +128,7 @@ export class Player {
         this.holdingKeys[Inputs.Right] = eventIsKeyDown;
         event.preventDefault();
         if (eventIsKeyDown) {
-          this.facing = c.Facing.right;
+          this.facing = consts.Facing.right;
         }
         break;
       case "ArrowUp":
@@ -165,22 +140,25 @@ export class Player {
     }
   }
   tick(cx: Context, ticker: Ticker) {
+    const state = get(cx.state);
+    const { blockSize, gridX, gridY, marginY } = get(cx.config);
     this.vx = 0;
     if (this.holdingKeys[Inputs.Left]) {
-      this.vx -= c.moveVX * cx.blockSize;
+      this.vx -= consts.moveVX * blockSize;
     }
     if (this.holdingKeys[Inputs.Right]) {
-      this.vx += c.moveVX * cx.blockSize;
+      this.vx += consts.moveVX * blockSize;
     }
+    const elapsed = get(cx.elapsed);
     if (this.holdingKeys[Inputs.Up]) {
       if (this.onGround) {
-        this.vy = -c.jumpVY * cx.blockSize;
-        this.jumpingBegin = cx.elapsed;
+        this.vy = -consts.jumpVY * blockSize;
+        this.jumpingBegin = elapsed;
       } else if (
         this.jumpingBegin &&
-        cx.elapsed - this.jumpingBegin < c.jumpFrames
+        elapsed - this.jumpingBegin < consts.jumpFrames
       ) {
-        this.vy = -c.jumpVY * cx.blockSize;
+        this.vy = -consts.jumpVY * blockSize;
       } else {
         this.jumpingBegin = null;
       }
@@ -192,21 +170,20 @@ export class Player {
       cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== Block.air &&
       cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== undefined;
     const isOutOfWorldLeft = (x: number) => x < 0;
-    const isOutOfWorldRight = (x: number) => x >= cx.gridX;
-    const isOutOfWorldBottom = (y: number) =>
-      y >= cx.gridY + cx.marginY / cx.blockSize;
+    const isOutOfWorldRight = (x: number) => x >= gridX;
+    const isOutOfWorldBottom = (y: number) => y >= gridY + marginY / blockSize;
 
     // next〜 は次フレームの座標、inner〜 は前フレームでかつ1px内側の座標
-    const nextX = (this.x + this.vx * ticker.deltaTime) / cx.blockSize;
+    const nextX = (this.x + this.vx * ticker.deltaTime) / blockSize;
     const nextBottomY =
-      (this.y - cx.marginY + this.vy * ticker.deltaTime) / cx.blockSize;
-    const nextTopY = nextBottomY - c.playerHeight;
-    const nextLeftX = nextX - c.playerWidth / 2;
-    const nextRightX = nextX + c.playerWidth / 2;
-    const innerBottomY = (this.y - cx.marginY - 1) / cx.blockSize;
-    const innerTopY = (this.y - cx.marginY + 1) / cx.blockSize - c.playerHeight;
-    const innerLeftX = (this.x + 1) / cx.blockSize - c.playerWidth / 2;
-    const innerRightX = (this.x - 1) / cx.blockSize + c.playerWidth / 2;
+      (this.y - marginY + this.vy * ticker.deltaTime) / blockSize;
+    const nextTopY = nextBottomY - consts.playerHeight;
+    const nextLeftX = nextX - consts.playerWidth / 2;
+    const nextRightX = nextX + consts.playerWidth / 2;
+    const innerBottomY = (this.y - marginY - 1) / blockSize;
+    const innerTopY = (this.y - marginY + 1) / blockSize - consts.playerHeight;
+    const innerLeftX = (this.x + 1) / blockSize - consts.playerWidth / 2;
+    const innerRightX = (this.x - 1) / blockSize + consts.playerWidth / 2;
 
     // 天井
     const hittingCeil =
@@ -221,12 +198,12 @@ export class Player {
       this.vy = 0;
     } else if (hittingCeil) {
       this.y =
-        (Math.ceil(nextTopY) + c.playerHeight) * cx.blockSize + cx.marginY;
+        (Math.ceil(nextTopY) + consts.playerHeight) * blockSize + marginY;
       this.vy = 0;
       this.jumpingBegin = null;
     } else if (this.onGround) {
       // 自分の位置は衝突したブロックの上
-      this.y = Math.floor(nextBottomY) * cx.blockSize + cx.marginY;
+      this.y = Math.floor(nextBottomY) * blockSize + marginY;
       this.vy = 0;
     }
     // プレイヤーの右上端または右下端がブロック または右画面端
@@ -245,10 +222,10 @@ export class Player {
       // todo: この場合どうするべき?
       this.vx = 0;
     } else if (rightHit) {
-      this.x = (Math.floor(nextRightX) - c.playerWidth / 2) * cx.blockSize;
+      this.x = (Math.floor(nextRightX) - consts.playerWidth / 2) * blockSize;
       this.vx = 0;
     } else if (leftHit) {
-      this.x = (Math.ceil(nextLeftX) + c.playerWidth / 2) * cx.blockSize;
+      this.x = (Math.ceil(nextLeftX) + consts.playerWidth / 2) * blockSize;
       this.vx = 0;
     }
     // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
@@ -256,8 +233,8 @@ export class Player {
     // Todo: ステージ個別に用意される初期座標に移動させる
     // Todo: 直接移動させるのではなく、ゲームオーバー処理を切り分ける
     if (isOutOfWorldBottom(innerTopY)) {
-      this.x = 2 * cx.blockSize;
-      this.y = 3 * cx.blockSize + cx.marginY;
+      this.x = 2 * blockSize;
+      this.y = 3 * blockSize + marginY;
       this.vx = 0;
       this.vy = 0;
     }
@@ -265,14 +242,20 @@ export class Player {
     // 当たり判定結果を反映する
     this.x += this.vx * ticker.deltaTime;
     this.y += this.vy * ticker.deltaTime;
-    this.vy += c.gravity * cx.blockSize * ticker.deltaTime;
+    this.vy += consts.gravity * blockSize * ticker.deltaTime;
+
+    cx.dynamic.playerX = this.x;
+    cx.dynamic.playerY = this.y;
+    cx.dynamic.playerFacing = this.facing;
+    cx.dynamic.focus = this.getCoords(cx); // TODO: これをやると、focusがplayerの位置に移動してしまう。修正する。
   }
-  rerender(prevCx: Context, cx: Context) {
-    this.sprite.width = c.playerWidth * cx.blockSize;
-    this.sprite.height = c.playerHeight * cx.blockSize;
-    this.x = (this.x / prevCx.blockSize) * cx.blockSize;
+  resize(cx: Context) {
+    const state = get(cx.state);
+    const cfg = get(cx.config);
+    this.sprite.width = consts.playerWidth * cfg.blockSize;
+    this.sprite.height = consts.playerHeight * cfg.blockSize;
+    this.x = (this.x / cfg.blockSize) * cfg.blockSize;
     this.y =
-      ((this.y - prevCx.marginY) / prevCx.blockSize) * cx.blockSize +
-      cx.marginY;
+      ((this.y - cfg.marginY) / cfg.blockSize) * cfg.blockSize + cfg.marginY;
   }
 }

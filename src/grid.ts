@@ -1,53 +1,35 @@
 import { type Container, Sprite } from "pixi.js";
+import { get } from "svelte/store";
 import { Block } from "./constants.ts";
-import type { Context } from "./context.ts";
+import { assert } from "./lib.ts";
+import type { Context, MovableObject } from "./public-types.ts";
 import { rockTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
-type GridCell =
+// structuredClone cannot clone Sprite so we need to store it separately
+type SpriteCell = {
+  sprite: Sprite | null;
+};
+export type GridCell =
   | {
       block: Block.block;
-      sprite: Sprite;
+      objectId?: unknown;
     }
   | {
       block: Block.movable;
-      sprite: Sprite;
       objectId: string;
-      relativePosition: {
-        x: number;
-        y: number;
-      };
     }
   | {
       block: Block.air;
-      sprite: null;
+      objectId?: unknown;
     };
-
-export type MovableBlocks = {
-  x: number;
-  y: number;
-  objectId: string;
-  // 基準ブロックからの相対位置
-  relativeX: number;
-  relativeY: number;
-}[];
-
-export type MovableObject = {
-  objectId: string;
-  x: number;
-  y: number;
-  relativePositions: {
-    x: number;
-    y: number;
-  }[];
-};
 
 export class Grid {
   private stage: Container;
   cells: GridCell[][];
-  movableBlocks: MovableBlocks;
+  sprites: SpriteCell[][];
   marginY: number; // windowの上端とy=0上端の距離(px)
-  oobSprites: Sprite[];
+  oobSprites: Sprite[]; // 画面外にあるやつ (ブラーがかかってるブロックのこと？)
   constructor(
     stage: Container,
     height: number,
@@ -55,54 +37,89 @@ export class Grid {
     stageDefinition: StageDefinition,
   ) {
     this.stage = stage;
-    this.movableBlocks = stageDefinition.movableBlocks;
+
     this.oobSprites = [];
     this.marginY = (height - cellSize * stageDefinition.stage.length) / 2;
     const cells: GridCell[][] = [];
+    const sprites: SpriteCell[][] = [];
+
     for (let y = 0; y < stageDefinition.stage.length; y++) {
       const rowDefinition = stageDefinition.stage[y].split("");
       const row: GridCell[] = [];
+      const spriteRow: SpriteCell[] = [];
       for (let x = 0; x < rowDefinition.length; x++) {
         const cellDef = rowDefinition[x];
         const block = blockFromDefinition(cellDef);
-        if (block === Block.air) {
-          const cell: GridCell = {
-            block,
-            sprite: null,
-          };
-          row.push(cell);
-        } else if (block === Block.movable) {
-          const sprite = createSprite(cellSize, block, x, y, this.marginY);
-          stage.addChild(sprite);
-          const movableBlock = stageDefinition.movableBlocks.filter(
-            (block) => block.x === x && block.y === y,
-          )[0];
-          const cell: GridCell = {
-            block,
-            sprite,
-            objectId: movableBlock.objectId,
-            // 同オブジェクトの基準ブロックに対する相対位置
-            relativePosition: {
-              x: movableBlock.relativeX,
-              y: movableBlock.relativeY,
-            },
-          };
-          row.push(cell);
-        } else {
-          const sprite = createSprite(cellSize, block, x, y, this.marginY);
-          stage.addChild(sprite);
-          const cell: GridCell = {
-            block,
-            sprite,
-          };
-          row.push(cell);
+        switch (block) {
+          case Block.air:
+            row.push({
+              block,
+            });
+            spriteRow.push({ sprite: null });
+            break;
+          case Block.movable: {
+            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            stage.addChild(sprite);
+            const group = stageDefinition.blockGroups.find(
+              (b) => b.x === x && b.y === y,
+            );
+            const objectId = group ? group.objectId : Math.random().toString();
+            const cell: GridCell = {
+              block,
+              objectId,
+            };
+            row.push(cell);
+            spriteRow.push({ sprite });
+
+            break;
+          }
+          case Block.block: {
+            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            stage.addChild(sprite);
+            const cell: GridCell = {
+              block,
+            };
+            row.push(cell);
+            spriteRow.push({ sprite });
+            break;
+          }
+          default:
+            block satisfies never;
         }
       }
       cells.push(row);
+      sprites.push(spriteRow);
     }
     this.cells = cells;
+    this.sprites = sprites;
 
     this.initOOBSprites(cellSize);
+  }
+  diffAndUpdateTo(cx: Context, newGrid: GridCell[][]) {
+    for (let y = 0; y < this.cells.length; y++) {
+      for (let x = 0; x < this.cells[y].length; x++) {
+        const cell = this.cells[y][x];
+        const newCell = newGrid[y][x];
+        if (cell.block !== newCell.block) {
+          this.setBlock(cx, x, y, newCell);
+        }
+      }
+    }
+  }
+  update(cx: Context, fn: (cell: GridCell, x: number, y: number) => GridCell) {
+    const { blockSize } = get(cx.config);
+    for (let y = 0; y < this.cells.length; y++) {
+      for (let x = 0; x < this.cells[y].length; x++) {
+        const cell = this.cells[y][x];
+        const newCell = fn(cell, x, y);
+        if (cell !== newCell) {
+          this.setBlock(cx, x, y, newCell);
+        }
+      }
+    }
+  }
+  snapshot(): GridCell[][] {
+    return structuredClone(this.cells);
   }
   initOOBSprites(cellSize: number) {
     this.oobSprites = [];
@@ -140,7 +157,7 @@ export class Grid {
       this.stage.removeChild(sprite);
     }
     for (let y = 0; y < this.cells.length; y++) {
-      const row = this.cells[y];
+      const row = this.sprites[y];
       for (let x = 0; x < row.length; x++) {
         const cell = row[x];
         if (cell.sprite) {
@@ -151,10 +168,7 @@ export class Grid {
     this.initOOBSprites(cellSize);
   }
   clone(grid: Grid) {
-    return {
-      _stage: grid.stage,
-      cells: grid.cells.map((cell) => cell.slice()),
-    };
+    return grid.cells.map((cell) => cell.slice());
   }
   getBlock(x: number, y: number): Block | undefined {
     return this.cells[y]?.[x]?.block;
@@ -164,123 +178,89 @@ export class Grid {
     if (!cell) return undefined;
     if (cell.block !== Block.movable) return undefined;
     const objectId = cell.objectId;
-    const retrievedBlocks = this.movableBlocks.filter(
-      (block) => block.objectId === objectId,
-    );
-    if (!retrievedBlocks) return undefined;
+    const retrievedBlocks: { x: number; y: number }[] = [];
+    for (let y = 0; y < this.cells.length; y++) {
+      for (let x = 0; x < this.cells[y].length; x++) {
+        if (this.cells[y][x].objectId === cell.objectId) {
+          retrievedBlocks.push({ x, y });
+        }
+      }
+    }
     const retrievedObject: MovableObject = {
+      block: cell.block,
       objectId,
-      x: retrievedBlocks.filter(
-        (block) => block.relativeX === 0 && block.relativeY === 0,
-      )[0].x,
-      y: retrievedBlocks.filter(
-        (block) => block.relativeX === 0 && block.relativeY === 0,
-      )[0].y,
       relativePositions: retrievedBlocks.map((block) => ({
-        x: block.relativeX,
-        y: block.relativeY,
+        x: block.x - x,
+        y: block.y - y,
       })),
     };
-    if (!retrievedObject) return undefined;
-
     return retrievedObject;
   }
-  setBlock(x: number, y: number, block: Block) {
+  setBlock(cx: Context, x: number, y: number, cell: GridCell) {
+    const prevSprite = this.sprites[y][x];
+    const { blockSize, marginY } = get(cx.config);
     const prev = this.cells[y][x];
-    if (block === prev.block) return;
-    if (prev.block !== Block.air) {
-      this.stage.removeChild(prev.sprite);
+    if (prev.block === cell.block) return;
+    if (prevSprite.sprite) {
+      cx._stage.removeChild(prevSprite.sprite);
     }
-    if (block === Block.air) {
-      this.cells[y][x] = {
-        block,
-        sprite: null,
-      };
-    }
-  }
-  // 指定された座標にオブジェクトを配置し、this.movableBlocksを更新する
-  setMovableObject(cx: Context, x: number, y: number, object: MovableObject) {
-    const prev = this.cells[y][x];
-    if (prev.block !== Block.air) {
-      this.stage.removeChild(prev.sprite);
-    }
-
-    for (const i of object.relativePositions) {
-      const positionX = x + i.x;
-      const positionY = y + i.y;
-      const sprite = createSprite(
-        cx.blockSize,
-        Block.movable,
-        positionX,
-        positionY,
-        cx.marginY,
+    if (prev.block === Block.air && prevSprite.sprite) {
+      console.warn(
+        "sprites is out of sync with cells: expected null, got sprite",
       );
-      this.stage.addChild(sprite);
-      this.cells[positionY][positionX] = {
-        block: Block.movable,
-        sprite,
-        objectId: object.objectId,
-        relativePosition: {
-          x: i.x,
-          y: i.y,
-        },
-      };
-      this.movableBlocks.push({
-        x: positionX,
-        y: positionY,
-        objectId: object.objectId,
-        relativeX: i.x,
-        relativeY: i.y,
-      });
+    }
+    if (prev.block !== Block.air && prevSprite.sprite === null) {
+      console.warn(
+        "sprites is out of sync with cells: expected sprite, got null",
+      );
     }
 
-    // 座標基準で重複を削除
-    // this.movableBlocks = Array.from(
-    //   new Map(this.movableBlocks.map((b) => [`${b.x},${b.y}`, b])).values(),
-    // );
+    if (cell.block !== Block.movable && cell.objectId) {
+      console.warn("Cell is not movable but has an objectId");
+    }
 
-    // オブジェクトの座標を更新
-    object.x = x;
-    object.y = y;
-  }
-  clearAllMovableBlocks() {
-    for (const i of this.movableBlocks) {
-      const prev = this.cells[i.y][i.x];
-      if (prev.block !== Block.air) {
-        this.stage.removeChild(prev.sprite);
+    switch (cell.block) {
+      case Block.air:
+        this.cells[y][x] = {
+          block: cell.block,
+          objectId: undefined,
+        };
+        prevSprite.sprite = null;
+        break;
+      case Block.block: {
+        const blockSprite = createSprite(blockSize, cell.block, x, y, marginY);
+        this.stage.addChild(blockSprite);
+        this.cells[y][x] = {
+          block: cell.block,
+          objectId: undefined,
+        };
+        prevSprite.sprite = blockSprite;
+        break;
       }
-      this.setBlock(i.x, i.y, Block.air);
+      case Block.movable: {
+        const movableSprite = createSprite(
+          blockSize,
+          cell.block,
+          x,
+          y,
+          marginY,
+        );
+        this.stage.addChild(movableSprite);
+        assert(cell.objectId !== undefined, "movable block must have objectId");
+        this.cells[y][x] = {
+          block: cell.block,
+          objectId: cell.objectId,
+        };
+        prevSprite.sprite = movableSprite;
+        break;
+      }
+      default:
+        cell satisfies never;
     }
-  }
-  setAllMovableBlocks(cx: Context, newMovableBlocks: MovableBlocks) {
-    this.movableBlocks = [];
-    const objectIds = Array.from(
-      new Set(newMovableBlocks.map((block) => block.objectId)),
-    );
-    for (const objectId of objectIds) {
-      const retrievedBlocks = newMovableBlocks.filter(
-        (block) => block.objectId === objectId,
-      );
-      const movableObject: MovableObject = {
-        objectId,
-        x: retrievedBlocks.filter(
-          (block) => block.relativeX === 0 && block.relativeY === 0,
-        )[0].x,
-        y: retrievedBlocks.filter(
-          (block) => block.relativeX === 0 && block.relativeY === 0,
-        )[0].y,
-        relativePositions: retrievedBlocks.map((block) => ({
-          x: block.relativeX,
-          y: block.relativeY,
-        })),
-      };
-      cx.grid.setMovableObject(
-        cx,
-        movableObject.x,
-        movableObject.y,
-        movableObject,
-      );
-    }
+    cx.state.update((prev) => ({
+      ...prev,
+      cells: this.cells,
+    }));
   }
 }
 
@@ -319,4 +299,28 @@ function updateSprite(
   sprite.height = blockSize;
   sprite.x = x * blockSize;
   sprite.y = y * blockSize + marginY;
+}
+
+export function printCells(cells: GridCell[][], context?: string) {
+  console.log(
+    `${context ? context : "Grid"}:
+     ${cells
+       .map((row) =>
+         row
+           .map((cell) => {
+             switch (cell.block) {
+               case Block.air:
+                 return ".";
+               case Block.block:
+                 return "b";
+               case Block.movable:
+                 return "m";
+               default:
+                 cell satisfies never;
+             }
+           })
+           .join(""),
+       )
+       .join("\n")}`,
+  );
 }
