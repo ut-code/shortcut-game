@@ -2,7 +2,7 @@ import { Sprite, type SpriteOptions, type Texture, type Ticker } from "pixi.js";
 import { get } from "svelte/store";
 import * as Ability from "./ability.ts";
 import * as consts from "./constants.ts";
-import { Facing, Inputs } from "./constants.ts";
+import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
 import type { AbilityInit, Context } from "./public-types.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
@@ -158,8 +158,8 @@ export function tick(cx: Context, ticker: Ticker) {
   }
 
   const isBlock = (x: number, y: number) =>
-    cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== Block.air &&
-    cx.grid.getBlock(Math.floor(x), Math.floor(y)) !== undefined;
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.air &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isOutOfWorldLeft = (x: number) => x < 0;
   const isOutOfWorldRight = (x: number) => x >= gridX;
   const isOutOfWorldBottom = (y: number) => y >= gridY + marginY / blockSize;

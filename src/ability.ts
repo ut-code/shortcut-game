@@ -37,22 +37,7 @@ export function init(cx: Context, options?: AbilityInit) {
     e.preventDefault();
     if (get(cx.state).usage.paste > 0 && onGround) paste(cx);
   });
-
-  // there is no such thing as undo / redo event
-  document.addEventListener("keydown", (e) => {
-    if (!e.ctrlKey && !e.metaKey) return;
-    switch (e.key) {
-      case "z":
-        e.preventDefault();
-        History.undo(cx);
-        break;
-      case "y":
-        e.preventDefault();
-        History.redo(cx);
-        break;
-    }
-  });
-  History.record(cx);
+  History.init(cx);
 }
 
 export function focusCoord(playerAt: Coords, facing: Facing) {
@@ -79,9 +64,9 @@ export function copy(cx: Context) {
   if (!focus) return;
   const x = focus.x;
   const y = focus.y;
-  const target = cx.grid.getBlock(x, y);
+  const target = cx.grid.getBlock(cx, x, y);
   if (!target || target !== Block.movable) return;
-  const movableObject = cx.grid.getMovableObject(x, y);
+  const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
   History.record(cx);
@@ -114,7 +99,7 @@ export function paste(cx: Context) {
   for (const i of inventory.relativePositions) {
     const positionX = x + i.x;
     const positionY = y + i.y;
-    const target = cx.grid.getBlock(positionX, positionY);
+    const target = cx.grid.getBlock(cx, positionX, positionY);
     if (target !== Block.air) {
       // すでに何かある場合は、ペーストできない
       return;
@@ -139,10 +124,10 @@ export function cut(cx: Context) {
 
   const x = focus.x;
   const y = focus.y;
-  const target = cx.grid.getBlock(x, y);
+  const target = cx.grid.getBlock(cx, x, y);
   // removable 以外はカットできない
   if (!target || target !== Block.movable) return;
-  const movableObject = cx.grid.getMovableObject(x, y);
+  const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
   History.record(cx);
@@ -170,7 +155,7 @@ export function placeMovableObject(
   for (const i of object.relativePositions) {
     const positionX = x + i.x;
     const positionY = y + i.y;
-    const target = grid.getBlock(positionX, positionY);
+    const target = grid.getBlock(cx, positionX, positionY);
     if (target !== Block.air) {
       // すでに何かある場合は、ペーストできない
       return;
@@ -192,7 +177,7 @@ export function removeMovableObject(
   y: number,
 ): MovableObject | undefined {
   const grid = cx.grid;
-  const obj = grid.getMovableObject(x, y);
+  const obj = grid.getMovableObject(cx, x, y);
   if (!obj) return undefined;
 
   for (const i of obj.relativePositions) {

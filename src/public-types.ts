@@ -31,7 +31,8 @@ export type StateSnapshot = {
   playerFacing: Facing; // player facing direction at the time of snapshot
 };
 export type GameHistory = {
-  tree: StateSnapshot[];
+  stash?: StateSnapshot; // 最新の状態を放り込んでおくところ: ctrl + Y で最新の場所に戻るのに使う
+  tree: StateSnapshot[]; // a linear tree.
   index: number;
 };
 

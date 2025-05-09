@@ -1,7 +1,7 @@
 import { Application, Container, type Ticker } from "pixi.js";
 import { derived, get, writable } from "svelte/store";
 import { Facing } from "./constants.ts";
-import { Grid } from "./grid.ts";
+import { Grid, createCellsFromStageDefinition } from "./grid.ts";
 import * as Player from "./player.ts";
 import type { Context, GameState, UIInfo } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
@@ -62,8 +62,17 @@ export async function setup(
     app.screen.width / gridX,
     app.screen.height / gridY,
   );
-  const grid = new Grid(stage, app.screen.height, blockSize, stageDefinition);
 
+  const gridMarginY =
+    (app.screen.height - blockSize * stageDefinition.stage.length) / 2;
+  const config = writable({
+    gridX,
+    gridY,
+    marginY: gridMarginY,
+    blockSize,
+    initialPlayerX: stageDefinition.initialPlayerX,
+    initialPlayerY: stageDefinition.initialPlayerY,
+  });
   const state = writable<GameState>({
     inventory: null,
     inventoryIsInfinite: false,
@@ -73,9 +82,19 @@ export async function setup(
       paste: Number.POSITIVE_INFINITY,
       cut: Number.POSITIVE_INFINITY,
     },
-    cells: grid.snapshot(),
+    cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,
   });
+  const grid = new Grid(
+    {
+      _stage_container: stage,
+      state,
+      config,
+    },
+    app.screen.height,
+    blockSize,
+    stageDefinition,
+  );
   const history = writable({
     index: -1,
     tree: [],
@@ -101,20 +120,13 @@ export async function setup(
         onGround: false,
         jumpingBegin: null,
         holdingKeys: {},
-        facing: Facing.left,
+        facing: Facing.right,
       },
     },
     state: state,
     history,
     uiContext,
-    config: writable({
-      gridX,
-      gridY,
-      marginY: grid.marginY,
-      blockSize,
-      initialPlayerX: stageDefinition.initialPlayerX,
-      initialPlayerY: stageDefinition.initialPlayerY,
-    }),
+    config,
     elapsed: writable(0),
   };
 
@@ -183,7 +195,7 @@ function useOnResize(
       prev.marginY = grid.marginY;
       return prev;
     });
-    cx.grid.rerender(app.screen.height, blockSize);
+    cx.grid.rerender(cx, app.screen.height, blockSize);
     Player.resize(cx);
   };
 }

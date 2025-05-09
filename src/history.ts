@@ -1,7 +1,27 @@
 import { get } from "svelte/store";
+import { printCells } from "./grid.ts";
+import { assert } from "./lib.ts";
 import type { Context, StateSnapshot } from "./public-types.ts";
 
-// History については、 `docs/history-stack.png` を参照のこと
+export function init(cx: Context) {
+  // there is no such thing as undo / redo event
+  document.addEventListener("keydown", (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    switch (e.key) {
+      case "z":
+        e.preventDefault();
+        undo(cx);
+        break;
+      case "y":
+        e.preventDefault();
+        redo(cx);
+        break;
+    }
+  });
+  record(cx);
+}
+
+// History については、 Discord の中川さんの画像を参照のこと
 export function record(cx: Context) {
   const h = createSnapshot(cx);
   cx.history.update((prev) => {
@@ -17,54 +37,99 @@ export function record(cx: Context) {
 
 export function undo(cx: Context): { x: number; y: number } | undefined {
   const history = get(cx.history);
-  const grid = cx.grid;
 
-  // {*記録* -> Action -> *記録*} -> 移動 -> {*記録* -> Action -> *記録*}
-  //                                           ^ Snapshot はここのを使いたい
-  //                       ^ index は整合性のためここに置きたい    ^ 最新の index はここ
-  const snapshot = history.tree[history.index - 1];
-  if (!snapshot) return undefined; // ゲームが開始する前
-  history.index -= 2;
+  // 最新に戻るため、記録しておく
+  if (history.index === history.tree.length - 1) {
+    console.log("stashing...");
+    stash(cx);
+  }
+
+  // 0. 一般
+  // ... *記録*}-> 移動 -> {*記録* -> Action -> *記録*}
+  //                         ^ Snapshot はここのを使いたい
+  //      ^ index は整合性のためここに置く       ^ 1 個前のindex はここ
+  //
+  // 1. 開始位置まで戻る
+  // {*記録*} -> 移動 -> {*記録* -> Action -> *記録*}
+  //  ^このsnapshotを使う  ^1 個前の Snapshot はここ
+  //  ^ 1 個前の index はここ
+  assert(history.index % 2 === 0, "history index looks very wrong");
+  const snapshotIndex = Math.max(0, history.index - 1);
+  const nextIndex = Math.max(0, history.index - 2);
+  const snapshot = history.tree[snapshotIndex];
+  history.index = nextIndex;
 
   // 状態を巻き戻す
-  cx.state.set(snapshot.game);
-  grid.diffAndUpdateTo(cx, snapshot.game.cells);
-  cx.dynamic.player.x = snapshot.playerX;
-  cx.dynamic.player.y = snapshot.playerY;
+  restore(cx, snapshot);
 
   cx.history.set(history);
-  console.log(`history: ${history.index} / ${history.tree.length - 1}`);
   return {
-    x: history.tree[history.index].playerX,
-    y: history.tree[history.index].playerY,
+    x: snapshot.playerX,
+    y: snapshot.playerY,
   };
 }
 
 export function redo(cx: Context): { x: number; y: number } | undefined {
   const history = get(cx.history);
 
-  // {*記録* -> Action -> *記録*} -> 移動 -> {*記録* -> Action -> *記録*}
-  //                                                               ^ Snapshot はここのを使いたい
-  //                       ^ 現在の index はここ                   ^ 最新の index はここ
-  // ちなみにこの実装だと ctrl + Z でスタート地点に戻れない
+  // 0. 一般
+  // {*記録* -> Action -> *記録*} -> 移動 -> {*記録* -> Action -> *記録*} -> 移動 (optional)
+  //                                                              ^ Snapshot はここのを使いたい
+  //                      ^ 現在の index はここ                   ^ 次の index はここ
+  //
+  // 1. 最新に戻る -> stash に残っている snapshot に戻る
+  // 2. すでに最新に戻ったことがある -> 操作なし
   const snapshot = history.tree[history.index + 2];
-  if (!snapshot) return undefined; // 最新の先;
+  if (!snapshot) {
+    const stash = popStash(cx);
+    if (!stash) {
+      // case 2. すでに最新に戻ったことがある
+      return undefined;
+    }
+    // case 1. 最新に戻る
+    restore(cx, stash);
+    return {
+      x: stash.playerX,
+      y: stash.playerY,
+    };
+  }
   history.index += 2;
 
-  const grid = cx.grid;
-
-  // 状態を巻き戻す
-  cx.state.set(snapshot.game);
-  grid.diffAndUpdateTo(cx, snapshot.game.cells);
-  cx.dynamic.player.x = snapshot.playerX;
-  cx.dynamic.player.y = snapshot.playerY;
-
-  console.log(`history: ${history.index} / ${history.tree.length - 1}`);
+  restore(cx, snapshot);
   cx.history.set(history);
+
   return {
-    x: history.tree[history.index].playerX,
-    y: history.tree[history.index].playerY,
+    x: snapshot.playerX,
+    y: snapshot.playerY,
   };
+}
+
+// 状態を巻き戻す
+function restore(cx: Context, ss: StateSnapshot) {
+  cx.state.set(ss.game);
+  cx.dynamic.player.x = ss.playerX;
+  cx.dynamic.player.y = ss.playerY;
+  cx.dynamic.player.facing = ss.playerFacing;
+  cx.grid.diffAndUpdateTo(cx, ss.game.cells);
+  printCells(ss.game.cells, "restore");
+}
+function stash(cx: Context) {
+  cx.history.update((prev) => {
+    prev.stash = createSnapshot(cx);
+    return prev;
+  });
+}
+function popStash(cx: Context): StateSnapshot | undefined {
+  const history = get(cx.history);
+  if (history.stash) {
+    const stash = history.stash;
+    cx.history.update((prev) => {
+      prev.stash = undefined;
+      return prev;
+    });
+    return stash;
+  }
+  return undefined;
 }
 
 export function createSnapshot(cx: Context): StateSnapshot {
