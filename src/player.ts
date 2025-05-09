@@ -19,10 +19,17 @@ export function init(
   sprite.anchor.set(0.5, 1);
   const { blockSize, initialPlayerX, initialPlayerY, marginY } = get(cx.config);
 
-  sprite.x = blockSize * initialPlayerX;
-  sprite.y = blockSize * initialPlayerY + marginY;
+  const coords = {
+    x: blockSize * initialPlayerX,
+    y: blockSize * initialPlayerY + marginY,
+  };
+
+  sprite.x = coords.x;
+  sprite.y = coords.y;
   sprite.width = consts.playerWidth * blockSize;
   sprite.height = consts.playerHeight * blockSize;
+  cx.dynamic.player.x = coords.x;
+  cx.dynamic.player.y = coords.y;
   cx._stage_container.addChild(sprite);
 
   // Move the sprite to the center of the screen

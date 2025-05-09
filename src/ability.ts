@@ -2,13 +2,13 @@ import { get } from "svelte/store";
 import { Block, Facing } from "./constants.ts";
 import { printCells } from "./grid.ts";
 import { createSnapshot } from "./history.ts";
+import * as History from "./history.ts";
 import type {
   AbilityInit,
   Context,
   Coords,
   MovableObject,
 } from "./public-types.ts";
-import type { StateSnapshot } from "./public-types.ts";
 
 export function init(cx: Context, options?: AbilityInit) {
   cx.state.update((prev) => ({
@@ -37,29 +37,24 @@ export function init(cx: Context, options?: AbilityInit) {
     e.preventDefault();
     if (get(cx.state).usage.paste > 0 && onGround) paste(cx);
   });
-  // TODO: use proper event names, because it won't work
-  document.addEventListener("undo", (e) => {
-    e.preventDefault();
-    undo(cx);
+
+  // there is no such thing as undo / redo event
+  document.addEventListener("keydown", (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    switch (e.key) {
+      case "z":
+        e.preventDefault();
+        History.undo(cx);
+        break;
+      case "y":
+        e.preventDefault();
+        History.redo(cx);
+        break;
+    }
   });
-  document.addEventListener("redo", (e) => {
-    e.preventDefault();
-    redo(cx);
-  });
-  const ss = createSnapshot(cx);
-  const cfg = get(cx.config);
-  ss.playerX = cfg.initialPlayerX;
-  ss.playerY = cfg.initialPlayerY;
-  console.log(ss);
-  pushHistory(cx, ss);
+  History.record(cx);
 }
 
-export function setInventory(cx: Context, inventory: MovableObject | null) {
-  cx.state.update((prev) => ({
-    ...prev,
-    inventory: structuredClone(inventory),
-  }));
-}
 export function focusCoord(playerAt: Coords, facing: Facing) {
   let dx: number;
   switch (facing) {
@@ -89,14 +84,14 @@ export function copy(cx: Context) {
   const movableObject = cx.grid.getMovableObject(x, y);
   if (!movableObject) return;
 
-  pushHistory(cx, createSnapshot(cx));
+  History.record(cx);
 
-  // コピー元とは別のオブジェクトとして管理する (これ必要？)
-  movableObject.objectId = self.crypto.randomUUID();
+  cx.state.update((prev) => {
+    prev.inventory = movableObject;
+    return prev;
+  });
 
-  setInventory(cx, movableObject);
-
-  pushHistory(cx, createSnapshot(cx));
+  History.record(cx);
 }
 export function paste(cx: Context) {
   const state = get(cx.state);
@@ -126,14 +121,17 @@ export function paste(cx: Context) {
     }
   }
 
-  pushHistory(cx, createSnapshot(cx));
+  History.record(cx);
   placeMovableObject(cx, x, y, inventory);
   if (!get(cx.state).inventoryIsInfinite) {
-    setInventory(cx, null);
+    cx.state.update((prev) => {
+      prev.inventory = null;
+      return prev;
+    });
   }
 
   printCells(createSnapshot(cx).game.cells, "paste");
-  pushHistory(cx, createSnapshot(cx));
+  History.record(cx);
 }
 export function cut(cx: Context) {
   const { focus } = cx.dynamic;
@@ -147,86 +145,18 @@ export function cut(cx: Context) {
   const movableObject = cx.grid.getMovableObject(x, y);
   if (!movableObject) return;
 
-  pushHistory(cx, createSnapshot(cx));
-  setInventory(cx, movableObject);
+  History.record(cx);
 
+  cx.state.update((prev) => {
+    prev.inventory = movableObject;
+    return prev;
+  });
   cx.grid.update(cx, (prev) =>
     prev.objectId === movableObject.objectId ? { block: Block.air } : prev,
   );
 
   printCells(createSnapshot(cx).game.cells, "cut");
-  pushHistory(cx, createSnapshot(cx));
-}
-
-// History については、 `docs/history-stack.png` を参照のこと
-export function pushHistory(cx: Context, h: StateSnapshot) {
-  printCells(h.game.cells, "pushHistory");
-  cx.history.update((prev) => {
-    if (prev.tree.length > prev.index + 1) {
-      // undo した後に pushHistory をする場合、履歴を切り詰める
-      prev.tree.length = prev.index + 1;
-    }
-    prev.tree.push(h);
-    prev.index = prev.tree.length - 1;
-    return prev;
-  });
-}
-function undo(cx: Context): { x: number; y: number } | undefined {
-  const history = get(cx.history);
-  if (history.index <= 0) return undefined;
-  const grid = cx.grid;
-  history.index--;
-  const snapshot = history.tree[history.index];
-  printCells(snapshot.game.cells);
-
-  // オブジェクトを配置
-  setInventory(cx, snapshot.game.inventory);
-  grid.diffAndUpdateTo(cx, snapshot.game.cells);
-  printCells(snapshot.game.cells, "undo");
-  cx.state.update((prev) => {
-    return {
-      ...prev,
-      usage: snapshot.game.usage,
-      inventory: snapshot.game.inventory,
-      inventoryIsInfinite: snapshot.game.inventoryIsInfinite,
-    };
-  });
-  cx.dynamic.player.x = snapshot.playerX;
-  cx.dynamic.player.y = snapshot.playerY;
-
-  cx.history.set(history);
-
-  console.log(`history: ${history.index} / ${history.tree.length - 1}`);
-  return {
-    x: history.tree[history.index].playerX,
-    y: history.tree[history.index].playerY,
-  };
-}
-
-function redo(cx: Context): { x: number; y: number } | undefined {
-  // TODO: プレイヤーの座標の履歴を「いい感じ」にするため、 history を二重管理する
-  const history = get(cx.history);
-  if (history.index >= history.tree.length - 1) return undefined;
-  const snapshot = history.tree[history.index];
-  printCells(snapshot.game.cells, "redo");
-  history.index++; // redo は、巻き戻し前の index
-  const grid = cx.grid;
-
-  // 状態を巻き戻す
-  grid.diffAndUpdateTo(cx, snapshot.game.cells);
-  setInventory(cx, snapshot.game.inventory);
-
-  cx.state.update((prev) => ({
-    ...prev,
-    usage: snapshot.game.usage,
-  }));
-
-  console.log(`history: ${history.index} / ${history.tree.length - 1}`);
-  cx.history.set(history);
-  return {
-    x: history.tree[history.index].playerX,
-    y: history.tree[history.index].playerY,
-  };
+  History.record(cx);
 }
 
 export function placeMovableObject(
