@@ -1,43 +1,41 @@
 <script lang="ts">
 // client-only.
 import { goto } from "$app/navigation";
-import { Block } from "@/constants.ts";
 import { setup } from "@/main.ts";
-import type { UIContext } from "@/public-types.ts";
+import type { UIInfo } from "@/public-types.ts";
 import type { StageDefinition } from "@/stages.ts";
 import Ability from "@/ui-components/Ability.svelte";
 import Key from "@/ui-components/Key.svelte";
-import { writable } from "svelte/store";
+import { onDestroy } from "svelte";
 
 type Props = { stageNum: string; stage: StageDefinition };
 const { stageNum, stage }: Props = $props();
 let container: HTMLElement | null = $state(null);
-const uiContext = writable<UIContext>({
-  inventory: null,
-  inventoryIsInfinite: false,
-  copy: 0,
-  cut: 0,
-  paste: 0,
-  undo: 0,
-  redo: 0,
-  paused: false,
+
+const bindings = $state({
+  onpause: () => {},
+  onresume: () => {},
+  ondestroy: () => {},
+  uiInfo: <UIInfo>{
+    inventory: null,
+    inventoryIsInfinite: false,
+    copy: 0,
+    cut: 0,
+    paste: 0,
+    undo: 0,
+    redo: 0,
+    paused: false,
+  },
 });
+const uiContext = $derived(bindings.uiInfo);
+
 $effect(() => {
   if (container) {
-    setup(container, stage, uiContext);
+    setup(container, stage, bindings);
   }
 });
 
-$effect(() => {
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      uiContext.update((prev) => ({ ...prev, paused: !prev.paused }));
-    }
-  };
-  document.addEventListener("keydown", onKeyDown);
-  return () => document.removeEventListener("keydown", onKeyDown);
-});
+onDestroy(() => bindings.ondestroy());
 </script>
 
 <div bind:this={container} class="container">
@@ -52,7 +50,7 @@ $effect(() => {
     <span style="flex-grow: 1"></span>
     <span style="font-size: 1.5rem;">Clipboard:</span>
     <div class="inventory">
-      {#if $uiContext.inventory !== null}
+      {#if uiContext.inventory !== null}
         <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
         <img
           src="/assets/block.png"
@@ -64,7 +62,7 @@ $effect(() => {
     </div>
     <span style="font-size: 1.5rem;">✕</span>
     <span style="font-size: 2rem;"
-      >{$uiContext.inventoryIsInfinite ? "∞" : "1"}</span
+      >{uiContext.inventoryIsInfinite ? "∞" : "1"}</span
     >
   </div>
   <div
@@ -72,21 +70,19 @@ $effect(() => {
     style="position: fixed; left: 0; bottom: 0; right: 0; display: flex; align-items: baseline;"
   >
     <span style="font-size: 1.5rem; margin-right: 1rem;">Abilities:</span>
-    <Ability key="C" name="Copy" num={$uiContext.copy} />
-    <Ability key="X" name="Cut" num={$uiContext.cut} />
-    <Ability key="V" name="Paste" num={$uiContext.paste} />
-    <Ability key="Z" name="Undo" num={$uiContext.undo} />
-    <Ability key="Y" name="Redo" num={$uiContext.redo} />
+    <Ability key="C" name="Copy" count={uiContext.copy} />
+    <Ability key="X" name="Cut" count={uiContext.cut} />
+    <Ability key="V" name="Paste" count={uiContext.paste} />
+    <Ability key="Z" name="Undo" count={uiContext.undo} />
+    <Ability key="Y" name="Redo" count={uiContext.redo} />
   </div>
-  {#if $uiContext.paused}
+  {#if uiContext.paused}
     <div class="uiBackground menu">
       <span style="font-size: 2rem;">Paused</span>
       <!-- todo: ボタンのスタイル -->
-      <button
-        style="font-size: 1.5rem;"
-        onclick={() => uiContext.update((prev) => ({ ...prev, paused: false }))}
-        >Resume</button
-      >
+      <button style="font-size: 1.5rem;" onclick={bindings.onresume}>
+        Resume
+      </button>
       <button
         style="font-size: 1.5rem;"
         onclick={() => window.location.reload()}>Restart</button

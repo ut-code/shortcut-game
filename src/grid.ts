@@ -173,6 +173,8 @@ export class Grid {
   getBlock(x: number, y: number): Block | undefined {
     return this.cells[y]?.[x]?.block;
   }
+  // satisfies: every(MovableObject.relativePositions, (pos) => pos.x >= 0)
+  // satisfies: every(MovableObject.relativePositions, (pos) => pos.y <= 0)
   getMovableObject(x: number, y: number): MovableObject | undefined {
     const cell = this.cells[y]?.[x];
     if (!cell) return undefined;
@@ -186,12 +188,19 @@ export class Grid {
         }
       }
     }
+    const minX = retrievedBlocks
+      .map((v) => v.x)
+      .reduce((a, b) => Math.min(a, b), Number.POSITIVE_INFINITY);
+    const maxY = retrievedBlocks
+      .map((v) => v.y)
+      .reduce((a, b) => Math.max(a, b), 0);
+
     const retrievedObject: MovableObject = {
       block: cell.block,
       objectId,
       relativePositions: retrievedBlocks.map((block) => ({
-        x: block.x - x,
-        y: block.y - y,
+        x: block.x - minX,
+        y: block.y - maxY,
       })),
     };
     return retrievedObject;
@@ -202,7 +211,7 @@ export class Grid {
     const prev = this.cells[y][x];
     if (prev.block === cell.block) return;
     if (prevSprite.sprite) {
-      cx._stage.removeChild(prevSprite.sprite);
+      cx._stage_container.removeChild(prevSprite.sprite);
     }
     if (prev.block === Block.air && prevSprite.sprite) {
       console.warn(

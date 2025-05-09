@@ -1,6 +1,6 @@
-import type { Container } from "pixi.js";
-import type { Writable } from "svelte/store";
-import type { Block, Facing } from "./constants.ts";
+import type { Container, Sprite } from "pixi.js";
+import type { Readable, Writable } from "svelte/store";
+import type { Block, Facing, Inputs } from "./constants.ts";
 import type { Grid, GridCell } from "./grid.ts";
 
 // GameState must be serializable
@@ -11,6 +11,7 @@ export type GameState = {
   inventoryIsInfinite: boolean;
   usage: AbilityUsage;
   cells: GridCell[][];
+  paused: boolean;
 };
 
 // config - things that won't update very often
@@ -35,7 +36,7 @@ export type GameHistory = {
 };
 
 export type Context = {
-  _stage: Container;
+  _stage_container: Container;
   grid: Grid;
 
   // Game State
@@ -43,19 +44,30 @@ export type Context = {
   config: Writable<GameConfig>; // not-so-dynamic data
   history: Writable<GameHistory>;
 
-  // dynamic data used for communication between modules
+  // dynamic data used for communication between modules (aka just sparkling variables)
+  // no need to serialize.
   dynamic: {
     focus: Coords | null; // current focus coordinates
-    playerX: number;
-    playerY: number;
-    playerFacing: Facing;
+    player: {
+      holdingKeys: { [key in Inputs]?: boolean };
+      coords: () => { x: number; y: number };
+      sprite: Sprite | null;
+      x: number;
+      y: number;
+      facing: Facing;
+      jumpingBegin: number | null;
+      onGround: boolean;
+      vx: number;
+      vy: number;
+    };
   };
   // about time
   elapsed: Writable<number>;
-  uiContext: Writable<UIContext>;
+  // TODO: make it derived from state, because this doesn't need to be separate state
+  uiContext: Readable<UIInfo>;
 };
 
-export type UIContext = {
+export type UIInfo = {
   inventory: MovableObject | null;
   inventoryIsInfinite: boolean;
   copy: number;

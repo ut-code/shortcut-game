@@ -15,3 +15,9 @@ export enum Facing {
   left = "left",
   right = "right",
 }
+export enum Inputs {
+  Left = 0,
+  Right = 1,
+  Up = 2,
+  Ctrl = 3,
+}
