@@ -234,10 +234,26 @@ export function tick(cx: Context, ticker: Ticker) {
   }
 
   if (isSwitchBase(nextX, nextBottomY)) {
-    const switchBlock = cx.grid.getBlock(cx, nextX, nextTopY);
-    if (switchBlock !== Block.switchWithObject) {
-      // if (switchBlock !== Block.switch) throw new Error("Invalid switch block");
-      cx.state.set;
+    const switchBlock = get(cx.state).cells[Math.floor(nextBottomY - 1)][
+      Math.floor(nextX)
+    ];
+    if (switchBlock.block === Block.switch) {
+      console.log("switch block");
+      cx.state.update((prev) => {
+        prev.switches = prev.switches.map((s) => {
+          if (
+            s.x === Math.floor(nextX) &&
+            s.y === Math.floor(nextBottomY - 1)
+          ) {
+            return {
+              ...s,
+              pressedByPlayer: true,
+            };
+          }
+          return s;
+        });
+        return prev;
+      });
     }
   }
 

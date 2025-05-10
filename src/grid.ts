@@ -89,6 +89,18 @@ export class Grid {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
             stage.addChild(sprite);
             spriteRow.push({ sprite, block });
+            get(cx.state).switches.push({
+              id: (
+                get(cx.state).cells[y][x] as {
+                  block: Block.switch;
+                  switchId: string;
+                }
+              ).switchId,
+              x,
+              y,
+              pressedByPlayer: false,
+              pressedByBlock: false,
+            });
             break;
           }
           case Block.switchBase: {
@@ -282,6 +294,7 @@ export class Grid {
       console.warn("Cell is not movable but has an objectId");
     }
 
+    // switch上にオブジェクトを置くとき
     if (prev.block === Block.switch) {
       if (cell.block !== Block.movable) {
         console.warn(
@@ -306,7 +319,15 @@ export class Grid {
       };
       prev.sprite = movableSprite;
       prev.block = Block.switchWithObject;
-    } else if (prev.block === Block.switchWithObject) {
+      get(cx.state).switches.filter((s) => {
+        if (s.x === x && s.y === y) {
+          s.pressedByBlock = true;
+        }
+        return s;
+      });
+    }
+    // switch上に置いてあるオブジェクトを消すとき
+    else if (prev.block === Block.switchWithObject) {
       if (cell.block !== Block.switch) {
         console.warn(
           "No block other than switch cannot replace the switch with object",
@@ -323,6 +344,12 @@ export class Grid {
       };
       prev.sprite = blockSprite;
       prev.block = Block.switch;
+      get(cx.state).switches.filter((s) => {
+        if (s.x === x && s.y === y) {
+          s.pressedByBlock = false;
+        }
+        return s;
+      });
     } else {
       switch (cell.block) {
         case Block.air:

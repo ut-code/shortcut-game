@@ -84,6 +84,7 @@ export async function setup(
     },
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,
+    switches: [],
   });
   const grid = new Grid(
     {
