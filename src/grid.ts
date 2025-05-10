@@ -8,7 +8,7 @@ import type {
   GameState,
   MovableObject,
 } from "./public-types.ts";
-import { rockTexture } from "./resources.ts";
+import { rockTexture, switchBaseTexture, switchTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
 // structuredClone cannot clone Sprite so we need to store it separately
@@ -27,6 +27,14 @@ export type GridCell =
     }
   | {
       block: Block.air;
+      objectId?: unknown;
+    }
+  | {
+      block: Block.switch;
+      objectId?: unknown;
+    }
+  | {
+      block: Block.switchBase;
       objectId?: unknown;
     };
 
@@ -66,6 +74,18 @@ export class Grid {
             break;
           }
           case Block.block: {
+            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            stage.addChild(sprite);
+            spriteRow.push({ sprite, block });
+            break;
+          }
+          case Block.switch: {
+            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            stage.addChild(sprite);
+            spriteRow.push({ sprite, block });
+            break;
+          }
+          case Block.switchBase: {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
             stage.addChild(sprite);
             spriteRow.push({ sprite, block });
@@ -286,7 +306,7 @@ export class Grid {
         break;
       }
       default:
-        cell satisfies never;
+      // cell satisfies never;
     }
     cx.state.update((prev) => ({
       ...prev,
@@ -327,6 +347,20 @@ export function createCellsFromStageDefinition(
           row.push(cell);
           break;
         }
+        case Block.switch: {
+          const cell: GridCell = {
+            block,
+          };
+          row.push(cell);
+          break;
+        }
+        case Block.switchBase: {
+          const cell: GridCell = {
+            block,
+          };
+          row.push(cell);
+          break;
+        }
         default:
           block satisfies never;
       }
@@ -344,6 +378,10 @@ export function blockFromDefinition(n: string) {
       return Block.block;
     case "m":
       return Block.movable;
+    case "s":
+      return Block.switch;
+    case "S":
+      return Block.switchBase;
     default:
       throw new Error("no proper block");
   }
@@ -355,10 +393,32 @@ function createSprite(
   y: number,
   marginY: number,
 ) {
-  const sprite = new Sprite(rockTexture);
-  sprite.tint = block === Block.movable ? 0xff0000 : 0xffffff;
-  updateSprite(sprite, blockSize, x, y, marginY);
-  return sprite;
+  switch (block) {
+    case Block.block: {
+      const sprite = new Sprite(rockTexture);
+      sprite.tint = 0xffffff;
+      updateSprite(sprite, blockSize, x, y, marginY);
+      return sprite;
+    }
+    case Block.movable: {
+      const movableSprite = new Sprite(rockTexture);
+      movableSprite.tint = 0xff0000;
+      updateSprite(movableSprite, blockSize, x, y, marginY);
+      return movableSprite;
+    }
+    case Block.switch: {
+      const switchSprite = new Sprite(switchTexture);
+      updateSprite(switchSprite, blockSize, x, y, marginY);
+      return switchSprite;
+    }
+    case Block.switchBase: {
+      const switchBaseSprite = new Sprite(switchBaseTexture);
+      updateSprite(switchBaseSprite, blockSize, x, y, marginY);
+      return switchBaseSprite;
+    }
+    default:
+      throw new Error("no proper block");
+  }
 }
 function updateSprite(
   sprite: Sprite,
@@ -387,6 +447,10 @@ export function printCells(cells: GridCell[][], context?: string) {
                  return "b";
                case Block.movable:
                  return "m";
+               case Block.switch:
+                 return "s";
+               case Block.switchBase:
+                 return "S";
                default:
                  cell satisfies never;
              }

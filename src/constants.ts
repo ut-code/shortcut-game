@@ -10,6 +10,8 @@ export enum Block {
   air = "air",
   block = "block",
   movable = "movable",
+  switch = "switch",
+  switchBase = "switch-base",
 }
 export enum Facing {
   left = "left",
