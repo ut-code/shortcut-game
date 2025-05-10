@@ -69,6 +69,8 @@ export function copy(cx: Context) {
   const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
+  movableObject.objectId = Math.random().toString();
+
   History.record(cx);
 
   cx.state.update((prev) => {
@@ -100,7 +102,7 @@ export function paste(cx: Context) {
     const positionX = x + i.x;
     const positionY = y + i.y;
     const target = cx.grid.getBlock(cx, positionX, positionY);
-    if (target !== Block.air) {
+    if (target !== Block.air && target !== Block.switch) {
       // すでに何かある場合は、ペーストできない
       return;
     }
@@ -126,7 +128,11 @@ export function cut(cx: Context) {
   const y = focus.y;
   const target = cx.grid.getBlock(cx, x, y);
   // removable 以外はカットできない
-  if (!target || target !== Block.movable) return;
+  if (
+    !target ||
+    (target !== Block.movable && target !== Block.switchWithObject)
+  )
+    return;
   const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
@@ -136,9 +142,19 @@ export function cut(cx: Context) {
     prev.inventory = movableObject;
     return prev;
   });
-  cx.grid.update(cx, (prev) =>
-    prev.objectId === movableObject.objectId ? { block: Block.air } : prev,
-  );
+  if (target === Block.movable) {
+    cx.grid.update(cx, (prev) =>
+      prev.objectId === movableObject.objectId ? { block: Block.air } : prev,
+    );
+  }
+  if (target === Block.switchWithObject) {
+    cx.grid.update(cx, (prev) => {
+      if (prev.objectId !== movableObject.objectId) return prev;
+      if (prev.block === Block.switchWithObject)
+        return { block: Block.switch, switchId: prev.switchId };
+      return { block: Block.air };
+    });
+  }
 
   printCells(createSnapshot(cx).game.cells, "cut");
   History.record(cx);
@@ -156,7 +172,7 @@ export function placeMovableObject(
     const positionX = x + i.x;
     const positionY = y + i.y;
     const target = grid.getBlock(cx, positionX, positionY);
-    if (target !== Block.air) {
+    if (target !== Block.air && target !== Block.switch) {
       // すでに何かある場合は、ペーストできない
       return;
     }

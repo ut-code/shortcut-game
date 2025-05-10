@@ -159,7 +159,10 @@ export function tick(cx: Context, ticker: Ticker) {
 
   const isBlock = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.air &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
+  const isSwitchBase = (x: number, y: number) =>
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.switchBase;
   const isOutOfWorldLeft = (x: number) => x < 0;
   const isOutOfWorldRight = (x: number) => x >= gridX;
   const isOutOfWorldBottom = (y: number) => y >= gridY + marginY / blockSize;
@@ -228,6 +231,14 @@ export function tick(cx: Context, ticker: Ticker) {
     player.y = 3 * blockSize + marginY;
     player.vx = 0;
     player.vy = 0;
+  }
+
+  if (isSwitchBase(nextX, nextBottomY)) {
+    const switchBlock = cx.grid.getBlock(cx, nextX, nextTopY);
+    if (switchBlock !== Block.switchWithObject) {
+      // if (switchBlock !== Block.switch) throw new Error("Invalid switch block");
+      cx.state.set;
+    }
   }
 
   // 当たり判定結果を反映する

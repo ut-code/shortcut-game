@@ -12,6 +12,7 @@ export enum Block {
   movable = "movable",
   switch = "switch",
   switchBase = "switch-base",
+  switchWithObject = "switch-with-object",
 }
 export enum Facing {
   left = "left",
