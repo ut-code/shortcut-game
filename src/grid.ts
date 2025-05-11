@@ -424,7 +424,10 @@ export class Grid {
     }
     // switch上に置いてあるオブジェクトを消すとき
     else if (prev.block === Block.switchWithObject) {
-      if (cell.block !== Block.switch) {
+      if (
+        cell.block !== Block.switch &&
+        cell.block !== Block.switchWithObject
+      ) {
         console.warn(
           "No block other than switch cannot replace the switch with object",
         );

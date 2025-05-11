@@ -142,19 +142,12 @@ export function cut(cx: Context) {
     prev.inventory = movableObject;
     return prev;
   });
-  if (target === Block.movable) {
-    cx.grid.update(cx, (prev) =>
-      prev.objectId === movableObject.objectId ? { block: Block.air } : prev,
-    );
-  }
-  if (target === Block.switchWithObject) {
-    cx.grid.update(cx, (prev) => {
-      if (prev.objectId !== movableObject.objectId) return prev;
-      if (prev.block === Block.switchWithObject)
-        return { block: Block.switch, switchId: prev.switchId };
-      return { block: Block.air };
-    });
-  }
+  cx.grid.update(cx, (prev) => {
+    if (prev.objectId !== movableObject.objectId) return prev;
+    if (prev.block === Block.switchWithObject)
+      return { block: Block.switch, switchId: prev.switchId };
+    return { block: Block.air };
+  });
 
   printCells(createSnapshot(cx).game.cells, "cut");
   History.record(cx);
