@@ -13,6 +13,8 @@ export enum Block {
   switch = "switch",
   switchBase = "switch-base",
   switchWithObject = "switch-with-object",
+  switchingBlockOFF = "switching-block-off",
+  switchingBlockON = "switching-block-on",
 }
 export enum Facing {
   left = "left",

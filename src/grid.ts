@@ -42,6 +42,16 @@ export type GridCell =
       block: Block.switchWithObject;
       switchId?: string;
       objectId: string; // Block.movableのID
+    }
+  | {
+      block: Block.switchingBlockOFF;
+      switchId?: string;
+      objectId?: unknown;
+    }
+  | {
+      block: Block.switchingBlockON;
+      switchId?: string;
+      objectId?: unknown;
     };
 
 export class Grid {
@@ -109,6 +119,22 @@ export class Grid {
             spriteRow.push({ sprite, block });
             break;
           }
+          case Block.switchingBlockOFF: {
+            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            stage.addChild(sprite);
+            spriteRow.push({ sprite, block });
+            get(cx.state).switchingBlocks.push({
+              id: (
+                get(cx.state).cells[y][x] as {
+                  block: Block.switch;
+                  switchId: string;
+                }
+              ).switchId,
+              x,
+              y,
+            });
+            break;
+          }
           default:
             block satisfies never;
         }
@@ -145,6 +171,7 @@ export class Grid {
         const cell = cells[y][x];
         const newCell = fn(cell, x, y);
         if (cell !== newCell) {
+          console.log("[updating] place at", x, y);
           this.setBlock(cx, x, y, newCell);
           cells[y][x] = newCell;
         }
@@ -300,6 +327,7 @@ export class Grid {
         console.warn(
           "No block other than movable cannot be placed on the switch",
         );
+        console.log("cell.block", cell.block);
         return;
       }
       const movableSprite = createSprite(
@@ -332,6 +360,8 @@ export class Grid {
         console.warn(
           "No block other than switch cannot replace the switch with object",
         );
+        console.log("cell.block", cell.block);
+        console.log("prev.block", prev.block);
         return;
       }
       const blockSprite = createSprite(blockSize, Block.switch, x, y, marginY);
@@ -350,6 +380,57 @@ export class Grid {
         }
         return s;
       });
+    }
+    // switchingBlockOFFがONに切り替わるとき
+    else if (prev.block === Block.switchingBlockOFF) {
+      if (cell.block !== Block.switchingBlockON) {
+        console.warn(
+          "No block other than switchingBlockON cannot replace the switchingBlockOFF",
+        );
+        return;
+      }
+      const blockSprite = createSprite(
+        blockSize,
+        Block.switchingBlockON,
+        x,
+        y,
+        marginY,
+      );
+      stage.addChild(blockSprite);
+      if (cells[y][x].block !== Block.switchingBlockOFF) return;
+      cells[y][x] = {
+        block: Block.switchingBlockON,
+        switchId: cells[y][x].switchId,
+        objectId: undefined,
+      };
+      prev.sprite = blockSprite;
+      prev.block = Block.switchingBlockON;
+    }
+    // switchingBlockONがOFFに切り替わるとき
+    else if (prev.block === Block.switchingBlockON) {
+      console.log("switchingBlockON");
+      if (cell.block !== Block.switchingBlockOFF) {
+        console.warn(
+          "No block other than switchingBlockOFF cannot replace the switchingBlockON",
+        );
+        return;
+      }
+      const blockSprite = createSprite(
+        blockSize,
+        Block.switchingBlockOFF,
+        x,
+        y,
+        marginY,
+      );
+      stage.addChild(blockSprite);
+      if (cells[y][x].block !== Block.switchingBlockON) return;
+      cells[y][x] = {
+        block: Block.switchingBlockOFF,
+        switchId: cells[y][x].switchId,
+        objectId: undefined,
+      };
+      prev.sprite = blockSprite;
+      prev.block = Block.switchingBlockOFF;
     } else {
       switch (cell.block) {
         case Block.air:
@@ -442,9 +523,16 @@ export function createCellsFromStageDefinition(
           break;
         }
         case Block.switch: {
+          const group = stageDefinition.switchGroups.find(
+            (b) => b.x === x && b.y === y,
+          );
+          if (!group) {
+            throw new Error("switch must have switchGroup");
+          }
+          const switchId = group.switchId;
           const cell: GridCell = {
             block,
-            switchId: Math.random().toString(),
+            switchId: switchId,
           };
           row.push(cell);
           break;
@@ -452,6 +540,21 @@ export function createCellsFromStageDefinition(
         case Block.switchBase: {
           const cell: GridCell = {
             block,
+          };
+          row.push(cell);
+          break;
+        }
+        case Block.switchingBlockOFF: {
+          const group = stageDefinition.switchGroups.find(
+            (b) => b.x === x && b.y === y,
+          );
+          if (!group) {
+            throw new Error("switchingBlock must have switchGroup");
+          }
+          const switchId = group.switchId;
+          const cell: GridCell = {
+            block,
+            switchId: switchId,
           };
           row.push(cell);
           break;
@@ -477,6 +580,8 @@ export function blockFromDefinition(n: string) {
       return Block.switch;
     case "S":
       return Block.switchBase;
+    case "w":
+      return Block.switchingBlockOFF;
     default:
       throw new Error("no proper block");
   }
@@ -517,6 +622,19 @@ function createSprite(
       updateSprite(movableSprite, blockSize, x, y, marginY);
       return movableSprite;
     }
+    case Block.switchingBlockOFF: {
+      const sprite = new Sprite(rockTexture);
+      sprite.tint = 0xffa500;
+      updateSprite(sprite, blockSize, x, y, marginY);
+      return sprite;
+    }
+    case Block.switchingBlockON: {
+      const sprite = new Sprite(rockTexture);
+      sprite.tint = 0xffa500;
+      sprite.alpha = 0.3;
+      updateSprite(sprite, blockSize, x, y, marginY);
+      return sprite;
+    }
     default:
       throw new Error("no proper block");
   }
@@ -554,6 +672,10 @@ export function printCells(cells: GridCell[][], context?: string) {
                  return "S";
                case Block.switchWithObject:
                  return "M";
+               case Block.switchingBlockOFF:
+                 return "w";
+               case Block.switchingBlockON:
+                 return "w";
                default:
                  cell satisfies never;
              }

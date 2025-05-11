@@ -160,6 +160,8 @@ export function tick(cx: Context, ticker: Ticker) {
   const isBlock = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.air &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
+      Block.switchingBlockON &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isSwitchBase = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.switchBase;
@@ -254,6 +256,40 @@ export function tick(cx: Context, ticker: Ticker) {
         });
         return prev;
       });
+      console.log("switch block", get(cx.state).switches);
+      console.log("switch block", get(cx.state).switchingBlocks);
+    }
+  } else {
+    cx.state.update((prev) => {
+      prev.switches = prev.switches.map((s) => {
+        return {
+          ...s,
+          pressedByPlayer: false,
+        };
+      });
+      return prev;
+    });
+  }
+
+  // スイッチの状態を反映
+  const switches = get(cx.state).switches;
+  for (const s of switches) {
+    const switchingBlock = get(cx.state).switchingBlocks.filter(
+      (sb) => sb.id === s.id,
+    );
+    if (s.pressedByPlayer || s.pressedByBlock) {
+      // console.log("pressed!", switchingBlock)
+      for (const sb of switchingBlock) {
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockOFF) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockON });
+        }
+      }
+    } else {
+      for (const sb of switchingBlock) {
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockON) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockOFF });
+        }
+      }
     }
   }
 

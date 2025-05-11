@@ -21,6 +21,11 @@ export type GameState = {
     pressedByPlayer: boolean;
     pressedByBlock: boolean;
   }[];
+  switchingBlocks: {
+    id: string;
+    x: number;
+    y: number;
+  }[];
 };
 
 // config - things that won't update very often

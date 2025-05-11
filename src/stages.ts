@@ -3,9 +3,16 @@ export type StageDefinition = {
   initialPlayerX: number;
   initialPlayerY: number;
   blockGroups: {
+    // 複数ブロックからなるオブジェクトについては明示的に指定
     x: number;
     y: number;
     objectId: string;
+  }[];
+  switchGroups: {
+    // スイッチに関わるブロックはすべて指定
+    x: number;
+    y: number;
+    switchId: string;
   }[];
 };
 
@@ -24,6 +31,7 @@ export const stages = new Map<string, StageDefinition>([
       initialPlayerX: 1,
       initialPlayerY: 5,
       blockGroups: [],
+      switchGroups: [],
     },
   ],
   [
@@ -41,6 +49,7 @@ export const stages = new Map<string, StageDefinition>([
       initialPlayerX: 3,
       initialPlayerY: 6,
       blockGroups: [],
+      switchGroups: [],
     },
   ],
   [
@@ -69,6 +78,7 @@ export const stages = new Map<string, StageDefinition>([
           objectId: "1",
         },
       ],
+      switchGroups: [],
     },
   ],
   [
@@ -106,6 +116,7 @@ export const stages = new Map<string, StageDefinition>([
           objectId: "1",
         },
       ],
+      switchGroups: [],
     },
   ],
   [
@@ -115,13 +126,30 @@ export const stages = new Map<string, StageDefinition>([
         "bbbbbbbbbbbbbbbbbb",
         ".........b........",
         ".........b........",
-        ".........b........",
-        ".s.......m........",
+        ".........w........",
+        ".s....m..w........",
         "bSbbbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 3,
       initialPlayerY: 5,
       blockGroups: [],
+      switchGroups: [
+        {
+          x: 1,
+          y: 4,
+          switchId: "1",
+        },
+        {
+          x: 9,
+          y: 3,
+          switchId: "1",
+        },
+        {
+          x: 9,
+          y: 4,
+          switchId: "1",
+        },
+      ],
     },
   ],
 ]);
