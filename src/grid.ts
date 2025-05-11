@@ -156,21 +156,10 @@ export class Grid {
     for (let y = 0; y < this.vsom.length; y++) {
       for (let x = 0; x < this.vsom[y].length; x++) {
         const vsom = this.vsom[y][x];
-        // const prev = get(cx.state).cells[y][x];
-        // if (vsom.block !== prev.block) {
-        //   console.log(prev.block, vsom.block);
-        //   throw new Error("block is not the same");
-        // }
         const newCell = newGrid[y][x];
         if (vsom.block !== newCell.block) {
-          // Block.switchingBlockON は設置しない
-          const updatedCell = { ...newCell };
-          // if(newCell.block === Block.switchingBlockON) {
-          //   if (vsom.block === Block.switchingBlockOFF) continue;
-          //   updatedCell = { ...newCell, block: Block.switchingBlockOFF };
-          // }
-          console.log("[diffing] place at", x, y, updatedCell);
-          this.setBlock(cx, x, y, updatedCell);
+          console.log("[diffing] place at", x, y, newCell);
+          this.setBlock(cx, x, y, newCell);
         }
       }
     }
@@ -219,8 +208,14 @@ export class Grid {
     ) {
       for (let x = 0; x < cells[cells.length - 1].length; x++) {
         const cell = cells[cells.length - 1][x];
-        if (cell.block === Block.block) {
-          const sprite = createSprite(cellSize, cell.block, x, y, this.marginY);
+        if (cell.block === Block.block || cell.block === Block.switchBase) {
+          const sprite = createSprite(
+            cellSize,
+            Block.block,
+            x,
+            y,
+            this.marginY,
+          );
           stage.addChild(sprite);
           this.oobSprites.push(sprite);
         }
@@ -440,7 +435,6 @@ export class Grid {
     }
     // switchingBlockONがOFFに切り替わるとき
     else if (prev.block === Block.switchingBlockON) {
-      console.log("switchingBlockON");
       if (cell.block !== Block.switchingBlockOFF) {
         console.warn(
           "No block other than switchingBlockOFF cannot replace the switchingBlockON",
