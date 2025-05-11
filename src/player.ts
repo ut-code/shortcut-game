@@ -161,6 +161,8 @@ export function tick(cx: Context, ticker: Ticker) {
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.air &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
+      Block.switchPressed &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
       Block.switchingBlockON &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isSwitchBase = (x: number, y: number) =>
@@ -266,6 +268,21 @@ export function tick(cx: Context, ticker: Ticker) {
       });
       return prev;
     });
+  }
+
+  for (const sw of get(cx.state).switches) {
+    if (
+      sw.pressedByPlayer &&
+      cx.grid.getBlock(cx, sw.x, sw.y) === Block.switch
+    ) {
+      cx.grid.setBlock(cx, sw.x, sw.y, { block: Block.switchPressed });
+    }
+    if (
+      !sw.pressedByPlayer &&
+      cx.grid.getBlock(cx, sw.x, sw.y) === Block.switchPressed
+    ) {
+      cx.grid.setBlock(cx, sw.x, sw.y, { block: Block.switch });
+    }
   }
 
   // スイッチの状態を反映

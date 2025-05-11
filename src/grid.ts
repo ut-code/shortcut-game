@@ -8,7 +8,12 @@ import type {
   GameState,
   MovableObject,
 } from "./public-types.ts";
-import { rockTexture, switchBaseTexture, switchTexture } from "./resources.ts";
+import {
+  rockTexture,
+  switchBaseTexture,
+  switchPressedTexture,
+  switchTexture,
+} from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
 // structuredClone cannot clone Sprite so we need to store it separately
@@ -50,6 +55,11 @@ export type GridCell =
     }
   | {
       block: Block.switchingBlockON;
+      switchId?: string;
+      objectId?: unknown;
+    }
+  | {
+      block: Block.switchPressed;
       switchId?: string;
       objectId?: unknown;
     };
@@ -333,8 +343,47 @@ export class Grid {
 
     const prevCell = cells[y][x];
 
+    if (prev.block === Block.switch && cell.block === Block.switchPressed) {
+      // switchが押されたとき
+      const blockSprite = createSprite(
+        blockSize,
+        Block.switchPressed,
+        x,
+        y,
+        marginY,
+      );
+      stage.addChild(blockSprite);
+      assert(
+        prevCell.block === Block.switch ||
+          prevCell.block === Block.switchPressed,
+        "block is not switch or switchPressed",
+      );
+      cells[y][x] = {
+        block: Block.switchPressed,
+        switchId: prevCell.switchId,
+        objectId: undefined,
+      };
+      prev.sprite = blockSprite;
+      prev.block = Block.switchPressed;
+    } else if (prev.block === Block.switchPressed) {
+      // switchが押されているとき
+      const blockSprite = createSprite(blockSize, Block.switch, x, y, marginY);
+      stage.addChild(blockSprite);
+      assert(
+        prevCell.block === Block.switchPressed ||
+          prevCell.block === Block.switch,
+        "block is not switch or switchPressed",
+      );
+      cells[y][x] = {
+        block: Block.switch,
+        switchId: prevCell.switchId,
+        objectId: undefined,
+      };
+      prev.sprite = blockSprite;
+      prev.block = Block.switch;
+    }
     // switch上にオブジェクトを置くとき
-    if (prev.block === Block.switch) {
+    else if (prev.block === Block.switch) {
       if (
         cell.block !== Block.movable &&
         cell.block !== Block.switchWithObject
@@ -665,6 +714,12 @@ function createSprite(
       updateSprite(sprite, blockSize, x, y, marginY);
       return sprite;
     }
+    case Block.switchPressed: {
+      const sprite = new Sprite(switchPressedTexture);
+      // sprite.tint = 0x00ff00;
+      updateSprite(sprite, blockSize, x, y, marginY);
+      return sprite;
+    }
     default:
       throw new Error("no proper block");
   }
@@ -706,6 +761,8 @@ export function printCells(cells: GridCell[][], context?: string) {
                  return "w";
                case Block.switchingBlockON:
                  return "w";
+               case Block.switchPressed:
+                 return "s";
                default:
                  cell satisfies never;
              }
