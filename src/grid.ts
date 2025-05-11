@@ -156,10 +156,21 @@ export class Grid {
     for (let y = 0; y < this.vsom.length; y++) {
       for (let x = 0; x < this.vsom[y].length; x++) {
         const vsom = this.vsom[y][x];
+        // const prev = get(cx.state).cells[y][x];
+        // if (vsom.block !== prev.block) {
+        //   console.log(prev.block, vsom.block);
+        //   throw new Error("block is not the same");
+        // }
         const newCell = newGrid[y][x];
         if (vsom.block !== newCell.block) {
-          console.log("[diffing] place at", x, y);
-          this.setBlock(cx, x, y, newCell);
+          // Block.switchingBlockON は設置しない
+          const updatedCell = { ...newCell };
+          // if(newCell.block === Block.switchingBlockON) {
+          //   if (vsom.block === Block.switchingBlockOFF) continue;
+          //   updatedCell = { ...newCell, block: Block.switchingBlockOFF };
+          // }
+          console.log("[diffing] place at", x, y, updatedCell);
+          this.setBlock(cx, x, y, updatedCell);
         }
       }
     }
@@ -294,7 +305,11 @@ export class Grid {
     const cells = get(cx.state).cells;
     const prev = this.vsom[y][x];
     const { blockSize, marginY } = get(cx.config);
-    if (prev.block === cell.block) return;
+    if (prev.block === cell.block) {
+      console.warn("block is already the same");
+      console.log("prev.block", prev.block);
+      return;
+    }
     if (prev.sprite) {
       cx._stage_container.removeChild(prev.sprite);
     }
@@ -321,9 +336,14 @@ export class Grid {
       console.warn("Cell is not movable but has an objectId");
     }
 
+    const prevCell = cells[y][x];
+
     // switch上にオブジェクトを置くとき
     if (prev.block === Block.switch) {
-      if (cell.block !== Block.movable) {
+      if (
+        cell.block !== Block.movable &&
+        cell.block !== Block.switchWithObject
+      ) {
         console.warn(
           "No block other than movable cannot be placed on the switch",
         );
@@ -339,10 +359,14 @@ export class Grid {
       );
       stage.addChild(movableSprite);
       assert(cell.objectId !== undefined, "movable block must have objectId");
-      if (cells[y][x].block !== Block.switch) return;
+      assert(
+        prevCell.block === Block.switch ||
+          prevCell.block === Block.switchWithObject,
+        "block is not switch",
+      );
       cells[y][x] = {
         block: Block.switchWithObject,
-        switchId: cells[y][x].switchId,
+        switchId: prevCell.switchId,
         objectId: cell.objectId,
       };
       prev.sprite = movableSprite;
@@ -366,10 +390,14 @@ export class Grid {
       }
       const blockSprite = createSprite(blockSize, Block.switch, x, y, marginY);
       stage.addChild(blockSprite);
-      if (cells[y][x].block !== Block.switchWithObject) return;
+      assert(
+        prevCell.block === Block.switchWithObject ||
+          prevCell.block === Block.switch,
+        "block is not switchWithObject",
+      );
       cells[y][x] = {
         block: Block.switch,
-        switchId: cells[y][x].switchId,
+        switchId: prevCell.switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
@@ -397,10 +425,14 @@ export class Grid {
         marginY,
       );
       stage.addChild(blockSprite);
-      if (cells[y][x].block !== Block.switchingBlockOFF) return;
+      assert(
+        prevCell.block === Block.switchingBlockOFF ||
+          prevCell.block === Block.switchingBlockON,
+        "block is not switchingBlock",
+      );
       cells[y][x] = {
         block: Block.switchingBlockON,
-        switchId: cells[y][x].switchId,
+        switchId: prevCell.switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
@@ -423,10 +455,14 @@ export class Grid {
         marginY,
       );
       stage.addChild(blockSprite);
-      if (cells[y][x].block !== Block.switchingBlockON) return;
+      assert(
+        prevCell.block === Block.switchingBlockOFF ||
+          prevCell.block === Block.switchingBlockON,
+        "block is not switchingBlock",
+      );
       cells[y][x] = {
         block: Block.switchingBlockOFF,
-        switchId: cells[y][x].switchId,
+        switchId: prevCell.switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
