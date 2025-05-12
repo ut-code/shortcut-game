@@ -231,8 +231,8 @@ export const stages = new Map<string, StageDefinition>([
         "bbbbbbbbbbbbbbbbbb",
         "..................",
         "..................",
-        "...............bbb",
-        "..............wbbb",
+        "........w......bbb",
+        "........w.....wbbb",
         ".....bm.w....w.bbb",
         ".....bbb...bbbbbbb",
         "...m.bbb...bbbbbbb",
@@ -259,6 +259,16 @@ export const stages = new Map<string, StageDefinition>([
         },
       ],
       switchGroups: [
+        {
+          x: 8,
+          y: 3,
+          switchId: "1",
+        },
+        {
+          x: 8,
+          y: 4,
+          switchId: "1",
+        },
         {
           x: 8,
           y: 5,
