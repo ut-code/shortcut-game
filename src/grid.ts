@@ -106,16 +106,24 @@ export class Grid {
             break;
           }
           case Block.switch: {
-            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            const switchId = (
+              get(cx.state).cells[y][x] as {
+                block: Block.switch;
+                switchId: string;
+              }
+            ).switchId;
+            const sprite = createSprite(
+              cellSize,
+              block,
+              x,
+              y,
+              this.marginY,
+              switchColor(switchId),
+            );
             stage.addChild(sprite);
             spriteRow.push({ sprite, block });
             get(cx.state).switches.push({
-              id: (
-                get(cx.state).cells[y][x] as {
-                  block: Block.switch;
-                  switchId: string;
-                }
-              ).switchId,
+              id: switchId,
               x,
               y,
               pressedByPlayer: false,
@@ -130,7 +138,20 @@ export class Grid {
             break;
           }
           case Block.switchingBlockOFF: {
-            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            const switchId = (
+              get(cx.state).cells[y][x] as {
+                block: Block.switch;
+                switchId: string;
+              }
+            ).switchId;
+            const sprite = createSprite(
+              cellSize,
+              block,
+              x,
+              y,
+              this.marginY,
+              switchColor(switchId),
+            );
             stage.addChild(sprite);
             spriteRow.push({ sprite, block });
             get(cx.state).switchingBlocks.push({
@@ -345,38 +366,50 @@ export class Grid {
 
     if (prev.block === Block.switch && cell.block === Block.switchPressed) {
       // switchが押されたとき
+      assert(
+        prevCell.block === Block.switch ||
+          prevCell.block === Block.switchPressed,
+        "block is not switch or switchPressed",
+      );
+      const switchId = prevCell.switchId;
+      if (!switchId) throw new Error("switchId is undefined");
       const blockSprite = createSprite(
         blockSize,
         Block.switchPressed,
         x,
         y,
         marginY,
+        switchColor(switchId),
       );
       stage.addChild(blockSprite);
-      assert(
-        prevCell.block === Block.switch ||
-          prevCell.block === Block.switchPressed,
-        "block is not switch or switchPressed",
-      );
       cells[y][x] = {
         block: Block.switchPressed,
-        switchId: prevCell.switchId,
+        switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
       prev.block = Block.switchPressed;
     } else if (prev.block === Block.switchPressed) {
       // switchが押されているとき
-      const blockSprite = createSprite(blockSize, Block.switch, x, y, marginY);
-      stage.addChild(blockSprite);
       assert(
         prevCell.block === Block.switchPressed ||
           prevCell.block === Block.switch,
         "block is not switch or switchPressed",
       );
+      const switchId = prevCell.switchId;
+      if (!switchId) throw new Error("switchId is undefined");
+      const blockSprite = createSprite(
+        blockSize,
+        Block.switch,
+        x,
+        y,
+        marginY,
+        switchColor(switchId),
+      );
+      stage.addChild(blockSprite);
       cells[y][x] = {
         block: Block.switch,
-        switchId: prevCell.switchId,
+        switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
@@ -435,16 +468,25 @@ export class Grid {
         console.log("prev.block", prev.block);
         return;
       }
-      const blockSprite = createSprite(blockSize, Block.switch, x, y, marginY);
-      stage.addChild(blockSprite);
       assert(
         prevCell.block === Block.switchWithObject ||
           prevCell.block === Block.switch,
         "block is not switchWithObject",
       );
+      const switchId = prevCell.switchId;
+      if (!switchId) throw new Error("switchId is undefined");
+      const blockSprite = createSprite(
+        blockSize,
+        Block.switch,
+        x,
+        y,
+        marginY,
+        switchColor(switchId),
+      );
+
       cells[y][x] = {
         block: Block.switch,
-        switchId: prevCell.switchId,
+        switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
@@ -464,22 +506,25 @@ export class Grid {
         );
         return;
       }
+      assert(
+        prevCell.block === Block.switchingBlockOFF ||
+          prevCell.block === Block.switchingBlockON,
+        "block is not switchingBlock",
+      );
+      const switchId = prevCell.switchId;
+      if (!switchId) throw new Error("switchId is undefined");
       const blockSprite = createSprite(
         blockSize,
         Block.switchingBlockON,
         x,
         y,
         marginY,
+        switchColor(switchId),
       );
       stage.addChild(blockSprite);
-      assert(
-        prevCell.block === Block.switchingBlockOFF ||
-          prevCell.block === Block.switchingBlockON,
-        "block is not switchingBlock",
-      );
       cells[y][x] = {
         block: Block.switchingBlockON,
-        switchId: prevCell.switchId,
+        switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
@@ -493,22 +538,25 @@ export class Grid {
         );
         return;
       }
+      assert(
+        prevCell.block === Block.switchingBlockOFF ||
+          prevCell.block === Block.switchingBlockON,
+        "block is not switchingBlock",
+      );
+      const switchId = prevCell.switchId;
+      if (!switchId) throw new Error("switchId is undefined");
       const blockSprite = createSprite(
         blockSize,
         Block.switchingBlockOFF,
         x,
         y,
         marginY,
+        switchColor(switchId),
       );
       stage.addChild(blockSprite);
-      assert(
-        prevCell.block === Block.switchingBlockOFF ||
-          prevCell.block === Block.switchingBlockON,
-        "block is not switchingBlock",
-      );
       cells[y][x] = {
         block: Block.switchingBlockOFF,
-        switchId: prevCell.switchId,
+        switchId,
         objectId: undefined,
       };
       prev.sprite = blockSprite;
@@ -674,6 +722,7 @@ function createSprite(
   x: number,
   y: number,
   marginY: number,
+  switchColor?: number, // default: #ffa500
 ) {
   switch (block) {
     case Block.block: {
@@ -690,6 +739,7 @@ function createSprite(
     }
     case Block.switch: {
       const switchSprite = new Sprite(switchTexture);
+      if (switchColor) switchSprite.tint = switchColor;
       updateSprite(switchSprite, blockSize, x, y, marginY);
       return switchSprite;
     }
@@ -706,20 +756,24 @@ function createSprite(
     }
     case Block.switchingBlockOFF: {
       const sprite = new Sprite(rockTexture);
-      sprite.tint = 0xffa500;
+      console.log("switchColor", switchColor);
+      if (switchColor) sprite.tint = switchColor;
+      else sprite.tint = 0xffa500;
       updateSprite(sprite, blockSize, x, y, marginY);
       return sprite;
     }
     case Block.switchingBlockON: {
       const sprite = new Sprite(rockTexture);
-      sprite.tint = 0xffa500;
+      if (switchColor) sprite.tint = switchColor;
+      else sprite.tint = 0xffa500;
       sprite.alpha = 0.3;
       updateSprite(sprite, blockSize, x, y, marginY);
       return sprite;
     }
     case Block.switchPressed: {
       const sprite = new Sprite(switchPressedTexture);
-      // sprite.tint = 0x00ff00;
+      if (switchColor) sprite.tint = switchColor;
+      else sprite.tint = 0xffa500;
       updateSprite(sprite, blockSize, x, y, marginY);
       return sprite;
     }
@@ -774,4 +828,11 @@ export function printCells(cells: GridCell[][], context?: string) {
        )
        .join("\n")}`,
   );
+}
+
+function switchColor(switchId: string): number | undefined {
+  // TODO: 暫定的
+  if (switchId === "1") return 0xffa500;
+  if (switchId === "2") return 0x00ff00;
+  return undefined;
 }
