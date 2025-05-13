@@ -365,7 +365,7 @@ export class Grid {
     const prevCell = cells[y][x];
 
     if (prev.block === Block.switch && cell.block === Block.switchPressed) {
-      // switchが押されたとき
+      // switchがプレイヤーに押されるとき
       assert(
         prevCell.block === Block.switch ||
           prevCell.block === Block.switchPressed,
@@ -390,7 +390,7 @@ export class Grid {
       prev.sprite = blockSprite;
       prev.block = Block.switchPressed;
     } else if (prev.block === Block.switchPressed) {
-      // switchが押されているとき
+      // switchがプレイヤーに押されているのが戻るとき
       assert(
         prevCell.block === Block.switchPressed ||
           prevCell.block === Block.switch,
@@ -483,7 +483,7 @@ export class Grid {
         marginY,
         switchColor(switchId),
       );
-
+      stage.addChild(blockSprite);
       cells[y][x] = {
         block: Block.switch,
         switchId,
@@ -722,7 +722,7 @@ function createSprite(
   x: number,
   y: number,
   marginY: number,
-  switchColor?: number, // default: #ffa500
+  switchColor?: number, // 例: #ffa500
 ) {
   switch (block) {
     case Block.block: {
@@ -756,7 +756,6 @@ function createSprite(
     }
     case Block.switchingBlockOFF: {
       const sprite = new Sprite(rockTexture);
-      console.log("switchColor", switchColor);
       if (switchColor) sprite.tint = switchColor;
       else sprite.tint = 0xffa500;
       updateSprite(sprite, blockSize, x, y, marginY);

@@ -100,7 +100,7 @@ export function redo(cx: Context) {
 
 // 状態を巻き戻す
 function restore(cx: Context, ss: StateSnapshot) {
-  cx.state.set(ss.game);
+  cx.state.set(structuredClone(ss.game));
   cx.dynamic.player.x = ss.playerX;
   cx.dynamic.player.y = ss.playerY;
   cx.dynamic.player.facing = ss.playerFacing;
