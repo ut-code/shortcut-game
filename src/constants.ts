@@ -10,6 +10,7 @@ export enum Block {
   air = "air",
   block = "block",
   movable = "movable",
+  fallable = "fallable",
   switch = "switch",
   switchBase = "switch-base",
   switchWithObject = "switch-with-object",

@@ -405,4 +405,23 @@ export const stages = new Map<string, StageDefinition>([
       ],
     },
   ],
+  [
+    "3-2",
+    {
+      stage: [
+        "bbbbbbbbbbbbbbbbbb",
+        "..................",
+        "..................",
+        ".............bbbbb",
+        ".........f...bbbbb",
+        ".........f...bbbbb",
+        ".........f...bbbbb",
+        "bbbbbbbbbbbbbbbbbb",
+      ],
+      initialPlayerX: 1,
+      initialPlayerY: 7,
+      blockGroups: [],
+      switchGroups: [],
+    },
+  ],
 ]);

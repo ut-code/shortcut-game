@@ -9,6 +9,7 @@ import type {
   MovableObject,
 } from "./public-types.ts";
 import {
+  fallableTexture,
   rockTexture,
   switchBaseTexture,
   switchPressedTexture,
@@ -29,6 +30,11 @@ export type GridCell =
   | {
       block: Block.movable;
       objectId: string;
+    }
+  | {
+      block: Block.fallable;
+      objectId: string;
+      dy: number; // in pixels
     }
   | {
       block: Block.air;
@@ -94,6 +100,12 @@ export class Grid {
             spriteRow.push({ sprite: null, block });
             break;
           case Block.movable: {
+            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            stage.addChild(sprite);
+            spriteRow.push({ sprite, block });
+            break;
+          }
+          case Block.fallable: {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
             stage.addChild(sprite);
             spriteRow.push({ sprite, block });
@@ -289,7 +301,11 @@ export class Grid {
     const cells = get(cx.state).cells;
     const cell = cells[y]?.[x];
     if (!cell) return undefined;
-    if (cell.block !== Block.movable && cell.block !== Block.switchWithObject)
+    if (
+      cell.block !== Block.movable &&
+      cell.block !== Block.switchWithObject &&
+      cell.block !== Block.fallable
+    )
       return undefined;
     const objectId = cell.objectId;
     const retrievedBlocks: { x: number; y: number }[] = [];
@@ -308,7 +324,7 @@ export class Grid {
       .reduce((a, b) => Math.max(a, b), 0);
 
     const retrievedObject: MovableObject = {
-      block: Block.movable,
+      block: cell.block === Block.fallable ? Block.fallable : Block.movable,
       objectId,
       relativePositions: retrievedBlocks.map((block) => ({
         x: block.x - minX,
@@ -357,6 +373,7 @@ export class Grid {
     if (
       cell.block !== Block.movable &&
       cell.block !== Block.switchWithObject &&
+      cell.block !== Block.fallable &&
       cell.objectId
     ) {
       console.warn("Cell is not movable but has an objectId");
@@ -419,7 +436,8 @@ export class Grid {
     else if (prev.block === Block.switch) {
       if (
         cell.block !== Block.movable &&
-        cell.block !== Block.switchWithObject
+        cell.block !== Block.switchWithObject &&
+        cell.block !== Block.fallable
       ) {
         console.warn(
           "No block other than movable cannot be placed on the switch",
@@ -441,6 +459,9 @@ export class Grid {
           prevCell.block === Block.switchWithObject,
         "block is not switch",
       );
+      if (cell.block === Block.fallable) {
+        console.warn("TODO: switchWithFallable is not implemented");
+      }
       cells[y][x] = {
         block: Block.switchWithObject,
         switchId: prevCell.switchId,
@@ -609,6 +630,28 @@ export class Grid {
           prev.block = cell.block;
           break;
         }
+        case Block.fallable: {
+          const movableSprite = createSprite(
+            blockSize,
+            cell.block,
+            x,
+            y,
+            marginY,
+          );
+          stage.addChild(movableSprite);
+          assert(
+            cell.objectId !== undefined,
+            "movable block must have objectId",
+          );
+          cells[y][x] = {
+            block: cell.block,
+            objectId: cell.objectId,
+            dy: 0,
+          };
+          prev.sprite = movableSprite;
+          prev.block = cell.block;
+          break;
+        }
         default:
         // cell satisfies never;
       }
@@ -642,6 +685,19 @@ export function createCellsFromStageDefinition(
           };
           row.push(cell);
 
+          break;
+        }
+        case Block.fallable: {
+          const group = stageDefinition.blockGroups.find(
+            (b) => b.x === x && b.y === y,
+          );
+          const objectId = group ? group.objectId : Math.random().toString();
+          const cell: GridCell = {
+            block,
+            objectId,
+            dy: 0,
+          };
+          row.push(cell);
           break;
         }
         case Block.block:
@@ -706,6 +762,8 @@ export function blockFromDefinition(n: string) {
       return Block.block;
     case "m":
       return Block.movable;
+    case "f":
+      return Block.fallable;
     case "s":
       return Block.switch;
     case "S":
@@ -734,6 +792,12 @@ function createSprite(
     case Block.movable: {
       const movableSprite = new Sprite(rockTexture);
       movableSprite.tint = 0xff0000;
+      updateSprite(movableSprite, blockSize, x, y, marginY);
+      return movableSprite;
+    }
+    case Block.fallable: {
+      const movableSprite = new Sprite(fallableTexture);
+      // movableSprite.tint = 0xff0000;
       updateSprite(movableSprite, blockSize, x, y, marginY);
       return movableSprite;
     }
@@ -806,6 +870,8 @@ export function printCells(cells: GridCell[][], context?: string) {
                case Block.block:
                  return "b";
                case Block.movable:
+                 return "m";
+               case Block.fallable:
                  return "m";
                case Block.switch:
                  return "s";
