@@ -1,7 +1,7 @@
 export type StageDefinition = {
   stage: string[];
-  initialPlayerX: number;
-  initialPlayerY: number;
+  initialPlayerX: number; // 左端から0-indexed
+  initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ
   blockGroups: {
     // 複数ブロックからなるオブジェクトについては明示的に指定
     x: number;
@@ -98,7 +98,7 @@ export const stages = new Map<string, StageDefinition>([
         "bb..bbbbbbbbbbb....bbb",
       ],
       initialPlayerX: 5,
-      initialPlayerY: 6,
+      initialPlayerY: 7,
       blockGroups: [
         {
           x: 11,
@@ -240,7 +240,7 @@ export const stages = new Map<string, StageDefinition>([
         "bbbbbbbbSbbbbbbbbb",
       ],
       initialPlayerX: 1,
-      initialPlayerY: 7,
+      initialPlayerY: 9,
       blockGroups: [
         {
           x: 3,
@@ -308,7 +308,7 @@ export const stages = new Map<string, StageDefinition>([
         "bbbbSbbbbbbbbbbbbbSbbbb",
       ],
       initialPlayerX: 1,
-      initialPlayerY: 7,
+      initialPlayerY: 9,
       blockGroups: [
         {
           x: 0,
