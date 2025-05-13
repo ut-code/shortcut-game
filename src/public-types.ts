@@ -12,6 +12,20 @@ export type GameState = {
   usage: AbilityUsage;
   cells: GridCell[][];
   paused: boolean;
+
+  // about the gimmick
+  switches: {
+    id: string;
+    x: number;
+    y: number;
+    pressedByPlayer: boolean;
+    pressedByBlock: boolean;
+  }[];
+  switchingBlocks: {
+    id: string;
+    x: number;
+    y: number;
+  }[];
 };
 
 // config - things that won't update very often

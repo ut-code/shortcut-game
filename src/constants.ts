@@ -10,6 +10,12 @@ export enum Block {
   air = "air",
   block = "block",
   movable = "movable",
+  switch = "switch",
+  switchBase = "switch-base",
+  switchWithObject = "switch-with-object",
+  switchingBlockOFF = "switching-block-off",
+  switchingBlockON = "switching-block-on",
+  switchPressed = "switch-pressed",
 }
 export enum Facing {
   left = "left",

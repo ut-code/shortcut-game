@@ -159,7 +159,14 @@ export function tick(cx: Context, ticker: Ticker) {
 
   const isBlock = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.air &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
+      Block.switchPressed &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
+      Block.switchingBlockON &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
+  const isSwitchBase = (x: number, y: number) =>
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.switchBase;
   const isOutOfWorldLeft = (x: number) => x < 0;
   const isOutOfWorldRight = (x: number) => x >= gridX;
   const isOutOfWorldBottom = (y: number) => y >= gridY + marginY / blockSize;
@@ -228,6 +235,77 @@ export function tick(cx: Context, ticker: Ticker) {
     player.y = 3 * blockSize + marginY;
     player.vx = 0;
     player.vy = 0;
+  }
+
+  if (isSwitchBase(nextX, nextBottomY)) {
+    const switchBlock = get(cx.state).cells[Math.floor(nextBottomY - 1)][
+      Math.floor(nextX)
+    ];
+    if (switchBlock.block === Block.switch) {
+      cx.state.update((prev) => {
+        prev.switches = prev.switches.map((s) => {
+          if (
+            s.x === Math.floor(nextX) &&
+            s.y === Math.floor(nextBottomY - 1)
+          ) {
+            return {
+              ...s,
+              pressedByPlayer: true,
+            };
+          }
+          return s;
+        });
+        return prev;
+      });
+    }
+  } else {
+    cx.state.update((prev) => {
+      prev.switches = prev.switches.map((s) => {
+        return {
+          ...s,
+          pressedByPlayer: false,
+        };
+      });
+      return prev;
+    });
+  }
+
+  for (const sw of get(cx.state).switches) {
+    if (
+      sw.pressedByPlayer &&
+      cx.grid.getBlock(cx, sw.x, sw.y) === Block.switch
+    ) {
+      cx.grid.setBlock(cx, sw.x, sw.y, { block: Block.switchPressed });
+    }
+    if (
+      !sw.pressedByPlayer &&
+      cx.grid.getBlock(cx, sw.x, sw.y) === Block.switchPressed
+    ) {
+      cx.grid.setBlock(cx, sw.x, sw.y, { block: Block.switch });
+    }
+  }
+
+  // スイッチの状態を反映
+  const switches = get(cx.state).switches;
+  for (const s of switches) {
+    const switchingBlock = get(cx.state).switchingBlocks.filter(
+      (sb) => sb.id === s.id,
+    );
+    // スイッチが押されているとき
+    if (s.pressedByPlayer || s.pressedByBlock) {
+      for (const sb of switchingBlock) {
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockOFF) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockON });
+        }
+      }
+    } else {
+      // スイッチが押されていないとき
+      for (const sb of switchingBlock) {
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockON) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockOFF });
+        }
+      }
+    }
   }
 
   // 当たり判定結果を反映する

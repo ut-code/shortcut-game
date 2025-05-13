@@ -35,7 +35,7 @@ export function record(cx: Context) {
   });
 }
 
-export function undo(cx: Context): { x: number; y: number } | undefined {
+export function undo(cx: Context) {
   const history = get(cx.history);
 
   // 最新に戻るため、記録しておく
@@ -69,7 +69,7 @@ export function undo(cx: Context): { x: number; y: number } | undefined {
   };
 }
 
-export function redo(cx: Context): { x: number; y: number } | undefined {
+export function redo(cx: Context) {
   const history = get(cx.history);
 
   // 0. 一般
@@ -84,29 +84,23 @@ export function redo(cx: Context): { x: number; y: number } | undefined {
     const stash = popStash(cx);
     if (!stash) {
       // case 2. すでに最新に戻ったことがある
-      return undefined;
+      return;
     }
     // case 1. 最新に戻る
     restore(cx, stash);
-    return {
-      x: stash.playerX,
-      y: stash.playerY,
-    };
+    return;
   }
   history.index += 2;
 
   restore(cx, snapshot);
   cx.history.set(history);
 
-  return {
-    x: snapshot.playerX,
-    y: snapshot.playerY,
-  };
+  return;
 }
 
 // 状態を巻き戻す
 function restore(cx: Context, ss: StateSnapshot) {
-  cx.state.set(ss.game);
+  cx.state.set(structuredClone(ss.game));
   cx.dynamic.player.x = ss.playerX;
   cx.dynamic.player.y = ss.playerY;
   cx.dynamic.player.facing = ss.playerFacing;
