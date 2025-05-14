@@ -184,7 +184,6 @@ export function placeMovableObject(
     grid.setBlock(cx, positionX, positionY, {
       block: object.block,
       objectId: object.objectId,
-      dy: 0,
     });
   }
 }

@@ -1,6 +1,7 @@
-import { type Container, Sprite } from "pixi.js";
+import { type Container, Sprite, type Ticker } from "pixi.js";
 import { type Writable, get } from "svelte/store";
 import { Block } from "./constants.ts";
+import * as consts from "./constants.ts";
 import { assert } from "./lib.ts";
 import type {
   Context,
@@ -21,6 +22,8 @@ import type { StageDefinition } from "./stages.ts";
 type VirtualSpriteCell = {
   sprite: Sprite | null;
   block: Block;
+  dy?: number; // in pixels
+  dvy?: number;
 };
 export type GridCell =
   | {
@@ -34,7 +37,6 @@ export type GridCell =
   | {
       block: Block.fallable;
       objectId: string;
-      dy: number; // in pixels
     }
   | {
       block: Block.air;
@@ -646,7 +648,6 @@ export class Grid {
           cells[y][x] = {
             block: cell.block,
             objectId: cell.objectId,
-            dy: 0,
           };
           prev.sprite = movableSprite;
           prev.block = cell.block;
@@ -660,6 +661,48 @@ export class Grid {
       ...prev,
       cells: cells,
     }));
+  }
+  tick(cx: Context, ticker: Ticker) {
+    const { blockSize, gridX, gridY, marginY } = get(cx.config);
+    const cells = get(cx.state).cells;
+    for (let y = gridY - 1; y >= 0; y--) {
+      for (let x = 0; x < gridX; x++) {
+        let cellY = y;
+        const vsom = this.vsom[cellY][x];
+        const cell = cells[cellY][x];
+        if (cell.block === Block.fallable) {
+          vsom.dy = (vsom.dy ?? 0) + (vsom.dvy ?? 0) * ticker.deltaTime;
+          vsom.dvy =
+            (vsom.dvy ?? 0) + consts.gravity * blockSize * ticker.deltaTime;
+          while (vsom.dy > 0 && cellY <= gridY - 2) {
+            // 下のブロックと接触判定を行う
+            const vsomBelow = this.vsom[cellY + 1][x];
+            const cellBelow = cells[cellY + 1][x];
+            if (cellBelow.block === Block.air) {
+              assert(vsomBelow.sprite === null, "air sprite is not null");
+              // fallableを1ブロック下に動かしdyを1blockSize分上げる
+              vsom.dy -= blockSize;
+              this.vsom[cellY + 1][x] = vsom;
+              this.vsom[cellY][x] = vsomBelow;
+              cells[cellY + 1][x] = cell;
+              cells[cellY][x] = cellBelow;
+              cellY += 1;
+              cx.state.update((prev) => ({
+                ...prev,
+                cells: cells,
+              }));
+            } else {
+              // 衝突したので止める
+              vsom.dy = 0;
+              vsom.dvy = 0;
+              break;
+            }
+          }
+          assert(!!vsom.sprite, "falling sprite is null");
+          vsom.sprite.y = cellY * blockSize + marginY + vsom.dy;
+        }
+      }
+    }
   }
 }
 
@@ -695,7 +738,6 @@ export function createCellsFromStageDefinition(
           const cell: GridCell = {
             block,
             objectId,
-            dy: 0,
           };
           row.push(cell);
           break;
