@@ -164,6 +164,7 @@ export function tick(cx: Context, ticker: Ticker) {
       Block.switchPressed &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
       Block.switchingBlockON &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.goal &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isSwitchBase = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.switchBase;

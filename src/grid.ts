@@ -9,6 +9,7 @@ import type {
   MovableObject,
 } from "./public-types.ts";
 import {
+  goalTexture,
   rockTexture,
   switchBaseTexture,
   switchPressedTexture,
@@ -61,6 +62,10 @@ export type GridCell =
   | {
       block: Block.switchPressed;
       switchId?: string;
+      objectId?: unknown;
+    }
+  | {
+      block: Block.goal;
       objectId?: unknown;
     };
 
@@ -164,6 +169,12 @@ export class Grid {
               x,
               y,
             });
+            break;
+          }
+          case Block.goal: {
+            const sprite = createSprite(cellSize, block, x, y, this.marginY);
+            stage.addChild(sprite);
+            spriteRow.push({ sprite, block });
             break;
           }
           default:
@@ -689,6 +700,13 @@ export function createCellsFromStageDefinition(
           row.push(cell);
           break;
         }
+        case Block.goal: {
+          const cell: GridCell = {
+            block,
+          };
+          row.push(cell);
+          break;
+        }
         default:
           block satisfies never;
       }
@@ -712,6 +730,8 @@ export function blockFromDefinition(n: string) {
       return Block.switchBase;
     case "w":
       return Block.switchingBlockOFF;
+    case "g":
+      return Block.goal;
     default:
       throw new Error("no proper block");
   }
@@ -776,7 +796,13 @@ function createSprite(
       updateSprite(sprite, blockSize, x, y, marginY);
       return sprite;
     }
+    case Block.goal: {
+      const sprite = new Sprite(goalTexture);
+      updateSprite(sprite, blockSize, x, y, marginY);
+      return sprite;
+    }
     default:
+      block satisfies Block.air;
       throw new Error("no proper block");
   }
 }
@@ -819,6 +845,8 @@ export function printCells(cells: GridCell[][], context?: string) {
                  return "w";
                case Block.switchPressed:
                  return "s";
+               case Block.goal:
+                 return "g";
                default:
                  cell satisfies never;
              }
