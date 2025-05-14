@@ -63,6 +63,7 @@ export type Context = {
   // no need to serialize.
   dynamic: {
     focus: Coords | null; // current focus coordinates
+    highlight: Sprite;
     player: {
       holdingKeys: { [key in Inputs]?: boolean };
       coords: () => { x: number; y: number };

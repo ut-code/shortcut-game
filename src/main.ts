@@ -1,4 +1,4 @@
-import { Application, Container, type Ticker } from "pixi.js";
+import { Application, Container, Sprite, type Ticker } from "pixi.js";
 import { derived, get, writable } from "svelte/store";
 import { Facing } from "./constants.ts";
 import { Grid, createCellsFromStageDefinition } from "./grid.ts";
@@ -31,19 +31,6 @@ export async function setup(
       f(ticker);
     }
   };
-
-  function tick() {
-    // highlight is re-rendered every tick
-    const highlight = Player.createHighlight(cx);
-    if (highlight) {
-      stage.addChild(highlight);
-    }
-    return () => {
-      if (highlight) {
-        stage.removeChild(highlight);
-      }
-    };
-  }
 
   // Create a new application
   const app = new Application();
@@ -104,11 +91,14 @@ export async function setup(
   const uiContext = derived([state, history], ([$state, $history]) => {
     return useUI($state, $history);
   });
+  const highlight = new Sprite();
+  stage.addChild(highlight);
   const cx: Context = {
     _stage_container: stage,
     grid,
     dynamic: {
       focus: null,
+      highlight,
       player: {
         // HACK: these values are immediately overwritten inside Player.init().
         sprite: null,
@@ -141,13 +131,7 @@ export async function setup(
   cx.dynamic.player = Player.init(cx, bunnyTexture);
   app.ticker.add(unlessPaused((ticker) => Player.tick(cx, ticker)));
 
-  let cleanup: undefined | (() => void) = undefined;
-  app.ticker.add(
-    unlessPaused(() => {
-      if (cleanup) cleanup();
-      cleanup = tick();
-    }),
-  );
+  app.ticker.add(unlessPaused(() => Player.highlightTick(cx)));
 
   // Append the application canvas to the document body
   el.appendChild(app.canvas);

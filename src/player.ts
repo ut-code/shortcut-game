@@ -70,20 +70,24 @@ export function getCoords(cx: Context) {
   const y = Math.round((coords.y - marginY) / blockSize) - 1; // it was not working well so take my patch
   return { x, y };
 }
-export function createHighlight(cx: Context) {
+export function highlightTick(cx: Context) {
   const state = get(cx.state);
   const player = cx.dynamic.player;
+  const highlight = cx.dynamic.highlight;
   const { blockSize, marginY } = get(cx.config);
-  if (!player.holdingKeys[Inputs.Ctrl] || !player.onGround) return;
-  const texture =
+  if (!player.holdingKeys[Inputs.Ctrl] || !player.onGround) {
+    // no highlight
+    highlight.scale = 0;
+    return;
+  }
+  highlight.texture =
     state.inventory === null ? highlightTexture : highlightHoldTexture;
-  const highlight: Sprite = new Sprite(texture);
+  highlight.scale = 1;
   highlight.width = blockSize;
   highlight.height = blockSize;
   const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
   highlight.x = highlightCoords.x * blockSize;
   highlight.y = highlightCoords.y * blockSize + marginY;
-  return highlight;
 }
 
 export function handleInput(
