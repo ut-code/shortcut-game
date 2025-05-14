@@ -22,8 +22,8 @@ import type { StageDefinition } from "./stages.ts";
 type VirtualSpriteCell = {
   sprite: Sprite | null;
   block: Block;
-  dy?: number; // in pixels
-  dvy?: number;
+  dy: number; // fallableで用いる 本来のマスからの表示位置のずれ in pixels, dy < 0
+  dvy: number;
 };
 export type GridCell =
   | {
@@ -99,24 +99,24 @@ export class Grid {
         const block = blockFromDefinition(cellDef);
         switch (block) {
           case Block.air:
-            spriteRow.push({ sprite: null, block });
+            spriteRow.push({ sprite: null, block, dy: 0, dvy: 0 });
             break;
           case Block.movable: {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
             stage.addChild(sprite);
-            spriteRow.push({ sprite, block });
+            spriteRow.push({ sprite, block, dy: 0, dvy: 0 });
             break;
           }
           case Block.fallable: {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
             stage.addChild(sprite);
-            spriteRow.push({ sprite, block });
+            spriteRow.push({ sprite, block, dy: 0, dvy: 0 });
             break;
           }
           case Block.block: {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
             stage.addChild(sprite);
-            spriteRow.push({ sprite, block });
+            spriteRow.push({ sprite, block, dy: 0, dvy: 0 });
             break;
           }
           case Block.switch: {
@@ -135,7 +135,7 @@ export class Grid {
               switchColor(switchId),
             );
             stage.addChild(sprite);
-            spriteRow.push({ sprite, block });
+            spriteRow.push({ sprite, block, dy: 0, dvy: 0 });
             get(cx.state).switches.push({
               id: switchId,
               x,
@@ -148,7 +148,7 @@ export class Grid {
           case Block.switchBase: {
             const sprite = createSprite(cellSize, block, x, y, this.marginY);
             stage.addChild(sprite);
-            spriteRow.push({ sprite, block });
+            spriteRow.push({ sprite, block, dy: 0, dvy: 0 });
             break;
           }
           case Block.switchingBlockOFF: {
@@ -167,7 +167,7 @@ export class Grid {
               switchColor(switchId),
             );
             stage.addChild(sprite);
-            spriteRow.push({ sprite, block });
+            spriteRow.push({ sprite, block, dy: 0, dvy: 0 });
             get(cx.state).switchingBlocks.push({
               id: (
                 get(cx.state).cells[y][x] as {
@@ -284,7 +284,7 @@ export class Grid {
       for (let x = 0; x < row.length; x++) {
         const cell = row[x];
         if (cell.sprite) {
-          updateSprite(cell.sprite, cellSize, x, y, this.marginY);
+          updateSprite(cell.sprite, cellSize, x, y, this.marginY, cell.dy);
         }
       }
     }
@@ -408,6 +408,8 @@ export class Grid {
       };
       prev.sprite = blockSprite;
       prev.block = Block.switchPressed;
+      prev.dy = 0;
+      prev.dvy = 0;
     } else if (prev.block === Block.switchPressed) {
       // switchがプレイヤーに押されているのが戻るとき
       assert(
@@ -433,6 +435,8 @@ export class Grid {
       };
       prev.sprite = blockSprite;
       prev.block = Block.switch;
+      prev.dy = 0;
+      prev.dvy = 0;
     }
     // switch上にオブジェクトを置くとき
     else if (prev.block === Block.switch) {
@@ -471,6 +475,8 @@ export class Grid {
       };
       prev.sprite = movableSprite;
       prev.block = Block.switchWithObject;
+      prev.dy = 0;
+      prev.dvy = 0;
       get(cx.state).switches.filter((s) => {
         if (s.x === x && s.y === y) {
           s.pressedByBlock = true;
@@ -514,6 +520,8 @@ export class Grid {
       };
       prev.sprite = blockSprite;
       prev.block = Block.switch;
+      prev.dy = 0;
+      prev.dvy = 0;
       get(cx.state).switches.filter((s) => {
         if (s.x === x && s.y === y) {
           s.pressedByBlock = false;
@@ -552,6 +560,8 @@ export class Grid {
       };
       prev.sprite = blockSprite;
       prev.block = Block.switchingBlockON;
+      prev.dy = 0;
+      prev.dvy = 0;
     }
     // switchingBlockONがOFFに切り替わるとき
     else if (prev.block === Block.switchingBlockON) {
@@ -584,6 +594,8 @@ export class Grid {
       };
       prev.sprite = blockSprite;
       prev.block = Block.switchingBlockOFF;
+      prev.dy = 0;
+      prev.dvy = 0;
     } else {
       switch (cell.block) {
         case Block.air:
@@ -609,6 +621,8 @@ export class Grid {
           };
           prev.sprite = blockSprite;
           prev.block = cell.block;
+          prev.dy = 0;
+          prev.dvy = 0;
           break;
         }
         case Block.movable: {
@@ -630,6 +644,8 @@ export class Grid {
           };
           prev.sprite = movableSprite;
           prev.block = cell.block;
+          prev.dy = 0;
+          prev.dvy = 0;
           break;
         }
         case Block.fallable: {
@@ -651,6 +667,8 @@ export class Grid {
           };
           prev.sprite = movableSprite;
           prev.block = cell.block;
+          prev.dy = 0;
+          prev.dvy = 0;
           break;
         }
         default:
@@ -828,43 +846,43 @@ function createSprite(
     case Block.block: {
       const sprite = new Sprite(rockTexture);
       sprite.tint = 0xffffff;
-      updateSprite(sprite, blockSize, x, y, marginY);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
     case Block.movable: {
       const movableSprite = new Sprite(rockTexture);
       movableSprite.tint = 0xff0000;
-      updateSprite(movableSprite, blockSize, x, y, marginY);
+      updateSprite(movableSprite, blockSize, x, y, marginY, 0);
       return movableSprite;
     }
     case Block.fallable: {
       const movableSprite = new Sprite(fallableTexture);
       // movableSprite.tint = 0xff0000;
-      updateSprite(movableSprite, blockSize, x, y, marginY);
+      updateSprite(movableSprite, blockSize, x, y, marginY, 0);
       return movableSprite;
     }
     case Block.switch: {
       const switchSprite = new Sprite(switchTexture);
       if (switchColor) switchSprite.tint = switchColor;
-      updateSprite(switchSprite, blockSize, x, y, marginY);
+      updateSprite(switchSprite, blockSize, x, y, marginY, 0);
       return switchSprite;
     }
     case Block.switchBase: {
       const switchBaseSprite = new Sprite(switchBaseTexture);
-      updateSprite(switchBaseSprite, blockSize, x, y, marginY);
+      updateSprite(switchBaseSprite, blockSize, x, y, marginY, 0);
       return switchBaseSprite;
     }
     case Block.switchWithObject: {
       const movableSprite = new Sprite(rockTexture);
       movableSprite.tint = 0xff0000;
-      updateSprite(movableSprite, blockSize, x, y, marginY);
+      updateSprite(movableSprite, blockSize, x, y, marginY, 0);
       return movableSprite;
     }
     case Block.switchingBlockOFF: {
       const sprite = new Sprite(rockTexture);
       if (switchColor) sprite.tint = switchColor;
       else sprite.tint = 0xffa500;
-      updateSprite(sprite, blockSize, x, y, marginY);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
     case Block.switchingBlockON: {
@@ -872,14 +890,14 @@ function createSprite(
       if (switchColor) sprite.tint = switchColor;
       else sprite.tint = 0xffa500;
       sprite.alpha = 0.3;
-      updateSprite(sprite, blockSize, x, y, marginY);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
     case Block.switchPressed: {
       const sprite = new Sprite(switchPressedTexture);
       if (switchColor) sprite.tint = switchColor;
       else sprite.tint = 0xffa500;
-      updateSprite(sprite, blockSize, x, y, marginY);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
     default:
@@ -892,11 +910,12 @@ function updateSprite(
   x: number,
   y: number,
   marginY: number,
+  dy: number,
 ) {
   sprite.width = blockSize;
   sprite.height = blockSize;
   sprite.x = x * blockSize;
-  sprite.y = y * blockSize + marginY;
+  sprite.y = y * blockSize + marginY + dy;
 }
 
 export function printCells(cells: GridCell[][], context?: string) {
