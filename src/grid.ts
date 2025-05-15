@@ -33,10 +33,12 @@ export type GridCell =
   | {
       block: Block.movable;
       objectId: string;
+      switchId: string | undefined;
     }
   | {
       block: Block.fallable;
       objectId: string;
+      switchId: string | undefined; // switchの上に置かれている場合
     }
   | {
       block: Block.air;
@@ -50,11 +52,6 @@ export type GridCell =
   | {
       block: Block.switchBase;
       objectId?: unknown;
-    }
-  | {
-      block: Block.switchWithObject;
-      switchId?: string;
-      objectId: string; // Block.movableのID
     }
   | {
       block: Block.switchingBlockOFF;
@@ -303,11 +300,7 @@ export class Grid {
     const cells = get(cx.state).cells;
     const cell = cells[y]?.[x];
     if (!cell) return undefined;
-    if (
-      cell.block !== Block.movable &&
-      cell.block !== Block.switchWithObject &&
-      cell.block !== Block.fallable
-    )
+    if (cell.block !== Block.movable && cell.block !== Block.fallable)
       return undefined;
     const objectId = cell.objectId;
     const retrievedBlocks: { x: number; y: number }[] = [];
@@ -326,7 +319,7 @@ export class Grid {
       .reduce((a, b) => Math.max(a, b), 0);
 
     const retrievedObject: MovableObject = {
-      block: cell.block === Block.fallable ? Block.fallable : Block.movable,
+      block: cell.block,
       objectId,
       relativePositions: retrievedBlocks.map((block) => ({
         x: block.x - minX,
@@ -374,7 +367,6 @@ export class Grid {
 
     if (
       cell.block !== Block.movable &&
-      cell.block !== Block.switchWithObject &&
       cell.block !== Block.fallable &&
       cell.objectId
     ) {
@@ -440,41 +432,24 @@ export class Grid {
     }
     // switch上にオブジェクトを置くとき
     else if (prev.block === Block.switch) {
-      if (
-        cell.block !== Block.movable &&
-        cell.block !== Block.switchWithObject &&
-        cell.block !== Block.fallable
-      ) {
+      if (cell.block !== Block.movable && cell.block !== Block.fallable) {
         console.warn(
           "No block other than movable cannot be placed on the switch",
         );
         console.log("cell.block", cell.block);
         return;
       }
-      const movableSprite = createSprite(
-        blockSize,
-        Block.switchWithObject,
-        x,
-        y,
-        marginY,
-      );
+      const movableSprite = createSprite(blockSize, cell.block, x, y, marginY);
       stage.addChild(movableSprite);
       assert(cell.objectId !== undefined, "movable block must have objectId");
-      assert(
-        prevCell.block === Block.switch ||
-          prevCell.block === Block.switchWithObject,
-        "block is not switch",
-      );
-      if (cell.block === Block.fallable) {
-        console.warn("TODO: switchWithFallable is not implemented");
-      }
+      assert(prevCell.block === Block.switch, "block is not switch");
       cells[y][x] = {
-        block: Block.switchWithObject,
+        block: cell.block,
         switchId: prevCell.switchId,
         objectId: cell.objectId,
       };
       prev.sprite = movableSprite;
-      prev.block = Block.switchWithObject;
+      prev.block = cell.block;
       prev.dy = 0;
       prev.dvy = 0;
       get(cx.state).switches.filter((s) => {
@@ -485,21 +460,20 @@ export class Grid {
       });
     }
     // switch上に置いてあるオブジェクトを消すとき
-    else if (prev.block === Block.switchWithObject) {
-      if (
-        cell.block !== Block.switch &&
-        cell.block !== Block.switchWithObject
-      ) {
+    else if (
+      (prevCell.block === Block.movable || prevCell.block === Block.fallable) &&
+      prevCell.switchId !== undefined
+    ) {
+      if (cell.block !== Block.switch) {
         console.warn(
-          "No block other than switch cannot replace the switch with object",
+          "No block other than switch can replace the switch with object",
         );
         console.log("cell.block", cell.block);
         console.log("prev.block", prev.block);
         return;
       }
       assert(
-        prevCell.block === Block.switchWithObject ||
-          prevCell.block === Block.switch,
+        prev.block === Block.movable || prev.block === Block.fallable,
         "block is not switchWithObject",
       );
       const switchId = prevCell.switchId;
@@ -641,6 +615,7 @@ export class Grid {
           cells[y][x] = {
             block: cell.block,
             objectId: cell.objectId,
+            switchId: undefined,
           };
           prev.sprite = movableSprite;
           prev.block = cell.block;
@@ -664,6 +639,7 @@ export class Grid {
           cells[y][x] = {
             block: cell.block,
             objectId: cell.objectId,
+            switchId: undefined,
           };
           prev.sprite = movableSprite;
           prev.block = cell.block;
@@ -743,6 +719,7 @@ export function createCellsFromStageDefinition(
           const cell: GridCell = {
             block,
             objectId,
+            switchId: undefined,
           };
           row.push(cell);
 
@@ -756,6 +733,7 @@ export function createCellsFromStageDefinition(
           const cell: GridCell = {
             block,
             objectId,
+            switchId: undefined,
           };
           row.push(cell);
           break;
@@ -872,12 +850,6 @@ function createSprite(
       updateSprite(switchBaseSprite, blockSize, x, y, marginY, 0);
       return switchBaseSprite;
     }
-    case Block.switchWithObject: {
-      const movableSprite = new Sprite(rockTexture);
-      movableSprite.tint = 0xff0000;
-      updateSprite(movableSprite, blockSize, x, y, marginY, 0);
-      return movableSprite;
-    }
     case Block.switchingBlockOFF: {
       const sprite = new Sprite(rockTexture);
       if (switchColor) sprite.tint = switchColor;
@@ -931,15 +903,13 @@ export function printCells(cells: GridCell[][], context?: string) {
                case Block.block:
                  return "b";
                case Block.movable:
-                 return "m";
+                 return cell.switchId !== undefined ? "M" : "m";
                case Block.fallable:
-                 return "m";
+                 return cell.switchId !== undefined ? "F" : "f";
                case Block.switch:
                  return "s";
                case Block.switchBase:
                  return "S";
-               case Block.switchWithObject:
-                 return "M";
                case Block.switchingBlockOFF:
                  return "w";
                case Block.switchingBlockON:

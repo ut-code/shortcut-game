@@ -424,4 +424,37 @@ export const stages = new Map<string, StageDefinition>([
       switchGroups: [],
     },
   ],
+  [
+    "3-1", // fallable+スイッチのテスト用 あとでけす
+    {
+      stage: [
+        "bbbbbbbbbbbbbbbbbb",
+        ".........b........",
+        ".........b........",
+        ".........w........",
+        ".s....f..w........",
+        "bSbbbbbbbbbbbbbbbb",
+      ],
+      initialPlayerX: 3,
+      initialPlayerY: 5,
+      blockGroups: [],
+      switchGroups: [
+        {
+          x: 1,
+          y: 4,
+          switchId: "1",
+        },
+        {
+          x: 9,
+          y: 3,
+          switchId: "1",
+        },
+        {
+          x: 9,
+          y: 4,
+          switchId: "1",
+        },
+      ],
+    },
+  ],
 ]);
