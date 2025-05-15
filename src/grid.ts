@@ -442,7 +442,13 @@ export class Grid {
       const movableSprite = createSprite(blockSize, cell.block, x, y, marginY);
       stage.addChild(movableSprite);
       assert(cell.objectId !== undefined, "movable block must have objectId");
-      assert(prevCell.block === Block.switch, "block is not switch");
+      assert(
+        (prevCell.block === Block.switch ||
+          prevCell.block === Block.movable ||
+          prevCell.block === Block.fallable) &&
+          prevCell.switchId !== undefined,
+        "block is not switch",
+      );
       cells[y][x] = {
         block: cell.block,
         switchId: prevCell.switchId,
@@ -461,7 +467,10 @@ export class Grid {
     }
     // switch上に置いてあるオブジェクトを消すとき
     else if (
-      (prevCell.block === Block.movable || prevCell.block === Block.fallable) &&
+      (prev.block === Block.movable || prev.block === Block.fallable) &&
+      (prevCell.block === Block.switch ||
+        prevCell.block === Block.movable ||
+        prevCell.block === Block.fallable) &&
       prevCell.switchId !== undefined
     ) {
       if (cell.block !== Block.switch) {
@@ -472,10 +481,6 @@ export class Grid {
         console.log("prev.block", prev.block);
         return;
       }
-      assert(
-        prev.block === Block.movable || prev.block === Block.fallable,
-        "block is not switchWithObject",
-      );
       const switchId = prevCell.switchId;
       if (!switchId) throw new Error("switchId is undefined");
       const blockSprite = createSprite(
@@ -662,8 +667,8 @@ export class Grid {
     for (let y = gridY - 1; y >= 0; y--) {
       for (let x = 0; x < gridX; x++) {
         let cellY = y;
-        const vsom = this.vsom[cellY][x];
-        const cell = cells[cellY][x];
+        let vsom = this.vsom[cellY][x];
+        let cell = cells[cellY][x];
         if (cell.block === Block.fallable) {
           vsom.dy = (vsom.dy ?? 0) + (vsom.dvy ?? 0) * ticker.deltaTime;
           vsom.dvy =
@@ -672,19 +677,18 @@ export class Grid {
             // 下のブロックと接触判定を行う
             const vsomBelow = this.vsom[cellY + 1][x];
             const cellBelow = cells[cellY + 1][x];
-            if (cellBelow.block === Block.air) {
-              assert(vsomBelow.sprite === null, "air sprite is not null");
+            if (
+              cellBelow.block === Block.air ||
+              cellBelow.block === Block.switch
+            ) {
+              const { dy } = vsom;
               // fallableを1ブロック下に動かしdyを1blockSize分上げる
-              vsom.dy -= blockSize;
-              this.vsom[cellY + 1][x] = vsom;
-              this.vsom[cellY][x] = vsomBelow;
-              cells[cellY + 1][x] = cell;
-              cells[cellY][x] = cellBelow;
+              this.setBlock(cx, x, cellY + 1, cell);
+              this.setBlock(cx, x, cellY, { block: Block.air });
               cellY += 1;
-              cx.state.update((prev) => ({
-                ...prev,
-                cells: cells,
-              }));
+              vsom = this.vsom[cellY][x];
+              cell = cells[cellY][x];
+              vsom.dy = dy - blockSize;
             } else {
               // 衝突したので止める
               vsom.dy = 0;
