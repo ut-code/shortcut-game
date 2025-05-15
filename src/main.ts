@@ -2,6 +2,7 @@ import { Application, Container, type Ticker } from "pixi.js";
 import { derived, get, writable } from "svelte/store";
 import { Facing } from "./constants.ts";
 import { Grid, createCellsFromStageDefinition } from "./grid.ts";
+import * as History from "./history.ts";
 import * as Player from "./player.ts";
 import type { Context, GameState, UIInfo } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
@@ -12,18 +13,13 @@ export async function setup(
   el: HTMLElement,
   stageDefinition: StageDefinition,
   bindings: {
-    onpause: () => void;
-    onresume: () => void;
-    ondestroy: () => void;
+    pause: () => void;
+    resume: () => void;
+    destroy: () => void;
+    reset: () => void;
     uiInfo: UIInfo;
   },
 ): Promise<void> {
-  bindings.onpause = () => {
-    cx.state.update((prev) => {
-      prev.paused = true;
-      return prev;
-    });
-  };
   const cleanups: (() => void)[] = [];
   const unlessPaused = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
     const paused = get(cx.state).paused;
@@ -65,6 +61,7 @@ export async function setup(
 
   const gridMarginY =
     (app.screen.height - blockSize * stageDefinition.stage.length) / 2;
+  // things that don't need to reset on reset()
   const config = writable({
     gridX,
     gridY,
@@ -73,7 +70,12 @@ export async function setup(
     initialPlayerX: stageDefinition.initialPlayerX,
     initialPlayerY: stageDefinition.initialPlayerY,
   });
-  const state = writable<GameState>({
+
+  const initialHistory = {
+    index: 0,
+    tree: [],
+  };
+  const initialGameState = {
     inventory: null,
     inventoryIsInfinite: false,
     usage: {
@@ -86,7 +88,27 @@ export async function setup(
     paused: false,
     switches: [],
     switchingBlocks: [],
-  });
+  };
+  const initialDynamic = {
+    focus: null,
+    player: {
+      // HACK: these values are immediately overwritten inside Player.init().
+      sprite: null,
+      coords: {
+        x: stageDefinition.initialPlayerX,
+        y: stageDefinition.initialPlayerY,
+      },
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      onGround: false,
+      jumpingBegin: null,
+      holdingKeys: {},
+      facing: Facing.right,
+    },
+  };
+  const state = writable<GameState>(structuredClone(initialGameState));
   const grid = new Grid(
     {
       _stage_container: stage,
@@ -97,44 +119,40 @@ export async function setup(
     blockSize,
     stageDefinition,
   );
-  const history = writable({
-    index: -1,
-    tree: [],
-  });
-  const uiContext = derived([state, history], ([$state, $history]) => {
-    return useUI($state, $history);
-  });
+  const history = writable(structuredClone(initialHistory));
   const cx: Context = {
     _stage_container: stage,
     grid,
-    dynamic: {
-      focus: null,
-      player: {
-        // HACK: these values are immediately overwritten inside Player.init().
-        sprite: null,
-        coords() {
-          return { x: this.x, y: this.y };
-        },
-        x: 0,
-        y: 0,
-        vx: 0,
-        vy: 0,
-        onGround: false,
-        jumpingBegin: null,
-        holdingKeys: {},
-        facing: Facing.right,
-      },
-    },
+    dynamic: structuredClone(initialDynamic),
     state: state,
     history,
-    uiContext,
     config,
-    elapsed: writable(0),
+    elapsed: 0, // does this need to be writable? like is anyone listening to this/
+  };
+  bindings.reset = () => {
+    const d = stageDefinition;
+    cx.history = writable(structuredClone(initialHistory));
+    // 内部実装ゴリゴリに知ってるリセットなので、直したかったら直して。多分 coords の各プロパティのセッターをいい感じにしてやれば良い
+    // MEMO: `coords` は抽象化失敗してるので、直すか消すほうが良い
+    cx.dynamic.player.x = blockSize * d.initialPlayerX;
+    cx.dynamic.player.y = blockSize * d.initialPlayerY + get(cx.config).marginY;
+    cx.dynamic.focus = null;
+    cx.elapsed = 0;
+    cx.state.update((prev) => ({
+      ...prev,
+      paused: false,
+    }));
+    cx.grid.diffAndUpdateTo(
+      cx,
+      createCellsFromStageDefinition(stageDefinition),
+    );
+    // 上に同じく。 init を使う？でも init は中で document.addEventListener してるので...
+    History.record(cx);
   };
 
   app.ticker.add(
     unlessPaused((ticker) => {
-      cx.elapsed.update((prev) => prev + ticker.deltaTime);
+      cx.elapsed += ticker.deltaTime;
     }),
   );
 
@@ -157,23 +175,27 @@ export async function setup(
     window.removeEventListener("resize", onresize);
   });
 
-  bindings.ondestroy = () => {
+  bindings.destroy = () => {
     for (const cleanup of cleanups) {
       cleanup();
     }
   };
-  bindings.onresume = () => {
+  bindings.resume = () => {
     cx.state.update((prev) => {
       prev.paused = false;
       return prev;
     });
   };
-  bindings.onpause = () => {
+  bindings.pause = () => {
     cx.state.update((prev) => {
       prev.paused = true;
       return prev;
     });
   };
+
+  const uiContext = derived([state, history], ([$state, $history]) => {
+    return useUI($state, $history);
+  });
   uiContext.subscribe((uiInfo) => {
     bindings.uiInfo = uiInfo;
   });
