@@ -681,7 +681,7 @@ export class Grid {
               cellBelow.block === Block.air ||
               cellBelow.block === Block.switch
             ) {
-              const { dy } = vsom;
+              const { dy, dvy } = vsom;
               // fallableを1ブロック下に動かしdyを1blockSize分上げる
               this.setBlock(cx, x, cellY + 1, cell);
               this.setBlock(cx, x, cellY, { block: Block.air });
@@ -689,6 +689,7 @@ export class Grid {
               vsom = this.vsom[cellY][x];
               cell = cells[cellY][x];
               vsom.dy = dy - blockSize;
+              vsom.dvy = dvy;
             } else {
               // 衝突したので止める
               vsom.dy = 0;
