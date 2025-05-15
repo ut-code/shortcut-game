@@ -13,9 +13,10 @@ const { stageNum, stage }: Props = $props();
 let container: HTMLElement | null = $state(null);
 
 const bindings = $state({
-  onpause: () => {},
-  onresume: () => {},
-  ondestroy: () => {},
+  pause: () => {},
+  resume: () => {},
+  destroy: () => {},
+  reset: () => {},
   uiInfo: <UIInfo>{
     inventory: null,
     inventoryIsInfinite: false,
@@ -35,14 +36,18 @@ $effect(() => {
   }
 });
 
-onDestroy(() => bindings.ondestroy());
+onDestroy(() => bindings.destroy());
 </script>
 
 <div bind:this={container} id="container">
   <PauseMenu
     paused={uiContext.paused}
-    onpause={() => bindings.onpause()}
-    onresume={() => bindings.onresume()}
+    onpause={() => bindings.pause()}
+    onresume={() => bindings.resume()}
+    onreset={() => {
+      // if this isn't working well, we can use window.location.reload(); instead
+      bindings.reset();
+    }}
   />
   <div
     class="uiBackground"
@@ -57,6 +62,7 @@ onDestroy(() => bindings.ondestroy());
     <div class="inventory">
       {#if uiContext.inventory !== null}
         <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
+
         <img
           src="/assets/block.png"
           alt="inventory"

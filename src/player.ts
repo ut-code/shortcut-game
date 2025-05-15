@@ -39,7 +39,7 @@ export function init(
   Ability.init(cx, options?.ability);
   return {
     sprite,
-    coords() {
+    get coords() {
       return { x: this.x, y: this.y };
     },
     get x() {
@@ -65,7 +65,7 @@ export function init(
 
 export function getCoords(cx: Context) {
   const { blockSize, marginY } = get(cx.config);
-  const coords = cx.dynamic.player.coords();
+  const coords = cx.dynamic.player.coords;
   const x = Math.floor(coords.x / blockSize);
   const y = Math.round((coords.y - marginY) / blockSize) - 1; // it was not working well so take my patch
   return { x, y };
@@ -140,7 +140,7 @@ export function tick(cx: Context, ticker: Ticker) {
   if (player.holdingKeys[Inputs.Right]) {
     player.vx += consts.moveVX * blockSize;
   }
-  const elapsed = get(cx.elapsed);
+  const elapsed = cx.elapsed;
   if (player.holdingKeys[Inputs.Up]) {
     if (player.onGround) {
       player.vy = -consts.jumpVY * blockSize;
