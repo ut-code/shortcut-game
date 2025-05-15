@@ -1,5 +1,18 @@
+/**
+  Stage Grid, expressed as list of row from x=0 to x=max(x).
+  All rows are expected to equal in length. (but there's no runtime check afaik)
+  Example:
+  [
+    "bbbbbbbbbbb", // b stands for block
+    "...........", // . stands for air
+    ".....m..bbb", // m stands for movable block
+    "bbbbbbbbbbb"
+  ]
+  */
+type Stage = string[];
+
 export type StageDefinition = {
-  stage: string[];
+  stage: Stage;
   initialPlayerX: number; // 左端から0-indexed
   initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ
   blockGroups: {
