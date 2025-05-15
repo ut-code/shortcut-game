@@ -167,6 +167,8 @@ export async function setup(
     }),
   );
 
+  app.ticker.add(unlessPaused((ticker) => grid.tick(cx, ticker)));
+
   // Append the application canvas to the document body
   el.appendChild(app.canvas);
   const onresize = useOnResize(cx, app, grid, gridX, gridY);

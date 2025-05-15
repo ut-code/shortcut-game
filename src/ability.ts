@@ -65,7 +65,8 @@ export function copy(cx: Context) {
   const x = focus.x;
   const y = focus.y;
   const target = cx.grid.getBlock(cx, x, y);
-  if (!target || target !== Block.movable) return;
+  if (!target || (target !== Block.movable && target !== Block.fallable))
+    return;
   const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
@@ -128,10 +129,7 @@ export function cut(cx: Context) {
   const y = focus.y;
   const target = cx.grid.getBlock(cx, x, y);
   // removable 以外はカットできない
-  if (
-    !target ||
-    (target !== Block.movable && target !== Block.switchWithObject)
-  )
+  if (!target || (target !== Block.movable && target !== Block.fallable))
     return;
   const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
@@ -144,7 +142,10 @@ export function cut(cx: Context) {
   });
   cx.grid.update(cx, (prev) => {
     if (prev.objectId !== movableObject.objectId) return prev;
-    if (prev.block === Block.switchWithObject)
+    if (
+      (prev.block === Block.movable || prev.block === Block.fallable) &&
+      prev.switchId !== undefined
+    )
       return { block: Block.switch, switchId: prev.switchId };
     return { block: Block.air };
   });
@@ -176,6 +177,7 @@ export function placeMovableObject(
     grid.setBlock(cx, positionX, positionY, {
       block: object.block,
       objectId: object.objectId,
+      switchId: undefined,
     });
   }
 }
