@@ -13,6 +13,9 @@ import {
   switchBaseTexture,
   switchPressedTexture,
   switchTexture,
+  tutorialImg1,
+  tutorialImg2,
+  tutorialImg3,
 } from "./resources.ts";
 import type { StageDefinition } from "./stages.ts";
 
@@ -792,6 +795,27 @@ function updateSprite(
   sprite.x = x * blockSize;
   sprite.y = y * blockSize + marginY;
 }
+
+export function createTutorialSprite(
+  cx: { _stage_container: Container },
+  order: number,
+) {
+  let sprite = new Sprite(tutorialImg1);
+  switch (order) {
+    case 2:
+      sprite = new Sprite(tutorialImg2);
+      break;
+    case 3:
+      sprite = new Sprite(tutorialImg3);
+      break;
+  }
+  sprite.width = 200;
+  sprite.height = 200;
+  sprite.x = 500;
+  sprite.y = 100;
+  cx._stage_container.addChild(sprite);
+}
+//ToDo: 現在の仕様では、Escメニュー表示状態でも動き続ける。
 
 export function printCells(cells: GridCell[][], context?: string) {
   console.log(

@@ -1,7 +1,11 @@
 import { Application, Container, type Ticker } from "pixi.js";
 import { derived, get, writable } from "svelte/store";
 import { Facing } from "./constants.ts";
-import { Grid, createCellsFromStageDefinition } from "./grid.ts";
+import {
+  Grid,
+  createCellsFromStageDefinition,
+  createTutorialSprite,
+} from "./grid.ts";
 import * as Player from "./player.ts";
 import type { Context, GameState, UIInfo } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
@@ -137,6 +141,19 @@ export async function setup(
       cx.elapsed.update((prev) => prev + ticker.deltaTime);
     }),
   );
+
+  // Stage 1,2のチュートリアル表示実装機構
+  // Frm stands for Frames
+  let tutorialFrm = 0;
+  app.ticker.add((ticker) => {
+    tutorialFrm += ticker.deltaTime;
+    // 1秒ごとにチュートリアルの画像が変わる
+    createTutorialSprite(cx, Math.floor(tutorialFrm / 60 + 1));
+    if (tutorialFrm >= 180) {
+      tutorialFrm = 0;
+      //Todo: Stage 1,2のみにする
+    }
+  });
 
   cx.dynamic.player = Player.init(cx, bunnyTexture);
   app.ticker.add(unlessPaused((ticker) => Player.tick(cx, ticker)));
