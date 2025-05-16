@@ -158,13 +158,12 @@ export function tick(cx: Context, ticker: Ticker) {
   }
 
   const isBlock = (x: number, y: number) =>
-    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.air &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== null &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
       Block.switchPressed &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
-      Block.switchingBlockON &&
-    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
+      Block.switchingBlockON;
   const isSwitchBase = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.switchBase;
   const isOutOfWorldLeft = (x: number) => x < 0;

@@ -103,7 +103,7 @@ export function paste(cx: Context) {
     const positionX = x + i.x;
     const positionY = y + i.y;
     const target = cx.grid.getBlock(cx, positionX, positionY);
-    if (target !== Block.air && target !== Block.switch) {
+    if (target && target !== Block.switch) {
       // すでに何かある場合は、ペーストできない
       return;
     }
@@ -147,7 +147,7 @@ export function cut(cx: Context) {
       prev.switchId !== undefined
     )
       return { block: Block.switch, switchId: prev.switchId };
-    return { block: Block.air };
+    return { block: null };
   });
 
   printCells(createSnapshot(cx).game.cells, "cut");
@@ -166,7 +166,7 @@ export function placeMovableObject(
     const positionX = x + i.x;
     const positionY = y + i.y;
     const target = grid.getBlock(cx, positionX, positionY);
-    if (target !== Block.air && target !== Block.switch) {
+    if (target && target !== Block.switch) {
       // すでに何かある場合は、ペーストできない
       return;
     }
@@ -180,21 +180,4 @@ export function placeMovableObject(
       switchId: undefined,
     });
   }
-}
-
-export function removeMovableObject(
-  cx: Context,
-  x: number,
-  y: number,
-): MovableObject | undefined {
-  const grid = cx.grid;
-  const obj = grid.getMovableObject(cx, x, y);
-  if (!obj) return undefined;
-
-  for (const i of obj.relativePositions) {
-    const positionX = x + i.x;
-    const positionY = y + i.y;
-    grid.setBlock(cx, positionX, positionY, { block: Block.air });
-  }
-  return obj;
 }

@@ -7,7 +7,6 @@ export const jumpFrames = 10;
 export const gravity = 0.02;
 
 export enum Block {
-  air = "air",
   block = "block",
   movable = "movable",
   fallable = "fallable",
