@@ -5,6 +5,7 @@ export const moveVX = 0.1;
 export const jumpVY = 0.12;
 export const jumpFrames = 10;
 export const gravity = 0.02;
+export const maxObjectFallSpeed = 2;
 
 export enum Block {
   block = "block",

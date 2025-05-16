@@ -54,13 +54,9 @@ export async function setup(
 
   // Initialize the application
   await app.init({ background: "white", resizeTo: window });
-  const blockSize = Math.min(
-    app.screen.width / gridX,
-    app.screen.height / gridY,
-  );
+  const blockSize = Math.min(app.screen.width / gridX, app.screen.height / gridY);
 
-  const gridMarginY =
-    (app.screen.height - blockSize * stageDefinition.stage.length) / 2;
+  const gridMarginY = (app.screen.height - blockSize * stageDefinition.stage.length) / 2;
   // things that don't need to reset on reset()
   const config = writable({
     gridX,
@@ -142,10 +138,7 @@ export async function setup(
       ...prev,
       paused: false,
     }));
-    cx.grid.diffAndUpdateTo(
-      cx,
-      createCellsFromStageDefinition(stageDefinition),
-    );
+    cx.grid.diffAndUpdateTo(cx, createCellsFromStageDefinition(stageDefinition));
     // 上に同じく。 init を使う？でも init は中で document.addEventListener してるので...
     History.record(cx);
   };
@@ -203,19 +196,10 @@ export async function setup(
   });
 }
 
-function useOnResize(
-  cx: Context,
-  app: Application,
-  grid: Grid,
-  gridX: number,
-  gridY: number,
-) {
+function useOnResize(cx: Context, app: Application, grid: Grid, gridX: number, gridY: number) {
   return () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
-    const blockSize = Math.min(
-      app.screen.width / gridX,
-      app.screen.height / gridY,
-    );
+    const blockSize = Math.min(app.screen.width / gridX, app.screen.height / gridY);
     cx.config.update((prev) => {
       prev.blockSize = blockSize;
       prev.marginY = grid.marginY;

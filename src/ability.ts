@@ -3,12 +3,7 @@ import { Block, Facing } from "./constants.ts";
 import { printCells } from "./grid.ts";
 import { createSnapshot } from "./history.ts";
 import * as History from "./history.ts";
-import type {
-  AbilityInit,
-  Context,
-  Coords,
-  MovableObject,
-} from "./public-types.ts";
+import type { AbilityInit, Context, Coords, MovableObject } from "./public-types.ts";
 
 export function init(cx: Context, options?: AbilityInit) {
   cx.state.update((prev) => ({
@@ -65,8 +60,7 @@ export function copy(cx: Context) {
   const x = focus.x;
   const y = focus.y;
   const target = cx.grid.getBlock(cx, x, y);
-  if (!target || (target !== Block.movable && target !== Block.fallable))
-    return;
+  if (!target || (target !== Block.movable && target !== Block.fallable)) return;
   const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
@@ -83,35 +77,19 @@ export function copy(cx: Context) {
 }
 export function paste(cx: Context) {
   const state = get(cx.state);
-  const { focus } = cx.dynamic;
+  const { focus, player } = cx.dynamic;
   const { inventory } = state;
   if (!focus) return;
   if (!inventory) return;
   if (state.usage.paste <= 0) return;
 
-  // 左向きのときにブロックを配置する位置を変更するのに使用
-  const width =
-    inventory.relativePositions.reduce((acc, i) => Math.max(acc, i.x), 0) -
-    inventory.relativePositions.reduce((acc, i) => Math.min(acc, i.x), 1000) +
-    1;
-
-  const facing = cx.dynamic.player.facing;
-  const x = focus.x - (facing === Facing.left ? width - 1 : 0);
-  const y = focus.y;
-
-  for (const i of inventory.relativePositions) {
-    const positionX = x + i.x;
-    const positionY = y + i.y;
-    const target = cx.grid.getBlock(cx, positionX, positionY);
-    if (target && target !== Block.switch) {
-      // すでに何かある場合は、ペーストできない
-      return;
-    }
+  const { x, y } = findSafeObjectPlace(player.facing, focus.x, focus.y, inventory);
+  if (!canPlaceMovableObject(cx, x, y, inventory)) {
+    return;
   }
-
   History.record(cx);
   placeMovableObject(cx, x, y, inventory);
-  if (!get(cx.state).inventoryIsInfinite) {
+  if (!state.inventoryIsInfinite) {
     cx.state.update((prev) => {
       prev.inventory = null;
       return prev;
@@ -129,8 +107,7 @@ export function cut(cx: Context) {
   const y = focus.y;
   const target = cx.grid.getBlock(cx, x, y);
   // removable 以外はカットできない
-  if (!target || (target !== Block.movable && target !== Block.fallable))
-    return;
+  if (!target || (target !== Block.movable && target !== Block.fallable)) return;
   const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
@@ -142,10 +119,7 @@ export function cut(cx: Context) {
   });
   cx.grid.update(cx, (prev) => {
     if (prev.objectId !== movableObject.objectId) return prev;
-    if (
-      (prev.block === Block.movable || prev.block === Block.fallable) &&
-      prev.switchId !== undefined
-    )
+    if ((prev.block === Block.movable || prev.block === Block.fallable) && prev.switchId !== undefined)
       return { block: Block.switch, switchId: prev.switchId };
     return { block: null };
   });
@@ -154,22 +128,37 @@ export function cut(cx: Context) {
   History.record(cx);
 }
 
-export function placeMovableObject(
-  cx: Context,
-  x: number,
-  y: number,
-  object: MovableObject,
-) {
-  const grid = cx.grid;
+// 左向きのときにブロックを配置する位置を変更するのに使用
+function findSafeObjectPlace(facing: Facing, x: number, y: number, obj: MovableObject) {
+  const width =
+    obj.relativePositions.reduce((acc, i) => Math.max(acc, i.x), 0) -
+    obj.relativePositions.reduce((acc, i) => Math.min(acc, i.x), 1000) +
+    1;
 
+  return {
+    x: x - (facing === Facing.left ? width - 1 : 0),
+    y: y,
+  };
+}
+export function canPlaceMovableObject(cx: Context, x: number, y: number, object: MovableObject) {
+  const grid = cx.grid;
   for (const i of object.relativePositions) {
     const positionX = x + i.x;
     const positionY = y + i.y;
     const target = grid.getBlock(cx, positionX, positionY);
     if (target && target !== Block.switch) {
       // すでに何かある場合は、ペーストできない
-      return;
+      return false;
     }
+  }
+  return true;
+}
+export function placeMovableObject(cx: Context, x: number, y: number, object: MovableObject) {
+  const grid = cx.grid;
+
+  if (!canPlaceMovableObject(cx, x, y, object)) {
+    console.error("[placeMovableObject] cannot place object");
+    return;
   }
   for (const rel of object.relativePositions) {
     const positionX = x + rel.x;
