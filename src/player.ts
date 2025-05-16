@@ -253,7 +253,10 @@ export function tick(cx: Context, ticker: Ticker) {
               pressedByPlayer: true,
             };
           }
-          return s;
+          return {
+            ...s,
+            pressedByPlayer: false,
+          };
         });
         return prev;
       });
@@ -287,12 +290,17 @@ export function tick(cx: Context, ticker: Ticker) {
 
   // スイッチの状態を反映
   const switches = get(cx.state).switches;
-  for (const s of switches) {
+  const switchIds = [...new Set(switches.map((s) => s.id))]; // 重複削除
+  for (const sId of switchIds) {
     const switchingBlock = get(cx.state).switchingBlocks.filter(
-      (sb) => sb.id === s.id,
+      (sb) => sb.id === sId,
     );
     // スイッチが押されているとき
-    if (s.pressedByPlayer || s.pressedByBlock) {
+    if (
+      switches
+        .filter((s) => s.id === sId)
+        .some((s) => s.pressedByPlayer || s.pressedByBlock)
+    ) {
       for (const sb of switchingBlock) {
         if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockOFF) {
           cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockON });
