@@ -1,7 +1,7 @@
 .modal-btn {
   width: 100%;
   margin-top: 0.5rem;
-  padding: 0.6rem 0 0; /* Fleftexフォント側で文字が上に寄っているので */
+  padding: 0.4rem 0 0; /* Fleftexフォント側で文字が上に寄っているので */
   border-radius: 0.5rem;
   font-size: inherit;
   height: max-content;
