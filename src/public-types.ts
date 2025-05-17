@@ -12,6 +12,8 @@ export type GameState = {
   usage: AbilityUsage;
   cells: GridCell[][];
   paused: boolean;
+  goaled: boolean;
+  gameover: boolean;
 
   // about the gimmick
   switches: {
@@ -92,6 +94,8 @@ export type UIInfo = {
   undo: number;
   redo: number;
   paused: boolean;
+  goaled: boolean;
+  gameover: boolean;
 };
 export type Coords = {
   x: number;

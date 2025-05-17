@@ -6,6 +6,7 @@ import { assert, warnIf } from "./lib.ts";
 import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
 import {
   fallableTexture,
+  goalTexture,
   rockTexture,
   switchBaseTexture,
   switchPressedTexture,
@@ -65,6 +66,10 @@ export type GridCell =
   | {
       block: Block.switchPressed;
       switchId?: string;
+      objectId?: unknown;
+    }
+  | {
+      block: Block.goal;
       objectId?: unknown;
     };
 
@@ -160,6 +165,12 @@ export class Grid {
               x,
               y,
             });
+            break;
+          }
+          case Block.goal: {
+            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
+            stage.addChild(sprite);
+            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
             break;
           }
           case Block.switchingBlockON:
@@ -679,6 +690,13 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
           row.push(cell);
           break;
         }
+        case Block.goal: {
+          const cell: GridCell = {
+            block,
+          };
+          row.push(cell);
+          break;
+        }
         case Block.switchingBlockON:
         case Block.switchPressed: {
           throw new Error(`createCellsFromStageDefinition: block is not supported: ${block}`);
@@ -708,6 +726,8 @@ export function blockFromDefinition(d: string): Block | null {
       return Block.switchBase;
     case "w":
       return Block.switchingBlockOFF;
+    case "g":
+      return Block.goal;
     default:
       throw new Error(`[blockFromDefinition] no proper block: ${d}`);
   }
@@ -772,6 +792,11 @@ function createSprite(
       updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
+    case Block.goal: {
+      const sprite = new Sprite(goalTexture);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
+    }
     default:
       block satisfies never;
       throw new Error("unreachable");
@@ -828,6 +853,8 @@ export function printCells(cells: GridCell[][], context?: string) {
                  return "w";
                case Block.switchPressed:
                  return "s";
+               case Block.goal:
+                 return "g";
                default:
                  cell satisfies never;
              }

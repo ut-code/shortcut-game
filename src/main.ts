@@ -21,9 +21,9 @@ export async function setup(
   },
 ): Promise<void> {
   const cleanups: (() => void)[] = [];
-  const unlessPaused = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
-    const paused = get(cx.state).paused;
-    if (!paused) {
+  const unlessStopped = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
+    const stopped = get(cx.state).paused || get(cx.state).goaled || get(cx.state).gameover;
+    if (!stopped) {
       f(ticker);
     }
   };
@@ -82,6 +82,8 @@ export async function setup(
     },
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,
+    goaled: false,
+    gameover: false,
     switches: [],
     switchingBlocks: [],
   };
@@ -149,7 +151,7 @@ export async function setup(
   }
 
   app.ticker.add(
-    unlessPaused((ticker) => {
+    unlessStopped((ticker) => {
       cx.elapsed += ticker.deltaTime;
     }),
   );
@@ -171,17 +173,17 @@ export async function setup(
   }
 
   cx.dynamic.player = Player.init(cx, bunnyTexture);
-  app.ticker.add(unlessPaused((ticker) => Player.tick(cx, ticker)));
+  app.ticker.add(unlessStopped((ticker) => Player.tick(cx, ticker)));
 
   let cleanup: undefined | (() => void) = undefined;
   app.ticker.add(
-    unlessPaused(() => {
+    unlessStopped(() => {
       if (cleanup) cleanup();
       cleanup = tick();
     }),
   );
 
-  app.ticker.add(unlessPaused((ticker) => grid.tick(cx, ticker)));
+  app.ticker.add(unlessStopped((ticker) => grid.tick(cx, ticker)));
 
   // Append the application canvas to the document body
   el.appendChild(app.canvas);
@@ -199,6 +201,7 @@ export async function setup(
   bindings.resume = () => {
     cx.state.update((prev) => {
       prev.paused = false;
+      prev.goaled = false;
       return prev;
     });
   };
@@ -207,6 +210,15 @@ export async function setup(
       prev.paused = true;
       return prev;
     });
+  };
+  bindings.reset = () => {
+    cx.state.update((prev) => {
+      prev.paused = false;
+      prev.goaled = false;
+      prev.gameover = false;
+      return prev;
+    });
+    cx.reset();
   };
 
   const uiContext = derived([state, history], ([$state, $history]) => {

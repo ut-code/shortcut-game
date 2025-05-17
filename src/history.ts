@@ -39,7 +39,7 @@ export function undo(cx: Context) {
   const history = get(cx.history);
 
   // 最新に戻るため、記録しておく
-  if (history.index === history.tree.length - 1) {
+  if (history.index === history.tree.length - 1 && !get(cx.state).gameover) {
     console.log("stashing...");
     stash(cx);
   }

@@ -16,6 +16,7 @@ export enum Block {
   switchingBlockOFF = "switching-block-off",
   switchingBlockON = "switching-block-on",
   switchPressed = "switch-pressed",
+  goal = "goal",
 }
 export enum Facing {
   left = "left",

@@ -1,47 +1,37 @@
 <script lang="ts">
+import { RenderLayer } from "pixi.js";
+
 type Props = {
-  paused: boolean;
-  alreadyStopped: boolean;
-  onresume: () => void;
-  onpause: () => void;
-  onreset: () => void;
+  gameover: boolean;
+  reset: () => void;
 };
-let { paused, alreadyStopped, onresume, onpause, onreset }: Props = $props();
+const { gameover, reset }: Props = $props();
 let el: HTMLDialogElement;
 $effect(() => {
-  if (paused && !alreadyStopped) {
+  if (gameover) {
     el.showModal();
   } else {
-    el.close();
+    if (el.open) el.close();
   }
 });
-
 document.addEventListener("keydown", (ev) => {
-  if (ev.key === "Escape")
-    if (!paused && !alreadyStopped) {
-      onpause();
-      ev.preventDefault();
-    }
+  if (ev.key === "Escape") ev.preventDefault();
 });
 </script>
 
-<dialog bind:this={el} onclose={onresume} class="modal">
+<dialog bind:this={el} class="modal">
   <div class="uiBackground modal-box flex flex-col gap-1">
-    <h1 class="text-4xl text-center">Paused</h1>
+    <h1 class="text-4xl text-center">Game Over</h1>
     <!-- todo: ボタンのスタイル -->
-    <form method="dialog" class="w-full">
-      <button style="font-size: 1.5rem;" class="btn btn-block" type="submit">
-        Resume
-      </button>
-    </form>
+    <p class="text-xl text-center">ctrl+Z で戻る</p>
     <!-- TODO; これもうちょいパフォーマンスいいやつにしたい -->
     <button
       style="font-size: 1.5rem;"
       class="btn btn-block"
       onclick={() => {
-        onreset();
-      }}
-    >
+        el.close();
+        reset();
+    }}>
       Restart
     </button>
     <a style="font-size: 1.5rem;" class="btn btn-block" href="/">

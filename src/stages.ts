@@ -37,7 +37,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         ".........b........",
-        ".........b........",
+        ".........b......g.",
         ".........b...bbbbb",
         ".........m...bbbbb",
         "bbbbbbbbbbbbbbbbbb",
@@ -55,7 +55,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "..................",
-        "..................",
+        "...............g..",
         "m............bbbbb",
         "bb...........bbbbb",
         "bb.....m.....bbbbb",
@@ -73,7 +73,7 @@ export const stages = new Map<string, StageDefinition>([
     {
       stage: [
         "bbbbbbbbbbbbbbbbbb",
-        "...b..............",
+        "...b............g.",
         "...b....m......bbb",
         "...bm..........bbb",
         "...bbb.........bbb",
@@ -103,7 +103,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbbbbbb",
         "......................",
-        "......................",
+        "....................g.",
         "m..................bbb",
         "bb.................bbb",
         "bb..........m......bbb",
@@ -143,7 +143,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........b........",
         ".........b........",
         ".........w........",
-        ".s....m..w........",
+        ".s....m..w.....g..",
         "bSbbbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 3,
@@ -174,7 +174,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbbbbbbbbb",
         ".........................",
-        ".........................",
+        "......................g..",
         "...............wbbbbbbbbb",
         "m...............bbbbbbbbb",
         "bb..............w.....m..",
@@ -246,7 +246,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "..................",
-        "..................",
+        "................g.",
         "........w......bbb",
         "........w.....wbbb",
         ".....bm.w....w.bbb",
@@ -314,7 +314,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbbbbbbb",
         ".........w...b.........",
-        ".........w...b...m.....",
+        ".........w.g.b...m.....",
         ".........bbbbb.........",
         "m.......w.....w......m.",
         "mm.....w.......w.....mm",
@@ -427,7 +427,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "..................",
-        "........bb........",
+        "........bb.....g..",
         ".......b.....bbbbb",
         "......b......bbbbb",
         ".....b.......bbbbb",
@@ -448,7 +448,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........b........",
         ".........b........",
         ".........w........",
-        ".s....f..w........",
+        ".s....f..w.....g..",
         "bSbbbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 3,
