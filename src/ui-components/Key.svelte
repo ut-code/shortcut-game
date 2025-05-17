@@ -20,8 +20,8 @@ $effect(() => {
   .key {
     display: inline-block;
     font-family: system-ui;
-    font-size: 1rem;
-    padding: 0.3rem;
+    font-size: 1.2rem;
+    padding: 0.2rem 0.3rem;
     border-style: solid;
     border-width: 0.2rem;
     border-radius: 0.3rem;
