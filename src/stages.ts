@@ -427,7 +427,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "..................",
-        "........bb........",
+        "........bb.....g..",
         ".......b.....bbbbb",
         "......b......bbbbb",
         ".....b.......bbbbb",
@@ -448,7 +448,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........b........",
         ".........b........",
         ".........w........",
-        ".s....f..w........",
+        ".s....f..w.....g..",
         "bSbbbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 3,
