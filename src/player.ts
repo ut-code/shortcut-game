@@ -154,6 +154,7 @@ export function tick(cx: Context, ticker: Ticker) {
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchPressed &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchingBlockON &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.inverseSwitchingBlockOFF &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.goal &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isSwitchBase = (x: number, y: number) =>
@@ -262,12 +263,18 @@ export function tick(cx: Context, ticker: Ticker) {
         if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockOFF) {
           cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockON });
         }
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.inverseSwitchingBlockOFF) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.inverseSwitchingBlockON });
+        }
       }
     } else {
       // スイッチが押されていないとき
       for (const sb of switchingBlock) {
         if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockON) {
           cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockOFF });
+        }
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.inverseSwitchingBlockON) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.inverseSwitchingBlockOFF });
         }
       }
     }

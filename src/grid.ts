@@ -64,6 +64,16 @@ export type GridCell =
       objectId?: unknown;
     }
   | {
+      block: Block.inverseSwitchingBlockOFF;
+      switchId?: string;
+      objectId?: unknown;
+    }
+  | {
+      block: Block.inverseSwitchingBlockON;
+      switchId?: string;
+      objectId?: unknown;
+    }
+  | {
       block: Block.switchPressed;
       switchId?: string;
       objectId?: unknown;
@@ -145,6 +155,7 @@ export class Grid {
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
             break;
           }
+          case Block.inverseSwitchingBlockOFF:
           case Block.switchingBlockOFF: {
             const switchId = (
               get(cx.state).cells[y][x] as {
@@ -173,6 +184,7 @@ export class Grid {
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
             break;
           }
+          case Block.inverseSwitchingBlockON:
           case Block.switchingBlockON:
           case Block.switchPressed:
             throw new Error(`createCellsFromStageDefinition: block is not supported: ${dblock}`);
@@ -437,50 +449,60 @@ export class Grid {
       });
     }
     // switchingBlockOFFがONに切り替わるとき
-    else if (vprev?.block === Block.switchingBlockOFF) {
-      if (cNewCell.block !== Block.switchingBlockON) {
+    else if (vprev?.block === Block.switchingBlockOFF || vprev?.block === Block.inverseSwitchingBlockOFF) {
+      if (cNewCell.block !== Block.switchingBlockON && cNewCell.block !== Block.inverseSwitchingBlockON) {
         console.warn("No block other than switchingBlockON cannot replace the switchingBlockOFF");
         return;
       }
       assert(
-        cprev.block === Block.switchingBlockOFF || cprev.block === Block.switchingBlockON,
+        cprev.block === Block.switchingBlockOFF ||
+          cprev.block === Block.switchingBlockON ||
+          cprev.block === Block.inverseSwitchingBlockOFF ||
+          cprev.block === Block.inverseSwitchingBlockON,
         "block is not switchingBlock",
       );
+      const inversed = vprev.block === Block.inverseSwitchingBlockOFF;
+      const switchONBlock = inversed ? Block.inverseSwitchingBlockON : Block.switchingBlockON;
       const switchId = cprev.switchId;
       if (!switchId) throw new Error("switchId is undefined");
-      const blockSprite = createSprite(blockSize, Block.switchingBlockON, x, y, marginY, switchColor(switchId));
+      const blockSprite = createSprite(blockSize, switchONBlock, x, y, marginY, switchColor(switchId));
       stage.addChild(blockSprite);
       cells[y][x] = {
-        block: Block.switchingBlockON,
+        block: switchONBlock,
         switchId,
         objectId: undefined,
       };
       vprev.sprite = blockSprite;
-      vprev.block = Block.switchingBlockON;
+      vprev.block = switchONBlock;
       vprev.dy = 0;
       vprev.vy = 0;
     }
     // switchingBlockONがOFFに切り替わるとき
-    else if (vprev?.block === Block.switchingBlockON) {
-      if (cNewCell.block !== Block.switchingBlockOFF) {
+    else if (vprev?.block === Block.switchingBlockON || vprev?.block === Block.inverseSwitchingBlockON) {
+      if (cNewCell.block !== Block.switchingBlockOFF && cNewCell.block !== Block.inverseSwitchingBlockOFF) {
         console.warn("No block other than switchingBlockOFF cannot replace the switchingBlockON");
         return;
       }
       assert(
-        cprev.block === Block.switchingBlockOFF || cprev.block === Block.switchingBlockON,
+        cprev.block === Block.switchingBlockOFF ||
+          cprev.block === Block.switchingBlockON ||
+          cprev.block === Block.inverseSwitchingBlockOFF ||
+          cprev.block === Block.inverseSwitchingBlockON,
         "block is not switchingBlock",
       );
+      const inversed = vprev.block === Block.inverseSwitchingBlockON;
+      const switchOFFBlock = inversed ? Block.inverseSwitchingBlockOFF : Block.switchingBlockOFF;
       const switchId = cprev.switchId;
       if (!switchId) throw new Error("switchId is undefined");
-      const blockSprite = createSprite(blockSize, Block.switchingBlockOFF, x, y, marginY, switchColor(switchId));
+      const blockSprite = createSprite(blockSize, switchOFFBlock, x, y, marginY, switchColor(switchId));
       stage.addChild(blockSprite);
       cells[y][x] = {
-        block: Block.switchingBlockOFF,
+        block: switchOFFBlock,
         switchId,
         objectId: undefined,
       };
       vprev.sprite = blockSprite;
-      vprev.block = Block.switchingBlockOFF;
+      vprev.block = switchOFFBlock;
       vprev.dy = 0;
       vprev.vy = 0;
     } else {
@@ -654,6 +676,8 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
         }
         // switches
         case Block.switch:
+        case Block.inverseSwitchingBlockON:
+        case Block.inverseSwitchingBlockOFF:
         case Block.switchingBlockON:
         case Block.switchingBlockOFF: {
           const group = stageDefinition.switchGroups.find((b) => b.x === x && b.y === y);
@@ -726,6 +750,7 @@ function createSprite(
       updateSprite(switchBaseSprite, blockSize, x, y, marginY, 0);
       return switchBaseSprite;
     }
+    case Block.inverseSwitchingBlockON:
     case Block.switchingBlockOFF: {
       const sprite = new Sprite(rockTexture);
       if (switchColor) sprite.tint = switchColor;
@@ -733,6 +758,7 @@ function createSprite(
       updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
+    case Block.inverseSwitchingBlockOFF:
     case Block.switchingBlockON: {
       const sprite = new Sprite(rockTexture);
       if (switchColor) sprite.tint = switchColor;
@@ -804,9 +830,11 @@ export function printCells(cells: GridCell[][], context?: string) {
                case Block.switchBase:
                  return "S";
                case Block.switchingBlockOFF:
-                 return "w";
                case Block.switchingBlockON:
                  return "w";
+               case Block.inverseSwitchingBlockOFF:
+               case Block.inverseSwitchingBlockON:
+                 return "W";
                case Block.switchPressed:
                  return "s";
                case Block.goal:

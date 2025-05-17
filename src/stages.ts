@@ -449,7 +449,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........b........",
         ".........b........",
         ".........w........",
-        ".sss..f..w.....g..",
+        ".sss..fW.w..W..g..",
         "bSSSbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 3,
@@ -478,6 +478,16 @@ export const stages = new Map<string, StageDefinition>([
         },
         {
           x: 9,
+          y: 4,
+          switchId: "1",
+        },
+        {
+          x: 7,
+          y: 4,
+          switchId: "1",
+        },
+        {
+          x: 12,
           y: 4,
           switchId: "1",
         },
