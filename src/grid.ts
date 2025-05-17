@@ -65,14 +65,13 @@ export class Grid {
     const vsprites: VirtualSOM = [];
 
     for (let y = 0; y < stageDefinition.stage.length; y++) {
-      const rowDefinition = stageDefinition.stage[y].split("");
-      const vspriteRow: (VirtualSpriteCell | null)[] = [];
-      for (let x = 0; x < rowDefinition.length; x++) {
-        const cellDef = rowDefinition[x];
-        const dblock = blockFromDefinition(cellDef);
+      const drow = stageDefinition.stage[y].split("");
+      const vrow: (VirtualSpriteCell | null)[] = [];
+      for (let x = 0; x < drow.length; x++) {
+        const dblock = blockFromDefinition(drow[x]);
         switch (dblock) {
           case null: // air
-            vspriteRow.push(null);
+            vrow.push(null);
             break;
           case Block.block:
           case Block.movable:
@@ -82,7 +81,7 @@ export class Grid {
           case Block.switchBase: {
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
             stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
+            vrow.push({ sprite, block: dblock, dy: 0, vy: 0 });
             break;
           }
           case Block.switch: {
@@ -94,17 +93,22 @@ export class Grid {
             ).switchId;
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY, switchColor(switchId));
             stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            get(cx.state).switches.push({
-              id: switchId,
-              x,
-              y,
-              pressedByPlayer: false,
-              pressedByBlock: false,
+            vrow.push({ sprite, block: dblock, dy: 0, vy: 0 });
+            cx.state.update((prev) => {
+              prev.switches.push({
+                id: switchId,
+                x,
+                y,
+                pressedByPlayer: false,
+                pressedByBlock: false,
+              });
+              return prev;
             });
             break;
           }
-          case Block.switchingBlockOFF: {
+          case Block.switchingBlockOFF:
+          case Block.switchingBlockON: {
+            console.log(dblock);
             const switchId = (
               get(cx.state).cells[y][x] as {
                 block: Block.switch;
@@ -113,27 +117,25 @@ export class Grid {
             ).switchId;
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY, switchColor(switchId));
             stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            get(cx.state).switchingBlocks.push({
-              id: (
-                get(cx.state).cells[y][x] as {
-                  block: Block.switch;
-                  switchId: string;
-                }
-              ).switchId,
-              x,
-              y,
+            vrow.push({ sprite, block: dblock, dy: 0, vy: 0 });
+            cx.state.update((prev) => {
+              prev.switchingBlocks.push({
+                id: switchId,
+                x,
+                y,
+                reversed: dblock === Block.switchingBlockON, // ON だと逆
+              });
+              return prev;
             });
             break;
           }
-          case Block.switchingBlockON:
           case Block.switchPressed:
             throw new Error(`[Grid.constructor]: block is not supported: ${dblock}`);
           default:
             dblock satisfies never;
         }
       }
-      vsprites.push(vspriteRow);
+      vsprites.push(vrow);
     }
     this.__vsom = vsprites;
 
@@ -330,7 +332,7 @@ export class Grid {
     // switch上にオブジェクトを置くとき
     else if (vprev?.block === Block.switch) {
       if (cNewCell.block !== Block.movable && cNewCell.block !== Block.fallable) {
-        console.warn("No block other than movable cannot be placed on the switch");
+        console.warn("No block other than movable can be placed on the switch");
         console.log("cell.block", cNewCell.block);
         return;
       }
@@ -351,12 +353,11 @@ export class Grid {
       vprev.block = cNewCell.block;
       vprev.dy = 0;
       vprev.vy = 0;
-      get(cx.state).switches.filter((s) => {
+      for (const s of get(cx.state).switches) {
         if (s.x === x && s.y === y) {
           s.pressedByBlock = true;
         }
-        return s;
-      });
+      }
     }
     // switch上に置いてあるオブジェクトを消すとき
     else if (
@@ -383,17 +384,16 @@ export class Grid {
       vprev.block = Block.switch;
       vprev.dy = 0;
       vprev.vy = 0;
-      get(cx.state).switches.filter((s) => {
+      for (const s of get(cx.state).switches) {
         if (s.x === x && s.y === y) {
           s.pressedByBlock = false;
         }
-        return s;
-      });
+      }
     }
     // switchingBlockOFFがONに切り替わるとき
     else if (vprev?.block === Block.switchingBlockOFF) {
       if (cNewCell.block !== Block.switchingBlockON) {
-        console.warn("No block other than switchingBlockON cannot replace the switchingBlockOFF");
+        console.warn("No block other than switchingBlockON can replace the switchingBlockOFF");
         return;
       }
       assert(
@@ -413,6 +413,11 @@ export class Grid {
       vprev.block = Block.switchingBlockON;
       vprev.dy = 0;
       vprev.vy = 0;
+      for (const s of get(cx.state).switches) {
+        if (s.x === x && s.y === y) {
+          s.pressedByBlock = false;
+        }
+      }
     }
     // switchingBlockONがOFFに切り替わるとき
     else if (vprev?.block === Block.switchingBlockON) {
@@ -437,6 +442,11 @@ export class Grid {
       vprev.block = Block.switchingBlockOFF;
       vprev.dy = 0;
       vprev.vy = 0;
+      for (const s of get(cx.state).switches) {
+        if (s.x === x && s.y === y) {
+          s.pressedByBlock = false;
+        }
+      }
     } else {
       switch (cNewCell.block) {
         case null:

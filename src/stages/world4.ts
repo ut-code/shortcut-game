@@ -1,25 +1,30 @@
+import type { PreprocessInput } from "@/stage-preprocessor.ts";
 import { usages } from "./_proto.ts";
-import type { StageDefinition } from "./type.ts";
 
 export namespace world4 {
-  export const stage1: StageDefinition = {
+  export const stage1: PreprocessInput = {
     stage: [
       "bbbbbbbbbbbbbbbbbb",
       "b.....b...........",
       "b.....b........G..",
       "b.....b.......bbbb",
       "b.....b.......bbbb",
-      "b ....m.......bbb",
+      "b.....m........bbb",
       "bbbbbbbbbbbbbbbbbb",
     ],
-    initialPlayerX: 3,
-    initialPlayerY: 5,
+    overlay: [
+      "bbbbbbbbbbbbbbbbbb",
+      "b.....b...........",
+      "b.....b........G..",
+      "b.....b.......bbbb",
+      "b.....b.......bbbb",
+      "b.S...m........bbb",
+      "bbbbbbbbbbbbbbbbbb",
+    ],
     usage: usages.allInf,
-    blockGroups: [],
-    switchGroups: [],
   };
 
-  export const stage2: StageDefinition = {
+  export const stage2: PreprocessInput = {
     stage: [
       "bbbbbbbbbbbbbbbbbb",
       "..................",
@@ -30,52 +35,65 @@ export namespace world4 {
       ".......f.....bbbbb",
       "bbbbbbbbb.bb.bbbbb",
     ],
-    initialPlayerX: 3,
-    initialPlayerY: 5,
+    overlay: [
+      "bbbbbbbbbbbbbbbbbb",
+      "..................",
+      "...............G..",
+      ".............bbbbb",
+      ".......f.....bbbbb",
+      ".......f.....bbbbb",
+      ".S.....f.....bbbbb",
+      "bbbbbbbbb.bb.bbbbb",
+    ],
     usage: usages.allInf,
-    blockGroups: [],
-    switchGroups: [],
   };
 
-  export const stage3: StageDefinition = {
+  export const stage3: PreprocessInput = {
     stage: [
       "bbbbbbbbbbbbbbbb",
-      "...d.........D..",
+      "G..W.........w..",
       "....bb..bb..bb..",
       "....bb..bb..bb..",
       "....bbf.bbs.bbm.",
       "...bbbbbbbbbbbbb",
     ],
-    initialPlayerX: 4,
-    initialPlayerY: 2,
-    usage: usages.allInf,
-    blockGroups: [],
-    switchGroups: [
-      {
-        x: 3,
-        y: 1,
-        switchId: "1",
-      },
+    overlay: [
+      "bbbbbbbbbbbbbbbb",
+      "...1.S.......1..",
+      "....bb..bb..bb..",
+      "....bb..bb..bb..",
+      "....bbf.bb1.bbm.",
+      "...bbbbbbbbbbbbb",
     ],
+    usage: usages.allInf,
   };
 
-  // TODO
-  export const stage4 = {
+  export const stage4: PreprocessInput = {
     stage: [
       // (s -> d,D  s' -> d',D')
       "bbbbbbbbbbbbbbbbbbbbbbb",
-      "bbbb..d..D.....bmmmmd'.",
-      "bbbb..bb.D.........d'",
+      "bbbb..W..w.....bmmmmW..",
+      "bbbb..bb.w.........W...",
       ".......b.bbbbbbbbbbb...",
-      ".s'...........D'......",
-      "bbbbb.........D'..m..",
-      "bbbbb.........bbbbbb",
+      ".s............w........",
+      "bbbbb.........w....m...",
+      "bbbbb.........bbbbbb...",
       "bbbbb.........bG......b",
-      "bbbbb.sss.S.f.b......bb",
+      "bbbbb.sss...f.b......bb",
+      "bbbbbbbbbbbbbbb.....bbb",
+    ],
+    overlay: [
+      "bbbbbbbbbbbbbbbbbbbbbbb",
+      "bbbb..1..1.....b99992..",
+      "bbbb..bb.1.........2...",
+      ".......b.bbbbbbbbbbb...",
+      ".2............2........",
+      "bbbbb.........2...m....",
+      "bbbbb.........bbbbbb...",
+      "bbbbb.........bG......b",
+      "bbbbb.111.S.f.b......bb",
       "bbbbbbbbbbbbbbb.....bbb",
     ],
     usage: usages.allInf,
-    blockGroups: [],
-    switchGroups: [],
   };
 }

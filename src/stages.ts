@@ -22,7 +22,8 @@ export const stages = new Map<string, StageDefinition>([
   ["8", stage8],
   ["3-1", world3.stage1],
   ["3-2", world3.stage2],
-  ["4-1", world4.stage1],
-  ["4-2", world4.stage2],
-  ["4-3", world4.stage3],
+  ["4-1", stagePreprocess(world4.stage1)],
+  ["4-2", stagePreprocess(world4.stage2)],
+  ["4-3", stagePreprocess(world4.stage3)],
+  ["4-4", stagePreprocess(world4.stage4)],
 ]);

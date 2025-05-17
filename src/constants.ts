@@ -46,8 +46,10 @@ export const BlockDefinitionMap = new Map<string, Block | null>([
   ["s", Block.switch],
   ["S", Block.switchBase],
   ["w", Block.switchingBlockOFF],
+  ["W", Block.switchingBlockON],
   ["^", Block.spike],
-  ["g", Block.goal],
+  ["g", Block.goal], // compat mode; delete soon
+  ["G", Block.goal],
 ]);
 
 export const ReverseBlockMap = new Map<Block | null, string>();

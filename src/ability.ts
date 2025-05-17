@@ -13,7 +13,7 @@ export function init(cx: Context, options?: AbilityInit) {
       paste: Number.POSITIVE_INFINITY,
       cut: Number.POSITIVE_INFINITY,
     },
-    inventoryIsInfinite: options?.inventoryIsInfinite ?? false,
+    inventoryIsInfinite: false,
   }));
 
   console.log("ability init");
@@ -64,12 +64,11 @@ export function copy(cx: Context) {
   const movableObject = cx.grid.getMovableObject(cx, x, y);
   if (!movableObject) return;
 
-  movableObject.objectId = Math.random().toString();
-
   History.record(cx);
 
   cx.state.update((prev) => {
     prev.inventory = movableObject;
+    prev.inventoryIsInfinite = true;
     return prev;
   });
 
@@ -87,8 +86,12 @@ export function paste(cx: Context) {
   if (!canPlaceMovableObject(cx, x, y, inventory)) {
     return;
   }
+
   History.record(cx);
+
+  inventory.objectId = crypto.randomUUID();
   placeMovableObject(cx, x, y, inventory);
+
   if (!state.inventoryIsInfinite) {
     cx.state.update((prev) => {
       prev.inventory = null;
@@ -115,6 +118,7 @@ export function cut(cx: Context) {
 
   cx.state.update((prev) => {
     prev.inventory = movableObject;
+    prev.inventoryIsInfinite = false;
     return prev;
   });
   cx.grid.update(cx, (prev) => {
