@@ -82,8 +82,8 @@ export namespace world3 {
       "bSbbb.........w..m.w....", // 5
       "bbbbb.........bbbbbb...b", // 6
       "bbbbb.........bg......bb", // 7
-      "bbbbb.sss...f.b......bbb", // 8
-      "bbbbbbSSSbbbbbb.....bbbb",
+      "bbbbbssss...f.b......bbb", // 8
+      "bbbbbSSSSbbbbbb.....bbbb",
     ],
     isTutorial: false,
     initialPlayerX: 10,
@@ -96,6 +96,7 @@ export namespace world3 {
       { x: 20, y: 1, objectId: "1" },
     ],
     switchGroups: [
+      { x: 5, y: 8, switchId: "1" },
       { x: 6, y: 8, switchId: "1" },
       { x: 7, y: 8, switchId: "1" },
       { x: 8, y: 8, switchId: "1" },
