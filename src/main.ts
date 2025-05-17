@@ -73,7 +73,7 @@ export async function setup(
   };
   const initialGameState = {
     inventory: null,
-    inventoryIsInfinite: false,
+    inventoryIsInfinite: !!stageDefinition.inventoryIsInfinite,
     usage: {
       // TODO
       copy: Number.POSITIVE_INFINITY,

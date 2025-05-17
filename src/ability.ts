@@ -13,7 +13,6 @@ export function init(cx: Context, options?: AbilityInit) {
       paste: Number.POSITIVE_INFINITY,
       cut: Number.POSITIVE_INFINITY,
     },
-    inventoryIsInfinite: options?.inventoryIsInfinite ?? false,
   }));
 
   console.log("ability init");
