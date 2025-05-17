@@ -287,17 +287,15 @@ export function tick(cx: Context, ticker: Ticker) {
     // スイッチが押されているとき
     if (s.pressedByPlayer || s.pressedByBlock) {
       for (const sb of switchingBlock) {
-        const preferredState = sb.reversed ? Block.switchingBlockON : Block.switchingBlockOFF;
-        if (cx.grid.getBlock(cx, sb.x, sb.y) !== preferredState) {
-          cx.grid.setBlock(cx, sb.x, sb.y, { block: preferredState });
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockOFF) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockON });
         }
       }
     } else {
       // スイッチが押されていないとき
       for (const sb of switchingBlock) {
-        const preferredState = sb.reversed ? Block.switchingBlockOFF : Block.switchingBlockON;
-        if (cx.grid.getBlock(cx, sb.x, sb.y) !== preferredState) {
-          cx.grid.setBlock(cx, sb.x, sb.y, { block: preferredState });
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockON) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockOFF });
         }
       }
     }

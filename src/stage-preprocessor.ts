@@ -85,8 +85,7 @@ function handleGrouping(input: PreprocessInput, id: string): handleGroupingRet |
           break;
         }
         case "s":
-        case "w":
-        case "W": {
+        case "w": {
           assert(blockType !== "groupId", `${id} seems to be used for blockGroup, but there's a switch at that place`);
           blockType = "switchId";
           switchGroups.push({
@@ -119,19 +118,16 @@ function find(stage: Stage, char: string) {
 }
 
 function validate(input: PreprocessInput) {
-  assert(input.stage != null, "stage is null");
-  assert(input.overlay != null, "overlay is null");
   const expectY = input.stage.length;
   const expectX = input.stage[0].length;
 
-  // what the fuck does "length is not defined" mean?
-  // validateLen(input.stage, expectY, expectX);
-  // validateLen(input.overlay, expectY, expectX);
+  validateLen(input.stage, expectY, expectX);
+  validateLen(input.overlay, expectY, expectX);
 }
 
 function validateLen(stage: Stage, expectY: number, expectX: number) {
   assert(stage.length === expectY, `stage length do not equal: expected ${expectY}, got ${stage.length}`);
   for (const row of stage) {
-    assert(row.length === expectX, `stage rows' lengths are not equal: expected ${expectX}, got ${row.length}`);
+    assert(row.length === expectX, `stage rows' lengths are not equal: expected ${length}, got ${row.length}`);
   }
 }
