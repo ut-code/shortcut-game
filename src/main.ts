@@ -211,6 +211,15 @@ export async function setup(
       return prev;
     });
   };
+  bindings.reset = () => {
+    cx.state.update((prev) => {
+      prev.paused = false;
+      prev.goaled = false;
+      prev.gameover = false;
+      return prev;
+    });
+    cx.reset();
+  };
 
   const uiContext = derived([state, history], ([$state, $history]) => {
     return useUI($state, $history);

@@ -2,8 +2,9 @@
 type Props = {
   goaled: boolean;
   nextStage: string;
+  reset: () => void;
 };
-const { goaled, nextStage }: Props = $props();
+const { goaled, nextStage, reset }: Props = $props();
 let el: HTMLDialogElement;
 $effect(() => {
   if (goaled) {
@@ -24,11 +25,13 @@ document.addEventListener("keydown", (ev) => {
     <a data-sveltekit-reload style="font-size: 1.5rem;" class="btn btn-block" href={`/game?stage=${nextStage}`}>
       Next Stage
     </a>
-    <!-- TODO; これもうちょいパフォーマンスいいやつにしたい -->
     <button
       style="font-size: 1.5rem;"
       class="btn btn-block"
-      onclick={() => window.location.reload()}
+      onclick={() => {
+        el.close();
+        reset();
+      }}
     >
       Restart
     </button>

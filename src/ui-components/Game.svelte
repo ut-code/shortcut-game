@@ -60,9 +60,11 @@ onDestroy(() => bindings.destroy());
   <GoalMenu
     goaled={uiContext.goaled}
     nextStage={nextStage}
+    reset={() => bindings.reset()}
   />
   <GameOverMenu
     gameover={uiContext.gameover}
+    reset={() => bindings.reset()}
   />
     <div
     class="uiBackground"

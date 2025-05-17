@@ -303,7 +303,6 @@ export function resize(cx: Context) {
 
 // Todo: 直接リセットさせるのではなく、ゲームオーバーシーンを切り分ける
 export function gameover(cx: Context) {
-  // cx.reset();
   cx.state.update((prev) => {
     prev.gameover = true;
     return prev;

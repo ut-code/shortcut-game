@@ -1,15 +1,17 @@
 <script lang="ts">
+import { RenderLayer } from "pixi.js";
+
 type Props = {
   gameover: boolean;
+  reset: () => void;
 };
-const { gameover }: Props = $props();
-let edl: HTMLDialogElement;
-let ebl: HTMLButtonElement;
+const { gameover, reset }: Props = $props();
+let el: HTMLDialogElement;
 $effect(() => {
   if (gameover) {
-    edl.showModal();
+    el.showModal();
   } else {
-    if (edl.open) edl.close();
+    if (el.open) el.close();
   }
 });
 document.addEventListener("keydown", (ev) => {
@@ -17,7 +19,7 @@ document.addEventListener("keydown", (ev) => {
 });
 </script>
 
-<dialog bind:this={edl} class="modal">
+<dialog bind:this={el} class="modal">
   <div class="uiBackground modal-box flex flex-col gap-1">
     <h1 class="text-4xl text-center">Game Over</h1>
     <!-- todo: ボタンのスタイル -->
@@ -26,8 +28,10 @@ document.addEventListener("keydown", (ev) => {
     <button
       style="font-size: 1.5rem;"
       class="btn btn-block"
-      onclick={() => window.location.reload()}
-    >
+      onclick={() => {
+        el.close();
+        reset();
+    }}>
       Restart
     </button>
     <a style="font-size: 1.5rem;" class="btn btn-block" href="/">
