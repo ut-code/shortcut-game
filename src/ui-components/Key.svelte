@@ -8,6 +8,7 @@ const { key, enabled }: Props = $props();
 <style>
   .key{
     display: inline-block;
+    font-family: system-ui;
     font-size: 1rem;
     padding: 0.3rem;
     border-style: solid;

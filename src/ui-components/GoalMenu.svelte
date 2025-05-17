@@ -22,12 +22,11 @@ document.addEventListener("keydown", (ev) => {
   <div class="uiBackground modal-box flex flex-col gap-1">
     <h1 class="text-4xl text-center">Goal!</h1>
     <!-- todo: ボタンのスタイル -->
-    <a data-sveltekit-reload style="font-size: 1.5rem;" class="btn btn-block" href={`/game?stage=${nextStage}`}>
+    <a data-sveltekit-reload class="btn btn-block button-with-fleftex" href={`/game?stage=${nextStage}`}>
       Next Stage
     </a>
     <button
-      style="font-size: 1.5rem;"
-      class="btn btn-block"
+      class="btn btn-block button-with-fleftex"
       onclick={() => {
         el.close();
         reset();
@@ -35,7 +34,7 @@ document.addEventListener("keydown", (ev) => {
     >
       Restart
     </button>
-    <a style="font-size: 1.5rem;" class="btn btn-block" href="/">
+    <a class="btn btn-block button-with-fleftex" href="/">
       Back to Stage Select
     </a>
   </div>
@@ -46,5 +45,10 @@ document.addEventListener("keydown", (ev) => {
     background: oklch(82.8% 0.189 84.429 / 40%);
     backdrop-filter: blur(2px);
     padding: 0.75rem 1rem;
+  }
+  .button-with-fleftex {
+    font-size: inherit !important;
+    height: max-content !important;
+    padding-top: 0.5rem;
   }
 </style>

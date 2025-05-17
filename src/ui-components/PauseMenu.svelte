@@ -27,24 +27,23 @@ document.addEventListener("keydown", (ev) => {
 
 <dialog bind:this={el} onclose={onresume} class="modal">
   <div class="uiBackground modal-box flex flex-col gap-1">
-    <h1 class="text-4xl text-center">Paused</h1>
+    <h1 class="text-center">Paused</h1>
     <!-- todo: ボタンのスタイル -->
     <form method="dialog" class="w-full">
-      <button style="font-size: 1.5rem;" class="btn btn-block" type="submit">
+      <button class="btn btn-block button-with-fleftex" type="submit">
         Resume
       </button>
     </form>
     <!-- TODO; これもうちょいパフォーマンスいいやつにしたい -->
     <button
-      style="font-size: 1.5rem;"
-      class="btn btn-block"
+      class="btn btn-block button-with-fleftex"
       onclick={() => {
         onreset();
       }}
     >
       Restart
     </button>
-    <a style="font-size: 1.5rem;" class="btn btn-block" href="/">
+    <a class="btn btn-block button-with-fleftex" href="/">
       Back to Stage Select
     </a>
   </div>
@@ -55,5 +54,10 @@ document.addEventListener("keydown", (ev) => {
     background: oklch(82.8% 0.189 84.429 / 40%);
     backdrop-filter: blur(2px);
     padding: 0.75rem 1rem;
+  }
+  .button-with-fleftex {
+    font-size: inherit !important;
+    height: max-content !important;
+    padding-top: 0.5rem;
   }
 </style>

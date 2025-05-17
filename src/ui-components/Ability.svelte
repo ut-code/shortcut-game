@@ -9,7 +9,7 @@ $effect(() => {
 </script>
 <span style="color: {count > 0 ? "black" : "gray"};">
   <Key key={isMacOS ? "⌘+" + key : "Ctrl+" + key} enabled={count > 0} />
-  <span style="font-size: 1.5rem;">{name}</span>
-  <span style="font-size: 1.5rem;">✕</span>
-  <span style="font-size: 2rem; margin-right: 1rem;">{isFinite(count) ? count : "∞"}</span>
+  <span style="">{name}</span>
+  <span style="">x</span>
+  <span style="margin-right: 1rem;">{isFinite(count) ? count : "∞"}</span>
 </span>
