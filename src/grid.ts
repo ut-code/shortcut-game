@@ -87,6 +87,7 @@ export class Grid {
   __vsom: VirtualSOM;
   marginY: number; // windowの上端とy=0上端の距離(px)
   oobSprites: Sprite[]; // グリッド定義の外を埋めるやつ
+  oobFallableSprites: { sprite: Sprite | null; vy: number }[]; // グリッド定義外に落ちたfallable
   constructor(
     cx: {
       _stage_container: Container;
@@ -99,6 +100,7 @@ export class Grid {
   ) {
     const stage = cx._stage_container;
     this.oobSprites = [];
+    this.oobFallableSprites = [];
     this.marginY = (height - cellSize * stageDefinition.stage.length) / 2;
     const vsprites: VirtualSOM = [];
 
@@ -284,6 +286,15 @@ export class Grid {
       }
     }
     this.initOOBSprites(cx, cellSize);
+    this.clearFallableSprites(cx);
+  }
+  // 画面外のfallableはステージ内のfallableのコピーでありhistoryの対象ではないので、
+  // undoなどでステージ全体に変更を加えるときに使う
+  clearFallableSprites(cx: { _stage_container: Container }) {
+    for (const sprite of this.oobFallableSprites) {
+      if (sprite.sprite) cx._stage_container.removeChild(sprite.sprite);
+    }
+    this.oobFallableSprites = [];
   }
   getBlock(cx: Context, x: number, y: number): Block | null {
     return get(cx.state).cells[y]?.[x]?.block ?? null;
@@ -575,6 +586,19 @@ export class Grid {
   tick(cx: Context, ticker: Ticker) {
     const { blockSize, gridX, gridY, marginY } = get(cx.config);
     const cells = get(cx.state).cells;
+
+    for (const s of this.oobFallableSprites) {
+      if (s.sprite) {
+        s.sprite.y += s.vy * ticker.deltaTime;
+        s.vy += consts.gravity * blockSize * ticker.deltaTime;
+        if (s.sprite.y > gridY * blockSize + marginY * 2) {
+          // 画面外に出たら消す
+          s.sprite.parent?.removeChild(s.sprite);
+          s.sprite = null;
+        }
+      }
+    }
+
     for (let y = gridY - 1; y >= 0; y--) {
       for (let x = 0; x < gridX; x++) {
         const vcell = this.__vsom[y][x];
@@ -590,14 +614,20 @@ export class Grid {
         }
 
         let swapDiff = 0;
+        let goOOB = false;
         while (swapDiff * blockSize <= vcell.dy) {
           // 下にブロックがあるなどの要因で止まる
           if (!isAvail(cells, x, y + swapDiff + 1)) break;
           vcell.dy -= blockSize;
           swapDiff++;
+          if (y + swapDiff >= cells.length) {
+            goOOB = true;
+            break;
+          }
         }
+
         // これ以上下に行けない
-        if (!isAvail(cells, x, y + swapDiff)) {
+        if (!goOOB && !isAvail(cells, x, y + swapDiff)) {
           // 着地 (dy はたいてい 0 未満なので、別で判定が必要)
           if (vcell.dy >= 0) {
             vcell.dy = 0;
@@ -606,7 +636,18 @@ export class Grid {
         }
 
         vcell.sprite.y = y * blockSize + marginY + vcell.dy;
-        if (swapDiff > 0) {
+
+        if (goOOB) {
+          // vcell.sprite はsetBlockで消えてしまうので、あたらしく作る
+          const oobSprite = createSprite(blockSize, Block.fallable, x, y, marginY);
+          oobSprite.y = (y + swapDiff) * blockSize + marginY + vcell.dy;
+          cx._stage_container.addChild(oobSprite);
+          this.oobFallableSprites.push({
+            sprite: oobSprite,
+            vy: vcell.vy,
+          });
+          this.setBlock(cx, x, y, { block: null });
+        } else if (swapDiff > 0) {
           this.setBlock(cx, x, y, { block: null });
           this.setBlock(cx, x, y + swapDiff, ccell);
           const vSwapCell = this.__vsom[y + swapDiff][x];
@@ -629,8 +670,7 @@ function isAvail(cells: GridCell[][], x: number, y: number) {
   switch (true) {
     case y >= cells.length:
       // 床が抜けている
-      // どうする?
-      return false;
+      return true;
     case cell.block === null || cell.block === Block.switch:
       // 下にブロックがない
       return true;

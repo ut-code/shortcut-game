@@ -450,7 +450,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........b........",
         ".........w........",
         ".sss..fW.w..W..g..",
-        "bSSSbbbbbbbbbbbbbb",
+        "bSSSb.bbbbbbbbbbbb",
       ],
       initialPlayerX: 3,
       initialPlayerY: 5,
