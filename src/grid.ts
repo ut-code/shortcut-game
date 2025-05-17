@@ -2,7 +2,7 @@ import { type Container, Sprite, type Ticker } from "pixi.js";
 import { type Writable, get } from "svelte/store";
 import { Block } from "./constants.ts";
 import * as consts from "./constants.ts";
-import { assert } from "./lib.ts";
+import { assert, warnIf } from "./lib.ts";
 import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
 import {
   fallableTexture,
@@ -188,7 +188,6 @@ export class Grid {
         const vsom = this.__vsom[y][x];
         const newCell = newGrid[y][x];
         if (vsom?.block !== newCell.block) {
-          console.log("[diffing] place at", x, y, newCell);
           this.setBlock(cx, x, y, newCell);
         }
       }
@@ -320,8 +319,8 @@ export class Grid {
     if (vprev?.sprite) {
       cx._stage_container.removeChild(vprev.sprite);
     }
-    assert(
-      vprev === null || cprev.block === undefined || cprev.block === vprev.block,
+    warnIf(
+      vprev !== null && cprev.block !== undefined && cprev.block === vprev.block,
       `[setBlock] vsom is out of sync with cells: vsom has ${vprev?.block} and cells has ${cprev.block}`,
     );
     if (cNewCell.block !== Block.movable && cNewCell.block !== Block.fallable) {
