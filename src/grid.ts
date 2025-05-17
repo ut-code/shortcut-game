@@ -3,12 +3,7 @@ import { type Writable, get } from "svelte/store";
 import { Block } from "./constants.ts";
 import * as consts from "./constants.ts";
 import { assert } from "./lib.ts";
-import type {
-  Context,
-  GameConfig,
-  GameState,
-  MovableObject,
-} from "./public-types.ts";
+import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
 import {
   fallableTexture,
   rockTexture,
@@ -789,10 +784,7 @@ function updateSprite(sprite: Sprite, blockSize: number, x: number, y: number, m
   sprite.y = y * blockSize + marginY + dy;
 }
 
-export function createTutorialSprite(
-  cx: { _stage_container: Container },
-  order: number,
-) {
+export function createTutorialSprite(cx: { _stage_container: Container }, order: number) {
   let sprite = new Sprite(tutorialImg1);
   switch (order) {
     case 2:
