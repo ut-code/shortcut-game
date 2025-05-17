@@ -1,12 +1,23 @@
 <script lang="ts">
-type Props = { key: string; enabled: boolean };
-const { key, enabled }: Props = $props();
+type Props = { key: string; enabled: boolean; withCtrl?: boolean };
+const { key, enabled, withCtrl }: Props = $props();
+let isMacOS: boolean = $state(false);
+$effect(() => {
+  isMacOS = navigator.userAgent.includes("Mac OS X");
+});
 </script>
-<span class="key" style="border-color: {enabled ? "black" : "gray"}; background: {enabled ? "white" : "lightgray"};">
-  {key}
+
+<span
+  class="key"
+  style="border-color: {enabled ? 'black' : 'gray'}; background: {enabled
+    ? 'white'
+    : 'lightgray'};"
+>
+  {(withCtrl ? (isMacOS ? "⌘+" : "Ctrl+") : "") + key}
 </span>
+
 <style>
-  .key{
+  .key {
     display: inline-block;
     font-family: system-ui;
     font-size: 1rem;

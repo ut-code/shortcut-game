@@ -28,7 +28,7 @@ document.addEventListener("keydown", (ev) => {
 
 <dialog bind:this={el} onclose={onresume} class="modal">
   <div class="modal-box flex flex-col gap-1">
-    <h1 class="text-4xl text-center my-6">Paused</h1>
+    <h1 class="text-center my-6">Paused</h1>
     <form method="dialog" class="w-full">
       <button class="btn modal-btn" type="submit">Resume</button>
     </form>

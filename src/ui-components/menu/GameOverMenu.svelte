@@ -1,4 +1,5 @@
 <script lang="ts">
+import Key from "../Key.svelte";
 import "./menu.css";
 
 type Props = {
@@ -21,8 +22,11 @@ document.addEventListener("keydown", (ev) => {
 
 <dialog bind:this={el} class="modal">
   <div class="modal-box flex flex-col gap-1">
-    <h1 class="text-4xl text-center mt-6 mb-2">Game Over</h1>
-    <p class="text-xl text-center text-gray-500 mb-4">ctrl+Z で戻る</p>
+    <h1 class="text-center mt-6 mb-2">Game Over</h1>
+    <p class="text-center text-gray-500 mb-2 flex flex-row justify-center items-end ">   
+      <span class="mr-2 ">Back with</span>
+      <Key key="Z" withCtrl enabled />
+    </p>
     <button
       class="btn modal-btn"
       onclick={() => {
