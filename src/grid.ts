@@ -320,7 +320,7 @@ export class Grid {
       cx._stage_container.removeChild(vprev.sprite);
     }
     warnIf(
-      vprev !== null && cprev.block !== undefined && cprev.block === vprev.block,
+      vprev !== null && cprev.block !== undefined && cprev.block !== vprev.block,
       `[setBlock] vsom is out of sync with cells: vsom has ${vprev?.block} and cells has ${cprev.block}`,
     );
     if (cNewCell.block !== Block.movable && cNewCell.block !== Block.fallable) {
