@@ -139,12 +139,10 @@ export async function setup(
     cx.dynamic.player.y = blockSize * d.initialPlayerY + get(cx.config).marginY;
     cx.dynamic.player.vx = 0;
     cx.dynamic.player.vy = 0;
+    cx.dynamic.player.jumpingBegin = null;
     cx.dynamic.focus = null;
     cx.elapsed = 0;
-    cx.state.update((prev) => ({
-      ...prev,
-      paused: false,
-    }));
+    cx.state.set(structuredClone(initialGameState));
     cx.grid.diffAndUpdateTo(cx, createCellsFromStageDefinition(stageDefinition));
     // 上に同じく。 init を使う？でも init は中で document.addEventListener してるので...
     History.record(cx);
