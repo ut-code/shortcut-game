@@ -5,7 +5,13 @@ import * as consts from "./constants.ts";
 import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
 import type { AbilityInit, Context } from "./public-types.ts";
-import { bunnyTexture, characterCtrlTexture, highlightHoldTexture, highlightTexture } from "./resources.ts";
+import {
+  bunnyTexture,
+  characterActivatedTexture,
+  characterCtrlTexture,
+  highlightHoldTexture,
+  highlightTexture,
+} from "./resources.ts";
 
 export function init(
   cx: Context,
@@ -58,6 +64,7 @@ export function init(
     vy: 0,
     onGround: false,
     jumpingBegin: null,
+    activated: false,
     holdingKeys: {},
     facing: consts.Facing.right,
   };
@@ -284,14 +291,22 @@ export function tick(cx: Context, ticker: Ticker) {
     player.sprite.scale.x = Math.abs(player.sprite.scale.x);
   }
 
-  if (player.holdingKeys[Inputs.Ctrl]) {
-    player.sprite.texture = characterCtrlTexture;
-    player.sprite.width = consts.playerWidth * blockSize;
-    player.sprite.height = (32 / 27) * consts.playerHeight * blockSize;
+  // プレイヤーの能力使用状況を反映
+  if (player.activated && player.holdingKeys[Inputs.Ctrl] && player.onGround) {
+    player.sprite.texture = characterActivatedTexture;
+    player.sprite.width = (29 / 26) * consts.playerWidth * blockSize;
+    player.sprite.height = (24 / 27) * consts.playerHeight * blockSize;
   } else {
-    player.sprite.texture = bunnyTexture;
-    player.sprite.width = consts.playerWidth * blockSize;
-    player.sprite.height = consts.playerHeight * blockSize;
+    player.activated = false;
+    if (player.holdingKeys[Inputs.Ctrl]) {
+      player.sprite.texture = characterCtrlTexture;
+      player.sprite.width = consts.playerWidth * blockSize;
+      player.sprite.height = (32 / 27) * consts.playerHeight * blockSize;
+    } else {
+      player.sprite.texture = bunnyTexture;
+      player.sprite.width = consts.playerWidth * blockSize;
+      player.sprite.height = consts.playerHeight * blockSize;
+    }
   }
 
   // 当たり判定結果を反映する

@@ -102,6 +102,7 @@ export async function setup(
       vy: 0,
       onGround: false,
       jumpingBegin: null,
+      activated: false,
       holdingKeys: {},
       facing: Facing.right,
     },

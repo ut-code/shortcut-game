@@ -3,8 +3,8 @@ import { Assets } from "pixi.js";
 // assets
 export const bunnyTexture = await Assets.load("/assets/character-normal.png");
 export const characterCtrlTexture = await Assets.load("/assets/character-ctrl.png");
+export const characterActivatedTexture = await Assets.load("/assets/character-activated.png");
 export const rockTexture = await Assets.load("/assets/block.png");
-// export const movableTexture = await Assets.load("/assets/movable.png");
 export const fallableTexture = await Assets.load("/assets/woodenbox.png");
 export const switchTexture = await Assets.load("/assets/switch.png");
 export const switchBaseTexture = await Assets.load("/assets/switch-base.png");

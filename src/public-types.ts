@@ -79,6 +79,7 @@ export type Context = {
       onGround: boolean;
       vx: number;
       vy: number;
+      activated: boolean;
     };
   };
   // about time

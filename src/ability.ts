@@ -74,6 +74,8 @@ export function copy(cx: Context) {
   });
 
   History.record(cx);
+
+  cx.dynamic.player.activated = true;
 }
 export function paste(cx: Context) {
   const state = get(cx.state);
@@ -98,6 +100,8 @@ export function paste(cx: Context) {
 
   printCells(createSnapshot(cx).game.cells, "paste");
   History.record(cx);
+
+  cx.dynamic.player.activated = true;
 }
 export function cut(cx: Context) {
   const { focus } = cx.dynamic;
@@ -126,6 +130,8 @@ export function cut(cx: Context) {
 
   printCells(createSnapshot(cx).game.cells, "cut");
   History.record(cx);
+
+  cx.dynamic.player.activated = true;
 }
 
 // 左向きのときにブロックを配置する位置を変更するのに使用
