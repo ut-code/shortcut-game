@@ -1,5 +1,5 @@
 // 単位は blockSize * px
-export const playerWidth = 0.6;
+export const playerWidth = 0.9;
 export const playerHeight = 0.9;
 export const moveVX = 0.1;
 export const jumpVY = 0.12;

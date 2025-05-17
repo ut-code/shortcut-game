@@ -276,12 +276,13 @@ export function tick(cx: Context, ticker: Ticker) {
     });
   }
 
-  // if (get(cx.state).gameover) {
-  //   cx.state.update((prev) => {
-  //     prev.gameover = true;
-  //     return prev;
-  //   });
-  // };
+  if (cx.dynamic.player.facing === consts.Facing.left) {
+    if (!cx.dynamic.player.sprite) throw new Error("Player sprite is null");
+    cx.dynamic.player.sprite.scale.x = -1 * Math.abs(cx.dynamic.player.sprite.scale.x);
+  } else {
+    if (!cx.dynamic.player.sprite) throw new Error("Player sprite is null");
+    cx.dynamic.player.sprite.scale.x = Math.abs(cx.dynamic.player.sprite.scale.x);
+  }
 
   // 当たり判定結果を反映する
   player.x += player.vx * ticker.deltaTime;
