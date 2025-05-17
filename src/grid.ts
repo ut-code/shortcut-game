@@ -2,12 +2,13 @@ import { type Container, Sprite, type Ticker } from "pixi.js";
 import { type Writable, get } from "svelte/store";
 import { Block, BlockDefinitionMap } from "./constants.ts";
 import * as consts from "./constants.ts";
-import { assert, warnIf } from "./lib.ts";
+import { assert } from "./lib.ts";
 import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
 import {
   fallableTexture,
   goalTexture,
   rockTexture,
+  spikeTexture,
   switchBaseTexture,
   switchPressedTexture,
   switchTexture,
@@ -27,49 +28,20 @@ type VirtualSpriteCell = {
 type VirtualSOM = (VirtualSpriteCell | null)[][];
 export type GridCell =
   | {
-      block: Block.block;
+      // blocks that don't have switchId
+      block: null | Block.block | Block.switchBase | Block.goal | Block.spike;
       objectId?: unknown;
     }
   | {
-      block: Block.movable;
-      objectId: string;
-      switchId: string | undefined;
-    }
-  | {
-      block: Block.fallable;
+      // movable blocks (can be placed on top of switch)
+      block: Block.movable | Block.fallable;
       objectId: string;
       switchId: string | undefined; // switchの上に置かれている場合
     }
   | {
-      block: null; // air
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switch;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchBase;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchingBlockOFF;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchingBlockON;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchPressed;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.goal;
+      // switches / triggerable blocks
+      block: Block.switch | Block.switchingBlockOFF | Block.switchingBlockON | Block.switchPressed;
+      switchId?: string; // optional でいいの?
       objectId?: unknown;
     };
 
@@ -102,19 +74,12 @@ export class Grid {
           case null: // air
             vspriteRow.push(null);
             break;
-          case Block.movable: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
-          case Block.fallable: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
-          case Block.block: {
+          case Block.block:
+          case Block.movable:
+          case Block.spike:
+          case Block.fallable:
+          case Block.goal:
+          case Block.switchBase: {
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
             stage.addChild(sprite);
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
@@ -139,12 +104,6 @@ export class Grid {
             });
             break;
           }
-          case Block.switchBase: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
           case Block.switchingBlockOFF: {
             const switchId = (
               get(cx.state).cells[y][x] as {
@@ -167,15 +126,9 @@ export class Grid {
             });
             break;
           }
-          case Block.goal: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
           case Block.switchingBlockON:
           case Block.switchPressed:
-            throw new Error(`createCellsFromStageDefinition: block is not supported: ${dblock}`);
+            throw new Error(`[Grid.constructor]: block is not supported: ${dblock}`);
           default:
             dblock satisfies never;
         }
@@ -204,6 +157,7 @@ export class Grid {
       }
     }
   }
+
   /**
     it uses object equality internally, therefore
     - object should be equal if they are the same.
@@ -631,6 +585,7 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
         case Block.block:
         case null:
         case Block.switchBase:
+        case Block.spike:
         case Block.goal: {
           const cell: GridCell = {
             block,
@@ -753,6 +708,11 @@ function createSprite(
       updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
+    case Block.spike: {
+      const sprite = new Sprite(spikeTexture);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
+    }
     default:
       block satisfies never;
       throw new Error("unreachable");
@@ -765,6 +725,7 @@ function updateSprite(sprite: Sprite, blockSize: number, x: number, y: number, m
   sprite.y = y * blockSize + marginY + dy;
 }
 
+//ToDo: 現在の仕様では、Escメニュー表示状態でも動き続ける。
 export function createTutorialSprite(cx: { _stage_container: Container }, order: number) {
   let sprite = new Sprite(tutorialImg1);
   switch (order) {
@@ -781,43 +742,11 @@ export function createTutorialSprite(cx: { _stage_container: Container }, order:
   sprite.y = 100;
   cx._stage_container.addChild(sprite);
 }
-//ToDo: 現在の仕様では、Escメニュー表示状態でも動き続ける。
 
 export function printCells(cells: GridCell[][], context?: string) {
   console.log(
     `${context ? context : "Grid"}:
-     ${cells
-       .map((row) =>
-         row
-           .map((cell) => {
-             switch (cell.block) {
-               case null:
-                 return ".";
-               case Block.block:
-                 return "b";
-               case Block.movable:
-                 return cell.switchId !== undefined ? "M" : "m";
-               case Block.fallable:
-                 return cell.switchId !== undefined ? "F" : "f";
-               case Block.switch:
-                 return "s";
-               case Block.switchBase:
-                 return "S";
-               case Block.switchingBlockOFF:
-                 return "w";
-               case Block.switchingBlockON:
-                 return "w";
-               case Block.switchPressed:
-                 return "s";
-               case Block.goal:
-                 return "g";
-               default:
-                 cell satisfies never;
-             }
-           })
-           .join(""),
-       )
-       .join("\n")}`,
+     ${cells.map((row) => row.map((cell) => consts.ReverseBlockMap.get(cell.block)).join("")).join("\n")}`,
   );
 }
 

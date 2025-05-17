@@ -128,6 +128,9 @@ export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: b
 export function tick(cx: Context, ticker: Ticker) {
   const { blockSize, gridX, gridY, marginY } = get(cx.config);
   const player = cx.dynamic.player;
+  const grid = cx.grid;
+
+  // movement
   const accel = player.onGround ? consts.playerAccelOnGround : consts.playerAccelInAir;
   const decel = player.onGround ? consts.playerDecelOnGround : consts.playerDecelInAir;
   let playerIntent = 0; // 0 -> no intent, 1 -> wants to go right, -1 -> wants to go left
@@ -176,6 +179,7 @@ export function tick(cx: Context, ticker: Ticker) {
     player.jumpingBegin = null;
   }
 
+  // collision
   const isBlock = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== null &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
@@ -238,6 +242,7 @@ export function tick(cx: Context, ticker: Ticker) {
     gameover(cx);
   }
 
+  // switch activation
   if (isSwitchBase(nextX, nextBottomY)) {
     const switchBlock = get(cx.state).cells[Math.floor(nextBottomY - 1)][Math.floor(nextX)];
     if (switchBlock.block === Block.switch) {
@@ -296,6 +301,7 @@ export function tick(cx: Context, ticker: Ticker) {
     }
   }
 
+  // goal
   if (isGoal(nextX, nextTopY) && player.onGround) {
     cx.state.update((prev) => {
       prev.goaled = true;
@@ -303,13 +309,13 @@ export function tick(cx: Context, ticker: Ticker) {
     });
   }
 
-  // if (get(cx.state).gameover) {
-  //   cx.state.update((prev) => {
-  //     prev.gameover = true;
-  //     return prev;
-  //   });
-  // };
+  // gameover
+  const coords = getCoords(cx);
+  if (player.onGround && cx.grid.getBlock(cx, coords.x, coords.y + 1) === Block.spike) {
+    gameover(cx);
+  }
 
+  // movement? again?
   // 当たり判定結果を反映する
   player.x += player.vx * ticker.deltaTime;
   player.y += player.vy * ticker.deltaTime;

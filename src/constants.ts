@@ -24,6 +24,7 @@ export enum Block {
   switchingBlockOFF = "switching-block-off",
   switchingBlockON = "switching-block-on",
   switchPressed = "switch-pressed",
+  spike = "spike",
   goal = "goal",
 }
 export enum Facing {
@@ -45,5 +46,11 @@ export const BlockDefinitionMap = new Map<string, Block | null>([
   ["s", Block.switch],
   ["S", Block.switchBase],
   ["w", Block.switchingBlockOFF],
+  ["^", Block.spike],
   ["g", Block.goal],
 ]);
+
+export const ReverseBlockMap = new Map<Block | null, string>();
+BlockDefinitionMap.forEach((value, key) => {
+  ReverseBlockMap.set(value, key);
+});
