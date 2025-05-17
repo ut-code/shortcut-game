@@ -353,10 +353,10 @@ export class Grid {
       vprev.block = Block.switchPressed;
       vprev.dy = 0;
       vprev.vy = 0;
-    } else if (vprev?.block === Block.switchPressed) {
+    } else if (vprev?.block === Block.switchPressed && cNewCell.block === Block.switch) {
       // switchがプレイヤーに押されているのが戻るとき
       assert(
-        cprev.block === Block.switchPressed || cprev.block === Block.switch,
+        cprev.block === Block.switchPressed || cprev.block === Block.switch || cprev.block === Block.movable,
         "block is not switch or switchPressed",
       );
       const switchId = cprev.switchId;
@@ -374,7 +374,7 @@ export class Grid {
       vprev.vy = 0;
     }
     // switch上にオブジェクトを置くとき
-    else if (vprev?.block === Block.switch) {
+    else if (vprev?.block === Block.switch || vprev?.block === Block.switchPressed) {
       if (cNewCell.block !== Block.movable && cNewCell.block !== Block.fallable) {
         console.warn("No block other than movable cannot be placed on the switch");
         console.log("cell.block", cNewCell.block);
