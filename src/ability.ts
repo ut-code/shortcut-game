@@ -5,16 +5,7 @@ import { createSnapshot } from "./history.ts";
 import * as History from "./history.ts";
 import type { AbilityInit, Context, Coords, MovableObject } from "./public-types.ts";
 
-export function init(cx: Context, options?: AbilityInit) {
-  cx.state.update((prev) => ({
-    ...prev,
-    usage: options?.enabled ?? {
-      copy: Number.POSITIVE_INFINITY,
-      paste: Number.POSITIVE_INFINITY,
-      cut: Number.POSITIVE_INFINITY,
-    },
-  }));
-
+export function init(cx: Context) {
   console.log("ability init");
   document.addEventListener("copy", (e) => {
     const { onGround } = cx.dynamic.player;

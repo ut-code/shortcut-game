@@ -17,6 +17,11 @@ export namespace world3 {
     inventoryIsInfinite: true,
     blockGroups: [],
     switchGroups: [],
+    usage: {
+      copy: Number.POSITIVE_INFINITY,
+      cut: Number.POSITIVE_INFINITY,
+      paste: Number.POSITIVE_INFINITY,
+    },
   };
   export const stage2: StageDefinition = {
     stage: [
@@ -35,6 +40,11 @@ export namespace world3 {
     inventoryIsInfinite: true,
     blockGroups: [],
     switchGroups: [],
+    usage: {
+      copy: Number.POSITIVE_INFINITY,
+      cut: Number.POSITIVE_INFINITY,
+      paste: Number.POSITIVE_INFINITY,
+    },
   };
   export const stage3: StageDefinition = {
     stage: [
@@ -55,6 +65,11 @@ export namespace world3 {
       { x: 13, y: 1, switchId: "1" },
       { x: 10, y: 4, switchId: "1" },
     ],
+    usage: {
+      copy: Number.POSITIVE_INFINITY,
+      cut: Number.POSITIVE_INFINITY,
+      paste: Number.POSITIVE_INFINITY,
+    },
   };
   export const stage4: StageDefinition = {
     stage: [
@@ -95,5 +110,10 @@ export namespace world3 {
       { x: 20, y: 2, switchId: "2" },
       { x: 21, y: 1, switchId: "2" },
     ],
+    usage: {
+      copy: Number.POSITIVE_INFINITY,
+      cut: Number.POSITIVE_INFINITY,
+      paste: Number.POSITIVE_INFINITY,
+    },
   };
 }

@@ -7,13 +7,7 @@ import { Block } from "./constants.ts";
 import type { AbilityInit, Context } from "./public-types.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
 
-export function init(
-  cx: Context,
-  spriteOptions?: SpriteOptions | Texture,
-  options?: {
-    ability?: AbilityInit;
-  },
-) {
+export function init(cx: Context, spriteOptions?: SpriteOptions | Texture) {
   const sprite = new Sprite(spriteOptions);
   // Center the sprite's anchor point
   sprite.anchor.set(0.5, 1);
@@ -36,7 +30,7 @@ export function init(
   document.addEventListener("keydown", (event) => handleInput(cx, event, true));
   document.addEventListener("keyup", (event) => handleInput(cx, event, false));
   console.log("player init");
-  Ability.init(cx, options?.ability);
+  Ability.init(cx);
   return {
     sprite,
     get coords() {
