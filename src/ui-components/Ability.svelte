@@ -7,9 +7,9 @@ $effect(() => {
   isMacOS = navigator.userAgent.includes("Mac OS X");
 });
 </script>
-<span style="color: {count > 0 ? "black" : "gray"};">
+<span style="display: flex; align-items: end; color: {count > 0 ? "black" : "gray"};">
   <Key key={isMacOS ? "⌘+" + key : "Ctrl+" + key} enabled={count > 0} />
-  <span style="">{name}</span>
-  <span style="">x</span>
+  <span style="margin-left:0.5rem; margin-right: 0.5rem;">{name}</span>
+  <span style="margin-right: 0.5rem; ">x</span>
   <span style="margin-right: 1rem;">{isFinite(count) ? count : "∞"}</span>
 </span>
