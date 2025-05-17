@@ -319,10 +319,6 @@ export class Grid {
     if (vprev?.sprite) {
       cx._stage_container.removeChild(vprev.sprite);
     }
-    warnIf(
-      vprev !== null && cprev.block !== undefined && cprev.block !== vprev.block,
-      `[setBlock] vsom is out of sync with cells: vsom has ${vprev?.block} and cells has ${cprev.block}`,
-    );
     if (cNewCell.block !== Block.movable && cNewCell.block !== Block.fallable) {
       assert(cNewCell.objectId == null, "Cell is not movable but has an objectId");
     }
