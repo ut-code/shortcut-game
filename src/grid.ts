@@ -194,6 +194,11 @@ export class Grid {
       }
     }
   }
+  /**
+    it uses object equality internally, therefore
+    - object should be equal if they are the same.
+    - object should be recreated `{ ...obj }` if they are not the same.
+  */
   update(cx: Context, fn: (cell: GridCell, x: number, y: number) => GridCell) {
     const cells = get(cx.state).cells;
     for (let y = 0; y < cells.length; y++) {
