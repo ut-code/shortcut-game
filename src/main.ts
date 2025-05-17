@@ -73,11 +73,11 @@ export async function setup(
   };
   const initialGameState = {
     inventory: null,
-    inventoryIsInfinite: false,
+    inventoryIsInfinite: !!stageDefinition.inventoryIsInfinite,
     usage: stageDefinition.usage ?? {
       copy: 0,
-      cut: Infinity,
-      paste: Infinity,
+      cut: Number.POSITIVE_INFINITY,
+      paste: Number.POSITIVE_INFINITY,
     },
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,

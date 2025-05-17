@@ -128,6 +128,6 @@ function validate(input: PreprocessInput) {
 function validateLen(stage: Stage, expectY: number, expectX: number) {
   assert(stage.length === expectY, `stage length do not equal: expected ${expectY}, got ${stage.length}`);
   for (const row of stage) {
-    assert(row.length === expectX, `stage rows' lengths are not equal: expected ${length}, got ${row.length}`);
+    assert(row.length === expectX, `stage rows' lengths are not equal: expected ${expectX}, got ${row.length}`);
   }
 }

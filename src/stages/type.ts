@@ -26,6 +26,7 @@ export type StageDefinition = {
   isTutorial?: boolean;
   initialPlayerX: number; // 左端から0-indexed
   initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ
+  inventoryIsInfinite?: boolean;
   // ブロックと fallable のグループ
   // 複数ブロックからなるオブジェクトについては明示的に指定
   blockGroups: BlockGroup[];

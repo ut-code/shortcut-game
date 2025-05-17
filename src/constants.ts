@@ -21,8 +21,10 @@ export enum Block {
   fallable = "fallable",
   switch = "switch",
   switchBase = "switch-base",
-  switchingBlockOFF = "switching-block-off",
-  switchingBlockON = "switching-block-on",
+  switchingBlockOFF = "switching-block-off", // 初期状態で出現している
+  switchingBlockON = "switching-block-on", // スイッチを押すと隠れる
+  inverseSwitchingBlockOFF = "inverse-switching-block-off", // 初期状態で隠れている
+  inverseSwitchingBlockON = "inverse-switching-block-on", // スイッチを押すと出現する
   switchPressed = "switch-pressed",
   spike = "spike",
   goal = "goal",
@@ -46,6 +48,7 @@ export const BlockDefinitionMap = new Map<string, Block | null>([
   ["s", Block.switch],
   ["S", Block.switchBase],
   ["w", Block.switchingBlockOFF],
+  ["W", Block.inverseSwitchingBlockOFF],
   ["^", Block.spike],
   ["g", Block.goal],
 ]);
