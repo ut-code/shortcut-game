@@ -5,7 +5,7 @@ import * as consts from "./constants.ts";
 import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
 import type { AbilityInit, Context } from "./public-types.ts";
-import { highlightHoldTexture, highlightTexture } from "./resources.ts";
+import { bunnyTexture, characterCtrlTexture, highlightHoldTexture, highlightTexture } from "./resources.ts";
 
 export function init(
   cx: Context,
@@ -276,12 +276,22 @@ export function tick(cx: Context, ticker: Ticker) {
     });
   }
 
-  if (cx.dynamic.player.facing === consts.Facing.left) {
-    if (!cx.dynamic.player.sprite) throw new Error("Player sprite is null");
-    cx.dynamic.player.sprite.scale.x = -1 * Math.abs(cx.dynamic.player.sprite.scale.x);
+  if (!player.sprite) throw new Error("Player sprite is null");
+
+  if (player.facing === consts.Facing.left) {
+    player.sprite.scale.x = -1 * Math.abs(player.sprite.scale.x);
   } else {
-    if (!cx.dynamic.player.sprite) throw new Error("Player sprite is null");
-    cx.dynamic.player.sprite.scale.x = Math.abs(cx.dynamic.player.sprite.scale.x);
+    player.sprite.scale.x = Math.abs(player.sprite.scale.x);
+  }
+
+  if (player.holdingKeys[Inputs.Ctrl]) {
+    player.sprite.texture = characterCtrlTexture;
+    player.sprite.width = consts.playerWidth * blockSize;
+    player.sprite.height = (32 / 27) * consts.playerHeight * blockSize;
+  } else {
+    player.sprite.texture = bunnyTexture;
+    player.sprite.width = consts.playerWidth * blockSize;
+    player.sprite.height = consts.playerHeight * blockSize;
   }
 
   // 当たり判定結果を反映する
