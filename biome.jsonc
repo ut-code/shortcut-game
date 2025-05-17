@@ -20,6 +20,9 @@
       "recommended": true,
       "correctness": {
         "useImportExtensions": "error"
+      },
+      "style": {
+        "useNumberNamespace": "off" // Infinity
       }
     }
   },

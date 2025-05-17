@@ -6,7 +6,7 @@ import * as History from "./history.ts";
 import * as Player from "./player.ts";
 import type { Context, GameState, UIInfo } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
-import type { StageDefinition } from "./stages.ts";
+import type { StageDefinition } from "./stages/type.ts";
 import { useUI } from "./ui-info.ts";
 
 export async function setup(
@@ -20,7 +20,7 @@ export async function setup(
     uiInfo: UIInfo;
   },
 ): Promise<void> {
-  const cleanups: (() => void)[] = [];
+  const destroyer: (() => void)[] = [];
   const unlessStopped = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
     const stopped = get(cx.state).paused || get(cx.state).goaled || get(cx.state).gameover;
     if (!stopped) {
@@ -45,7 +45,7 @@ export async function setup(
   const app = new Application();
   const stage = new Container();
   app.stage.addChild(stage);
-  cleanups.push(() => {
+  destroyer.push(() => {
     app.destroy(true, { children: true });
   });
 
@@ -74,11 +74,10 @@ export async function setup(
   const initialGameState = {
     inventory: null,
     inventoryIsInfinite: !!stageDefinition.inventoryIsInfinite,
-    usage: {
-      // TODO
-      copy: Number.POSITIVE_INFINITY,
-      paste: Number.POSITIVE_INFINITY,
-      cut: Number.POSITIVE_INFINITY,
+    usage: stageDefinition.usage ?? {
+      copy: 0,
+      cut: Infinity,
+      paste: Infinity,
     },
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,
@@ -139,12 +138,10 @@ export async function setup(
     cx.dynamic.player.y = blockSize * d.initialPlayerY + get(cx.config).marginY;
     cx.dynamic.player.vx = 0;
     cx.dynamic.player.vy = 0;
+    cx.dynamic.player.jumpingBegin = null;
     cx.dynamic.focus = null;
     cx.elapsed = 0;
-    cx.state.update((prev) => ({
-      ...prev,
-      paused: false,
-    }));
+    cx.state.set(structuredClone(initialGameState));
     cx.grid.diffAndUpdateTo(cx, createCellsFromStageDefinition(stageDefinition));
     // 上に同じく。 init を使う？でも init は中で document.addEventListener してるので...
     History.record(cx);
@@ -189,13 +186,15 @@ export async function setup(
   el.appendChild(app.canvas);
   const onresize = useOnResize(cx, app, grid, gridX, gridY);
   window.addEventListener("resize", onresize);
-  cleanups.push(() => {
+  destroyer.push(() => {
     window.removeEventListener("resize", onresize);
   });
 
   bindings.destroy = () => {
-    for (const cleanup of cleanups) {
-      cleanup();
+    for (const cleanup of destroyer) {
+      try {
+        cleanup();
+      } catch {}
     }
   };
   bindings.resume = () => {

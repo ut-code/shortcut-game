@@ -128,18 +128,48 @@ export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: b
 export function tick(cx: Context, ticker: Ticker) {
   const { blockSize, gridX, gridY, marginY } = get(cx.config);
   const player = cx.dynamic.player;
-  player.vx = 0;
-  if (player.holdingKeys[Inputs.Left]) {
-    player.vx -= consts.moveVX * blockSize;
-  }
+  const grid = cx.grid;
+
+  // movement
+  const accel = player.onGround ? consts.playerAccelOnGround : consts.playerAccelInAir;
+  const decel = player.onGround ? consts.playerDecelOnGround : consts.playerDecelInAir;
+  let playerIntent = 0; // 0 -> no intent, 1 -> wants to go right, -1 -> wants to go left
+  // positive direction
   if (player.holdingKeys[Inputs.Right]) {
-    player.vx += consts.moveVX * blockSize;
+    playerIntent = 1;
+  }
+  if (player.holdingKeys[Inputs.Left]) {
+    playerIntent = -1;
+  }
+  switch (playerIntent) {
+    case 1:
+      if (player.vx < consts.maxMoveVX * blockSize) {
+        player.vx += accel * blockSize;
+      }
+      break;
+    case -1:
+      if (player.vx > -consts.maxMoveVX * blockSize) {
+        player.vx -= decel * blockSize;
+      }
+      break;
+    case 0:
+      if (player.vx > decel * blockSize) {
+        player.vx -= decel * blockSize;
+      } else if (player.vx < -decel * blockSize) {
+        player.vx += decel * blockSize;
+      } else {
+        player.vx = 0;
+      }
+      break;
+    default:
+      throw new Error(`[Player.tick] Invalid playerIntent, got ${playerIntent}`);
   }
   const elapsed = cx.elapsed;
   if (player.holdingKeys[Inputs.Up]) {
     if (player.onGround) {
       player.vy = -consts.jumpVY * blockSize;
       player.jumpingBegin = elapsed;
+      player.vx *= consts.jumpAccelRate;
     } else if (player.jumpingBegin && elapsed - player.jumpingBegin < consts.jumpFrames) {
       player.vy = -consts.jumpVY * blockSize;
     } else {
@@ -149,6 +179,7 @@ export function tick(cx: Context, ticker: Ticker) {
     player.jumpingBegin = null;
   }
 
+  // collision
   const isBlock = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== null &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
@@ -212,6 +243,7 @@ export function tick(cx: Context, ticker: Ticker) {
     gameover(cx);
   }
 
+  // switch activation
   if (isSwitchBase(nextX, nextBottomY)) {
     const switchBlock = get(cx.state).cells[Math.floor(nextBottomY - 1)][Math.floor(nextX)];
     if (switchBlock.block === Block.switch) {
@@ -280,6 +312,7 @@ export function tick(cx: Context, ticker: Ticker) {
     }
   }
 
+  // goal
   if (isGoal(nextX, nextTopY) && player.onGround) {
     cx.state.update((prev) => {
       prev.goaled = true;
@@ -287,13 +320,13 @@ export function tick(cx: Context, ticker: Ticker) {
     });
   }
 
-  // if (get(cx.state).gameover) {
-  //   cx.state.update((prev) => {
-  //     prev.gameover = true;
-  //     return prev;
-  //   });
-  // };
+  // gameover
+  const coords = getCoords(cx);
+  if (player.onGround && cx.grid.getBlock(cx, coords.x, coords.y + 1) === Block.spike) {
+    gameover(cx);
+  }
 
+  // movement? again?
   // 当たり判定結果を反映する
   player.x += player.vx * ticker.deltaTime;
   player.y += player.vy * ticker.deltaTime;

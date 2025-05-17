@@ -3,7 +3,7 @@
 
 import { setup } from "@/main.ts";
 import type { UIInfo } from "@/public-types.ts";
-import type { StageDefinition } from "@/stages.ts";
+import type { StageDefinition } from "@/stages/type.ts";
 import Ability from "@/ui-components/Ability.svelte";
 import Key from "@/ui-components/Key.svelte";
 import { onDestroy } from "svelte";
