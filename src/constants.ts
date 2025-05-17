@@ -5,9 +5,9 @@ export const moveVX = 0.1;
 export const jumpVY = 0.12;
 export const jumpFrames = 10;
 export const gravity = 0.02;
+export const maxObjectFallSpeed = 2;
 
 export enum Block {
-  air = "air",
   block = "block",
   movable = "movable",
   fallable = "fallable",
@@ -16,6 +16,7 @@ export enum Block {
   switchingBlockOFF = "switching-block-off",
   switchingBlockON = "switching-block-on",
   switchPressed = "switch-pressed",
+  goal = "goal",
 }
 export enum Facing {
   left = "left",
@@ -27,3 +28,14 @@ export enum Inputs {
   Up = 2,
   Ctrl = 3,
 }
+
+export const BlockDefinitionMap = new Map<string, Block | null>([
+  [".", null],
+  ["b", Block.block],
+  ["m", Block.movable],
+  ["f", Block.fallable],
+  ["s", Block.switch],
+  ["S", Block.switchBase],
+  ["w", Block.switchingBlockOFF],
+  ["g", Block.goal],
+]);

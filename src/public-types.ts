@@ -12,6 +12,8 @@ export type GameState = {
   usage: AbilityUsage;
   cells: GridCell[][];
   paused: boolean;
+  goaled: boolean;
+  gameover: boolean;
 
   // about the gimmick
   switches: {
@@ -52,7 +54,10 @@ export type GameHistory = {
 
 export type Context = {
   _stage_container: Container;
+
+  // APIs
   grid: Grid;
+  reset: () => void;
 
   // Game State
   state: Writable<GameState>; // state that changes frequently (but not every frame)
@@ -89,6 +94,8 @@ export type UIInfo = {
   undo: number;
   redo: number;
   paused: boolean;
+  goaled: boolean;
+  gameover: boolean;
 };
 export type Coords = {
   x: number;

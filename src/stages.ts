@@ -13,8 +13,10 @@ type Stage = string[];
 
 export type StageDefinition = {
   stage: Stage;
+  isTutorial?: boolean;
   initialPlayerX: number; // 左端から0-indexed
   initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ
+  // ブロックと fallable のグループ
   blockGroups: {
     // 複数ブロックからなるオブジェクトについては明示的に指定
     x: number;
@@ -36,11 +38,12 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         ".........b........",
-        ".........b........",
+        ".........b......g.",
         ".........b...bbbbb",
         ".........m...bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
+      isTutorial: true,
       initialPlayerX: 1,
       initialPlayerY: 5,
       blockGroups: [],
@@ -53,12 +56,13 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "..................",
-        "..................",
+        "...............g..",
         "m............bbbbb",
         "bb...........bbbbb",
         "bb.....m.....bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
+      isTutorial: true,
       initialPlayerX: 3,
       initialPlayerY: 6,
       blockGroups: [],
@@ -70,7 +74,7 @@ export const stages = new Map<string, StageDefinition>([
     {
       stage: [
         "bbbbbbbbbbbbbbbbbb",
-        "...b..............",
+        "...b............g.",
         "...b....m......bbb",
         "...bm..........bbb",
         "...bbb.........bbb",
@@ -100,7 +104,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbbbbbb",
         "......................",
-        "......................",
+        "....................g.",
         "m..................bbb",
         "bb.................bbb",
         "bb..........m......bbb",
@@ -140,7 +144,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........b........",
         ".........b........",
         ".........w........",
-        ".s....m..w........",
+        ".s....m..w.....g..",
         "bSbbbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 3,
@@ -171,7 +175,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbbbbbbbbb",
         ".........................",
-        ".........................",
+        "......................g..",
         "...............wbbbbbbbbb",
         "m...............bbbbbbbbb",
         "bb..............w.....m..",
@@ -243,7 +247,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "..................",
-        "..................",
+        "................g.",
         "........w......bbb",
         "........w.....wbbb",
         ".....bm.w....w.bbb",
@@ -311,7 +315,7 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbbbbbbb",
         ".........w...b.........",
-        ".........w...b...m.....",
+        ".........w.g.b...m.....",
         ".........bbbbb.........",
         "m.......w.....w......m.",
         "mm.....w.......w.....mm",
@@ -424,15 +428,15 @@ export const stages = new Map<string, StageDefinition>([
       stage: [
         "bbbbbbbbbbbbbbbbbb",
         "..................",
-        "..................",
-        ".............bbbbb",
-        ".........f...bbbbb",
-        ".........f...bbbbb",
-        ".........f...bbbbb",
-        "bbbbbbbbbbbbbbbbbb",
+        "........bb.....g..",
+        ".......b.....bbbbb",
+        "......b......bbbbb",
+        ".....b.......bbbbb",
+        "....b........bbbbb",
+        "bbbbbbbbbb.bbbbbbb",
       ],
       initialPlayerX: 1,
-      initialPlayerY: 7,
+      initialPlayerY: 2,
       blockGroups: [],
       switchGroups: [],
     },
@@ -445,7 +449,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........b........",
         ".........b........",
         ".........w........",
-        ".sss..f..w........",
+        ".sss..f..w.....g..",
         "bSSSbbbbbbbbbbbbbb",
       ],
       initialPlayerX: 3,

@@ -1,7 +1,7 @@
 import { Application, Container, type Ticker } from "pixi.js";
 import { derived, get, writable } from "svelte/store";
 import { Facing } from "./constants.ts";
-import { Grid, createCellsFromStageDefinition } from "./grid.ts";
+import { Grid, createCellsFromStageDefinition, createTutorialSprite } from "./grid.ts";
 import * as History from "./history.ts";
 import * as Player from "./player.ts";
 import type { Context, GameState, UIInfo } from "./public-types.ts";
@@ -21,9 +21,9 @@ export async function setup(
   },
 ): Promise<void> {
   const cleanups: (() => void)[] = [];
-  const unlessPaused = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
-    const paused = get(cx.state).paused;
-    if (!paused) {
+  const unlessStopped = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
+    const stopped = get(cx.state).paused || get(cx.state).goaled || get(cx.state).gameover;
+    if (!stopped) {
       f(ticker);
     }
   };
@@ -54,13 +54,9 @@ export async function setup(
 
   // Initialize the application
   await app.init({ background: "white", resizeTo: window });
-  const blockSize = Math.min(
-    app.screen.width / gridX,
-    app.screen.height / gridY,
-  );
+  const blockSize = Math.min(app.screen.width / gridX, app.screen.height / gridY);
 
-  const gridMarginY =
-    (app.screen.height - blockSize * stageDefinition.stage.length) / 2;
+  const gridMarginY = (app.screen.height - blockSize * stageDefinition.stage.length) / 2;
   // things that don't need to reset on reset()
   const config = writable({
     gridX,
@@ -86,6 +82,8 @@ export async function setup(
     },
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,
+    goaled: false,
+    gameover: false,
     switches: [],
     switchingBlocks: [],
   };
@@ -120,54 +118,72 @@ export async function setup(
     stageDefinition,
   );
   const history = writable(structuredClone(initialHistory));
+
   const cx: Context = {
     _stage_container: stage,
     grid,
+    reset,
     dynamic: structuredClone(initialDynamic),
     state: state,
     history,
     config,
     elapsed: 0, // does this need to be writable? like is anyone listening to this/
   };
-  bindings.reset = () => {
+
+  function reset() {
     const d = stageDefinition;
     cx.history = writable(structuredClone(initialHistory));
     // 内部実装ゴリゴリに知ってるリセットなので、直したかったら直して。多分 coords の各プロパティのセッターをいい感じにしてやれば良い
     // MEMO: `coords` は抽象化失敗してるので、直すか消すほうが良い
     cx.dynamic.player.x = blockSize * d.initialPlayerX;
     cx.dynamic.player.y = blockSize * d.initialPlayerY + get(cx.config).marginY;
+    cx.dynamic.player.vx = 0;
+    cx.dynamic.player.vy = 0;
     cx.dynamic.focus = null;
     cx.elapsed = 0;
     cx.state.update((prev) => ({
       ...prev,
       paused: false,
     }));
-    cx.grid.diffAndUpdateTo(
-      cx,
-      createCellsFromStageDefinition(stageDefinition),
-    );
+    cx.grid.diffAndUpdateTo(cx, createCellsFromStageDefinition(stageDefinition));
     // 上に同じく。 init を使う？でも init は中で document.addEventListener してるので...
     History.record(cx);
-  };
+  }
 
   app.ticker.add(
-    unlessPaused((ticker) => {
+    unlessStopped((ticker) => {
       cx.elapsed += ticker.deltaTime;
     }),
   );
 
+  // Stage 1,2のチュートリアル表示実装機構
+  // isTutorialで表示の有無を決めている
+  // Frm stands for Frames
+  // ToDo: 現在の仕様では、メニューを開いているときも動き続ける。それを直すべきかそのままにするべきか
+  if (stageDefinition.isTutorial === true) {
+    let tutorialFrm = 0;
+    app.ticker.add((ticker) => {
+      tutorialFrm += ticker.deltaTime;
+      // 1秒ごとにチュートリアルの画像が変わる
+      createTutorialSprite(cx, Math.floor(tutorialFrm / 60 + 1));
+      if (tutorialFrm >= 180) {
+        tutorialFrm = 0;
+      }
+    });
+  }
+
   cx.dynamic.player = Player.init(cx, bunnyTexture);
-  app.ticker.add(unlessPaused((ticker) => Player.tick(cx, ticker)));
+  app.ticker.add(unlessStopped((ticker) => Player.tick(cx, ticker)));
 
   let cleanup: undefined | (() => void) = undefined;
   app.ticker.add(
-    unlessPaused(() => {
+    unlessStopped(() => {
       if (cleanup) cleanup();
       cleanup = tick();
     }),
   );
 
-  app.ticker.add(unlessPaused((ticker) => grid.tick(cx, ticker)));
+  app.ticker.add(unlessStopped((ticker) => grid.tick(cx, ticker)));
 
   // Append the application canvas to the document body
   el.appendChild(app.canvas);
@@ -185,6 +201,7 @@ export async function setup(
   bindings.resume = () => {
     cx.state.update((prev) => {
       prev.paused = false;
+      prev.goaled = false;
       return prev;
     });
   };
@@ -193,6 +210,15 @@ export async function setup(
       prev.paused = true;
       return prev;
     });
+  };
+  bindings.reset = () => {
+    cx.state.update((prev) => {
+      prev.paused = false;
+      prev.goaled = false;
+      prev.gameover = false;
+      return prev;
+    });
+    cx.reset();
   };
 
   const uiContext = derived([state, history], ([$state, $history]) => {
@@ -203,19 +229,10 @@ export async function setup(
   });
 }
 
-function useOnResize(
-  cx: Context,
-  app: Application,
-  grid: Grid,
-  gridX: number,
-  gridY: number,
-) {
+function useOnResize(cx: Context, app: Application, grid: Grid, gridX: number, gridY: number) {
   return () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
-    const blockSize = Math.min(
-      app.screen.width / gridX,
-      app.screen.height / gridY,
-    );
+    const blockSize = Math.min(app.screen.width / gridX, app.screen.height / gridY);
     cx.config.update((prev) => {
       prev.blockSize = blockSize;
       prev.marginY = grid.marginY;

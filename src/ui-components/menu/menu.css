@@ -1,0 +1,14 @@
+.modal-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0 0; /* Fleftexフォント側で文字が上に寄っているので */
+  border-radius: 0.5rem;
+  font-size: inherit;
+  height: max-content;
+}
+.modal-box {
+  background: oklch(82.8% 0.189 84.429 / 40%);
+  backdrop-filter: blur(2px);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
