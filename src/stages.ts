@@ -13,6 +13,7 @@ type Stage = string[];
 
 export type StageDefinition = {
   stage: Stage;
+  isTutorial?: boolean;
   initialPlayerX: number; // 左端から0-indexed
   initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ
   blockGroups: {
@@ -41,6 +42,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........m...bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
+      isTutorial: true,
       initialPlayerX: 1,
       initialPlayerY: 5,
       blockGroups: [],
@@ -59,6 +61,7 @@ export const stages = new Map<string, StageDefinition>([
         "bb.....m.....bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
+      isTutorial: true,
       initialPlayerX: 3,
       initialPlayerY: 6,
       blockGroups: [],
