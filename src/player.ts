@@ -204,15 +204,8 @@ export function tick(cx: Context, ticker: Ticker) {
     player.x = (Math.ceil(nextLeftX) + consts.playerWidth / 2) * blockSize;
     player.vx = 0;
   }
-  // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
-  // Todo: 本当はブロックの移動状況含むステージの状況すべてをリセットすべき
-  // Todo: ステージ個別に用意される初期座標に移動させる
-  // Todo: 直接移動させるのではなく、ゲームオーバー処理を切り分ける
   if (isOutOfWorldBottom(innerTopY)) {
-    player.x = 2 * blockSize;
-    player.y = 3 * blockSize + marginY;
-    player.vx = 0;
-    player.vy = 0;
+    gameover(cx);
   }
 
   if (isSwitchBase(nextX, nextBottomY)) {
@@ -289,4 +282,9 @@ export function resize(cx: Context) {
   if (!player.sprite) return;
   player.sprite.width = consts.playerWidth * cfg.blockSize;
   player.sprite.height = consts.playerHeight * cfg.blockSize;
+}
+
+// Todo: 直接リセットさせるのではなく、ゲームオーバーシーンを切り分ける
+export function gameover(cx: Context) {
+  cx.reset();
 }

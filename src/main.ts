@@ -116,22 +116,27 @@ export async function setup(
     stageDefinition,
   );
   const history = writable(structuredClone(initialHistory));
+
   const cx: Context = {
     _stage_container: stage,
     grid,
+    reset,
     dynamic: structuredClone(initialDynamic),
     state: state,
     history,
     config,
     elapsed: 0, // does this need to be writable? like is anyone listening to this/
   };
-  bindings.reset = () => {
+
+  function reset() {
     const d = stageDefinition;
     cx.history = writable(structuredClone(initialHistory));
     // 内部実装ゴリゴリに知ってるリセットなので、直したかったら直して。多分 coords の各プロパティのセッターをいい感じにしてやれば良い
     // MEMO: `coords` は抽象化失敗してるので、直すか消すほうが良い
     cx.dynamic.player.x = blockSize * d.initialPlayerX;
     cx.dynamic.player.y = blockSize * d.initialPlayerY + get(cx.config).marginY;
+    cx.dynamic.player.vx = 0;
+    cx.dynamic.player.vy = 0;
     cx.dynamic.focus = null;
     cx.elapsed = 0;
     cx.state.update((prev) => ({
@@ -141,7 +146,7 @@ export async function setup(
     cx.grid.diffAndUpdateTo(cx, createCellsFromStageDefinition(stageDefinition));
     // 上に同じく。 init を使う？でも init は中で document.addEventListener してるので...
     History.record(cx);
-  };
+  }
 
   app.ticker.add(
     unlessPaused((ticker) => {
