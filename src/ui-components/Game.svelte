@@ -1,16 +1,21 @@
 <script lang="ts">
+// client-only.
+
 import { setup } from "@/main.ts";
 import type { UIInfo } from "@/public-types.ts";
 import type { StageDefinition } from "@/stages.ts";
 import Ability from "@/ui-components/Ability.svelte";
 import Key from "@/ui-components/Key.svelte";
 import { onDestroy } from "svelte";
-import GameOverMenu from "./GameOverMenu.svelte";
-import GoalMenu from "./GoalMenu.svelte";
-// client-only.
-import PauseMenu from "./PauseMenu.svelte";
+import GameOverMenu from "./menu/GameOverMenu.svelte";
+import GoalMenu from "./menu/GoalMenu.svelte";
+import PauseMenu from "./menu/PauseMenu.svelte";
 
-type Props = { stageNum: string; stage: StageDefinition; stageNames: string[] };
+type Props = {
+  stageNum: string;
+  stage: StageDefinition;
+  stageNames: string[];
+};
 const { stageNum, stage, stageNames }: Props = $props();
 let container: HTMLElement | null = $state(null);
 
@@ -40,6 +45,7 @@ const nextStage = $derived(
 $effect(() => {
   if (container) {
     setup(container, stage, bindings);
+    return () => bindings.destroy();
   }
 });
 
@@ -59,14 +65,11 @@ onDestroy(() => bindings.destroy());
   />
   <GoalMenu
     goaled={uiContext.goaled}
-    nextStage={nextStage}
+    {nextStage}
     reset={() => bindings.reset()}
   />
-  <GameOverMenu
-    gameover={uiContext.gameover}
-    reset={() => bindings.reset()}
-  />
-    <div
+  <GameOverMenu gameover={uiContext.gameover} reset={() => bindings.reset()} />
+  <div
     class="uiBackground"
     style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: baseline;"
   >
