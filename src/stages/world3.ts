@@ -90,10 +90,10 @@ export namespace world3 {
     initialPlayerY: 8,
     inventoryIsInfinite: true,
     blockGroups: [
+      { x: 16, y: 1, objectId: "1" },
       { x: 17, y: 1, objectId: "1" },
       { x: 18, y: 1, objectId: "1" },
       { x: 19, y: 1, objectId: "1" },
-      { x: 20, y: 1, objectId: "1" },
     ],
     switchGroups: [
       { x: 5, y: 8, switchId: "1" },
@@ -108,8 +108,8 @@ export namespace world3 {
       { x: 14, y: 5, switchId: "2" },
       { x: 19, y: 4, switchId: "2" },
       { x: 19, y: 5, switchId: "2" },
-      { x: 20, y: 2, switchId: "2" },
-      { x: 21, y: 1, switchId: "2" },
+      { x: 19, y: 2, switchId: "2" },
+      { x: 20, y: 1, switchId: "2" },
     ],
     usage: {
       copy: Number.POSITIVE_INFINITY,
