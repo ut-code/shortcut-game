@@ -71,14 +71,15 @@ onDestroy(() => bindings.destroy());
   <GameOverMenu gameover={uiContext.gameover} reset={() => bindings.reset()} />
   <div
     class="uiBackground"
-    style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: baseline;"
+    style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: end; "
   >
-    <span style="font-size: 2rem; margin-right:0.5rem;">Stage:</span>
-    <span style="font-size: 2.5rem; margin-right: 1.5rem;">{stageNum}</span>
+    <!-- align-items: baseline does not work for Fleftex font -->
+    <span style="margin-right:0.5rem;">Stage:</span>
+    <span style="margin-right: 1.5rem;">{stageNum}</span>
     <Key key="Esc" enabled />
-    <span style="font-size: 1.5rem; margin-left: 0.5rem;">to pause</span>
+    <span style="margin-left: 0.5rem;">to pause</span>
     <span style="flex-grow: 1"></span>
-    <span style="font-size: 1.5rem;">Clipboard:</span>
+    <span style="">Clipboard:</span>
     <div class="inventory">
       {#if uiContext.inventory !== null}
         <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
@@ -91,16 +92,16 @@ onDestroy(() => bindings.destroy());
         />
       {/if}
     </div>
-    <span style="font-size: 1.5rem;">✕</span>
-    <span style="font-size: 2rem;"
-      >{uiContext.inventoryIsInfinite ? "∞" : "1"}</span
-    >
+    {#if !uiContext.inventoryIsInfinite}
+      <span style="">x</span>
+      <span style="">1</span>
+    {/if}
   </div>
   <div
     class="uiBackground"
-    style="position: fixed; left: 0; bottom: 0; right: 0; display: flex; align-items: baseline;"
+    style="position: fixed; left: 0; bottom: 0; right: 0; display: flex; align-items: end;"
   >
-    <span style="font-size: 1.5rem; margin-right: 1rem;">Abilities:</span>
+    <span style="margin-right: 1rem;">Abilities:</span>
     <Ability key="C" name="Copy" count={uiContext.copy} />
     <Ability key="X" name="Cut" count={uiContext.cut} />
     <Ability key="V" name="Paste" count={uiContext.paste} />
