@@ -140,15 +140,13 @@ export function tick(cx: Context, ticker: Ticker) {
   }
   switch (playerIntent) {
     case 1:
-      player.vx += accel * blockSize;
-      if (player.vx >= consts.maxMoveVX * blockSize) {
-        player.vx = consts.maxMoveVX * blockSize;
+      if (player.vx < consts.maxMoveVX * blockSize) {
+        player.vx += accel * blockSize;
       }
       break;
     case -1:
-      player.vx -= decel * blockSize;
-      if (player.vx <= -consts.maxMoveVX * blockSize) {
-        player.vx = -consts.maxMoveVX * blockSize;
+      if (player.vx > -consts.maxMoveVX * blockSize) {
+        player.vx -= decel * blockSize;
       }
       break;
     case 0:
@@ -168,6 +166,7 @@ export function tick(cx: Context, ticker: Ticker) {
     if (player.onGround) {
       player.vy = -consts.jumpVY * blockSize;
       player.jumpingBegin = elapsed;
+      player.vx *= consts.jumpAccelRate;
     } else if (player.jumpingBegin && elapsed - player.jumpingBegin < consts.jumpFrames) {
       player.vy = -consts.jumpVY * blockSize;
     } else {
