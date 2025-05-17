@@ -10,5 +10,6 @@ export function useUI(state: GameState, history: GameHistory): UIInfo {
     undo: history.index / 2,
     redo: (history.tree.length - 1 - history.index) / 2,
     paused: state.paused,
+    goaled: state.goaled,
   };
 }

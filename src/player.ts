@@ -168,6 +168,8 @@ export function tick(cx: Context, ticker: Ticker) {
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isSwitchBase = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.switchBase;
+  const isGoal = (x: number, y: number) =>
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.goal;
   const isOutOfWorldLeft = (x: number) => x < 0;
   const isOutOfWorldRight = (x: number) => x >= gridX;
   const isOutOfWorldBottom = (y: number) => y >= gridY + marginY / blockSize;
@@ -307,6 +309,13 @@ export function tick(cx: Context, ticker: Ticker) {
         }
       }
     }
+  }
+
+  if (isGoal(nextX, nextTopY) && player.onGround) {
+    cx.state.update((prev) => {
+      prev.goaled = true;
+      return prev;
+    });
   }
 
   // 当たり判定結果を反映する

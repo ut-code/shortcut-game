@@ -5,15 +5,17 @@ import type { StageDefinition } from "@/stages.ts";
 import Ability from "@/ui-components/Ability.svelte";
 import Key from "@/ui-components/Key.svelte";
 import { onDestroy } from "svelte";
+import GoalMenu from "./GoalMenu.svelte";
 // client-only.
 import PauseMenu from "./PauseMenu.svelte";
 
-type Props = { stageNum: string; stage: StageDefinition };
-const { stageNum, stage }: Props = $props();
+type Props = { stageNum: string; stage: StageDefinition; stageNames: string[] };
+const { stageNum, stage, stageNames }: Props = $props();
 let container: HTMLElement | null = $state(null);
 
 const bindings = $state({
   onpause: () => {},
+  ongoal: () => {},
   onresume: () => {},
   ondestroy: () => {},
   uiInfo: <UIInfo>{
@@ -25,9 +27,18 @@ const bindings = $state({
     undo: 0,
     redo: 0,
     paused: false,
+    goaled: false,
   },
 });
 const uiContext = $derived(bindings.uiInfo);
+
+const nextStage = $derived(
+  stageNames[
+    stageNames.indexOf(stageNum) + 1 >= stageNames.length
+      ? 0
+      : stageNames.indexOf(stageNum) + 1
+  ],
+);
 
 $effect(() => {
   if (container) {
@@ -44,7 +55,12 @@ onDestroy(() => bindings.ondestroy());
     onpause={() => bindings.onpause()}
     onresume={() => bindings.onresume()}
   />
-  <div
+  <GoalMenu
+    goaled={uiContext.goaled}
+    nextStage={nextStage}
+    ongoal={() => bindings.ongoal()}
+  />
+    <div
     class="uiBackground"
     style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: baseline;"
   >

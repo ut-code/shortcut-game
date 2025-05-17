@@ -14,6 +14,7 @@ export async function setup(
   bindings: {
     onpause: () => void;
     onresume: () => void;
+    ongoal: () => void;
     ondestroy: () => void;
     uiInfo: UIInfo;
   },
@@ -25,9 +26,9 @@ export async function setup(
     });
   };
   const cleanups: (() => void)[] = [];
-  const unlessPaused = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
-    const paused = get(cx.state).paused;
-    if (!paused) {
+  const unlessStopped = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
+    const stopped = get(cx.state).paused || get(cx.state).goaled;
+    if (!stopped) {
       f(ticker);
     }
   };
@@ -84,6 +85,7 @@ export async function setup(
     },
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,
+    goaled: false,
     switches: [],
     switchingBlocks: [],
   });
@@ -133,17 +135,17 @@ export async function setup(
   };
 
   app.ticker.add(
-    unlessPaused((ticker) => {
+    unlessStopped((ticker) => {
       cx.elapsed.update((prev) => prev + ticker.deltaTime);
     }),
   );
 
   cx.dynamic.player = Player.init(cx, bunnyTexture);
-  app.ticker.add(unlessPaused((ticker) => Player.tick(cx, ticker)));
+  app.ticker.add(unlessStopped((ticker) => Player.tick(cx, ticker)));
 
   let cleanup: undefined | (() => void) = undefined;
   app.ticker.add(
-    unlessPaused(() => {
+    unlessStopped(() => {
       if (cleanup) cleanup();
       cleanup = tick();
     }),
@@ -165,12 +167,19 @@ export async function setup(
   bindings.onresume = () => {
     cx.state.update((prev) => {
       prev.paused = false;
+      prev.goaled = false;
       return prev;
     });
   };
   bindings.onpause = () => {
     cx.state.update((prev) => {
       prev.paused = true;
+      return prev;
+    });
+  };
+  bindings.ongoal = () => {
+    cx.state.update((prev) => {
+      prev.goaled = true;
       return prev;
     });
   };
