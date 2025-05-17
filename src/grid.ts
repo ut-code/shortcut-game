@@ -376,7 +376,7 @@ export class Grid {
       vprev.block = Block.switchPressed;
       vprev.dy = 0;
       vprev.vy = 0;
-    } else if (vprev?.block === Block.switchPressed) {
+    } else if (vprev?.block === Block.switchPressed && cNewCell.block === Block.switch) {
       // switchがプレイヤーに押されているのが戻るとき
       assert(
         cprev.block === Block.switchPressed || cprev.block === Block.switch,
@@ -397,7 +397,7 @@ export class Grid {
       vprev.vy = 0;
     }
     // switch上にオブジェクトを置くとき
-    else if (vprev?.block === Block.switch) {
+    else if (vprev?.block === Block.switch || vprev?.block === Block.switchPressed) {
       if (cNewCell.block !== Block.movable && cNewCell.block !== Block.fallable) {
         console.warn("No block other than movable cannot be placed on the switch");
         console.log("cell.block", cNewCell.block);
@@ -407,7 +407,10 @@ export class Grid {
       stage.addChild(movableSprite);
       assert(cNewCell.objectId !== undefined, "movable block must have objectId");
       assert(
-        (cprev.block === Block.switch || cprev.block === Block.movable || cprev.block === Block.fallable) &&
+        (cprev.block === Block.switch ||
+          cprev.block === Block.switchPressed ||
+          cprev.block === Block.movable ||
+          cprev.block === Block.fallable) &&
           cprev.switchId !== undefined,
         "block is not switch",
       );
@@ -423,6 +426,7 @@ export class Grid {
       get(cx.state).switches.filter((s) => {
         if (s.x === x && s.y === y) {
           s.pressedByBlock = true;
+          s.pressedByPlayer = false;
         }
         return s;
       });

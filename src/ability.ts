@@ -159,12 +159,13 @@ export function placeMovableObject(cx: Context, x: number, y: number, object: Mo
     console.error("[placeMovableObject] cannot place object");
     return;
   }
+  const newObjectId = Math.random().toString();
   for (const rel of object.relativePositions) {
     const positionX = x + rel.x;
     const positionY = y + rel.y;
     grid.setBlock(cx, positionX, positionY, {
       block: object.block,
-      objectId: object.objectId,
+      objectId: newObjectId,
       switchId: undefined,
     });
   }
