@@ -54,7 +54,10 @@ export type GameHistory = {
 
 export type Context = {
   _stage_container: Container;
+
+  // APIs
   grid: Grid;
+  reset: () => void;
 
   // Game State
   state: Writable<GameState>; // state that changes frequently (but not every frame)

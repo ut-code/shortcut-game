@@ -207,12 +207,8 @@ export function tick(cx: Context, ticker: Ticker) {
     player.x = (Math.ceil(nextLeftX) + consts.playerWidth / 2) * blockSize;
     player.vx = 0;
   }
-  // ステージの下の端にプレイヤーが落ちるとGameOver
   if (isOutOfWorldBottom(innerTopY)) {
-    cx.state.update((prev) => {
-      prev.gameover = true;
-      return prev;
-    });
+    gameover(cx);
   }
 
   if (isSwitchBase(nextX, nextBottomY)) {
@@ -303,4 +299,13 @@ export function resize(cx: Context) {
   if (!player.sprite) return;
   player.sprite.width = consts.playerWidth * cfg.blockSize;
   player.sprite.height = consts.playerHeight * cfg.blockSize;
+}
+
+// Todo: 直接リセットさせるのではなく、ゲームオーバーシーンを切り分ける
+export function gameover(cx: Context) {
+  // cx.reset();
+  cx.state.update((prev) => {
+    prev.gameover = true;
+    return prev;
+  });
 }
