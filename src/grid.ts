@@ -9,6 +9,7 @@ import type {
   MovableObject,
 } from "./public-types.ts";
 import {
+  fallableTexture,
   rockTexture,
   switchBaseTexture,
   switchPressedTexture,

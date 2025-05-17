@@ -1,5 +1,5 @@
 export type StageDefinition = {
-  stage: string[];
+  stage: Stage;
   isTutorial?: boolean;
   initialPlayerX: number; // 左端から0-indexed
   initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ

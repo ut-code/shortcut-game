@@ -6,6 +6,7 @@ import {
   createCellsFromStageDefinition,
   createTutorialSprite,
 } from "./grid.ts";
+import * as History from "./history.ts";
 import * as Player from "./player.ts";
 import type { Context, GameState, UIInfo } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
