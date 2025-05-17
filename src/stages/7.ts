@@ -22,7 +22,7 @@ export const stage7: PreprocessInput = {
     ".....b2.3....3.bbb",
     ".....bbb...bbbbbbb",
     "...1 bbb...bbbbbbb",
-    ".S.12...3.........",
+    ".S.11...3.........",
     "bbbbbbbbbbbbbbbbbb",
   ],
   usage: {
