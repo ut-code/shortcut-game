@@ -1,5 +1,19 @@
+/**
+  Stage Grid, expressed as list of row from x=0 to x=max(x).
+  All rows are expected to equal in length. (but there's no runtime check afaik)
+  Example:
+  [
+    "bbbbbbbbbbb", // b stands for block
+    "...........", // . stands for air
+    ".....m..bbb", // m stands for movable block
+    "bbbbbbbbbbb"
+  ]
+  */
+type Stage = string[];
+
 export type StageDefinition = {
-  stage: string[];
+  stage: Stage;
+  isTutorial?: boolean;
   initialPlayerX: number; // 左端から0-indexed
   initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ
   blockGroups: {
@@ -28,6 +42,7 @@ export const stages = new Map<string, StageDefinition>([
         ".........m...bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
+      isTutorial: true,
       initialPlayerX: 1,
       initialPlayerY: 5,
       blockGroups: [],
@@ -46,6 +61,7 @@ export const stages = new Map<string, StageDefinition>([
         "bb.....m.....bbbbb",
         "bbbbbbbbbbbbbbbbbb",
       ],
+      isTutorial: true,
       initialPlayerX: 3,
       initialPlayerY: 6,
       blockGroups: [],
@@ -401,6 +417,58 @@ export const stages = new Map<string, StageDefinition>([
           x: 18,
           y: 8,
           switchId: "2",
+        },
+      ],
+    },
+  ],
+  [
+    "3-2",
+    {
+      stage: [
+        "bbbbbbbbbbbbbbbbbb",
+        "..................",
+        "........bb........",
+        ".......b.....bbbbb",
+        "......b......bbbbb",
+        ".....b.......bbbbb",
+        "...fb........bbbbb",
+        "bbbbbbbbbb.bbbbbbb",
+      ],
+      initialPlayerX: 1,
+      initialPlayerY: 7,
+      blockGroups: [],
+      switchGroups: [],
+    },
+  ],
+  [
+    "3-1", // fallable+スイッチのテスト用 あとでけす
+    {
+      stage: [
+        "bbbbbbbbbbbbbbbbbb",
+        ".........b........",
+        ".........b........",
+        ".........w........",
+        ".s....f..w........",
+        "bSbbbbbbbbbbbbbbbb",
+      ],
+      initialPlayerX: 3,
+      initialPlayerY: 5,
+      blockGroups: [],
+      switchGroups: [
+        {
+          x: 1,
+          y: 4,
+          switchId: "1",
+        },
+        {
+          x: 9,
+          y: 3,
+          switchId: "1",
+        },
+        {
+          x: 9,
+          y: 4,
+          switchId: "1",
         },
       ],
     },

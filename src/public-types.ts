@@ -67,7 +67,7 @@ export type Context = {
     focus: Coords | null; // current focus coordinates
     player: {
       holdingKeys: { [key in Inputs]?: boolean };
-      coords: () => { x: number; y: number };
+      coords: { x: number; y: number };
       sprite: Sprite | null;
       x: number;
       y: number;
@@ -79,9 +79,7 @@ export type Context = {
     };
   };
   // about time
-  elapsed: Writable<number>;
-  // TODO: make it derived from state, because this doesn't need to be separate state
-  uiContext: Readable<UIInfo>;
+  elapsed: number;
 };
 
 export type UIInfo = {

@@ -15,11 +15,10 @@ const { stageNum, stage, stageNames }: Props = $props();
 let container: HTMLElement | null = $state(null);
 
 const bindings = $state({
-  onpause: () => {},
-  ongoal: () => {},
-  onresume: () => {},
-  ondestroy: () => {},
-  ongameover: () => {},
+  pause: () => {},
+  resume: () => {},
+  destroy: () => {},
+  reset: () => {},
   uiInfo: <UIInfo>{
     inventory: null,
     inventoryIsInfinite: false,
@@ -35,11 +34,7 @@ const bindings = $state({
 const uiContext = $derived(bindings.uiInfo);
 
 const nextStage = $derived(
-  stageNames[
-    stageNames.indexOf(stageNum) + 1 >= stageNames.length
-      ? 0
-      : stageNames.indexOf(stageNum) + 1
-  ],
+  stageNames[stageNames.indexOf(stageNum) + 1 >= stageNames.length ? 0 : stageNames.indexOf(stageNum) + 1],
 );
 
 $effect(() => {
@@ -48,15 +43,19 @@ $effect(() => {
   }
 });
 
-onDestroy(() => bindings.ondestroy());
+onDestroy(() => bindings.destroy());
 </script>
 
 <div bind:this={container} id="container">
   <PauseMenu
     paused={uiContext.paused}
     alreadyStopped={uiContext.goaled || uiContext.gameover}
-    onpause={() => bindings.onpause()}
-    onresume={() => bindings.onresume()}
+    onpause={() => bindings.pause()}
+    onresume={() => bindings.resume()}
+    onreset={() => {
+      // if this isn't working well, we can use window.location.reload(); instead
+      bindings.reset();
+    }}
   />
   <GoalMenu
     goaled={uiContext.goaled}
@@ -78,6 +77,7 @@ onDestroy(() => bindings.ondestroy());
     <div class="inventory">
       {#if uiContext.inventory !== null}
         <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
+
         <img
           src="/assets/block.png"
           alt="inventory"
