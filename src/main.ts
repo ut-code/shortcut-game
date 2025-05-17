@@ -20,7 +20,7 @@ export async function setup(
     uiInfo: UIInfo;
   },
 ): Promise<void> {
-  const cleanups: (() => void)[] = [];
+  const destroyer: (() => void)[] = [];
   const unlessStopped = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
     const stopped = get(cx.state).paused || get(cx.state).goaled || get(cx.state).gameover;
     if (!stopped) {
@@ -45,7 +45,7 @@ export async function setup(
   const app = new Application();
   const stage = new Container();
   app.stage.addChild(stage);
-  cleanups.push(() => {
+  destroyer.push(() => {
     app.destroy(true, { children: true });
   });
 
@@ -189,13 +189,15 @@ export async function setup(
   el.appendChild(app.canvas);
   const onresize = useOnResize(cx, app, grid, gridX, gridY);
   window.addEventListener("resize", onresize);
-  cleanups.push(() => {
+  destroyer.push(() => {
     window.removeEventListener("resize", onresize);
   });
 
   bindings.destroy = () => {
-    for (const cleanup of cleanups) {
-      cleanup();
+    for (const cleanup of destroyer) {
+      try {
+        cleanup();
+      } catch {}
     }
   };
   bindings.resume = () => {

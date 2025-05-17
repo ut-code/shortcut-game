@@ -128,12 +128,40 @@ export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: b
 export function tick(cx: Context, ticker: Ticker) {
   const { blockSize, gridX, gridY, marginY } = get(cx.config);
   const player = cx.dynamic.player;
-  player.vx = 0;
-  if (player.holdingKeys[Inputs.Left]) {
-    player.vx -= consts.moveVX * blockSize;
-  }
+  const accel = player.onGround ? consts.playerAccelOnGround : consts.playerAccelInAir;
+  const decel = player.onGround ? consts.playerDecelOnGround : consts.playerDecelInAir;
+  let playerIntent = 0; // 0 -> no intent, 1 -> wants to go right, -1 -> wants to go left
+  // positive direction
   if (player.holdingKeys[Inputs.Right]) {
-    player.vx += consts.moveVX * blockSize;
+    playerIntent = 1;
+  }
+  if (player.holdingKeys[Inputs.Left]) {
+    playerIntent = -1;
+  }
+  switch (playerIntent) {
+    case 1:
+      player.vx += accel * blockSize;
+      if (player.vx >= consts.maxMoveVX * blockSize) {
+        player.vx = consts.maxMoveVX * blockSize;
+      }
+      break;
+    case -1:
+      player.vx -= decel * blockSize;
+      if (player.vx <= -consts.maxMoveVX * blockSize) {
+        player.vx = -consts.maxMoveVX * blockSize;
+      }
+      break;
+    case 0:
+      if (player.vx > decel * blockSize) {
+        player.vx -= decel * blockSize;
+      } else if (player.vx < -decel * blockSize) {
+        player.vx += decel * blockSize;
+      } else {
+        player.vx = 0;
+      }
+      break;
+    default:
+      throw new Error(`[Player.tick] Invalid playerIntent, got ${playerIntent}`);
   }
   const elapsed = cx.elapsed;
   if (player.holdingKeys[Inputs.Up]) {

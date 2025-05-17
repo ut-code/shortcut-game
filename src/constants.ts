@@ -1,10 +1,17 @@
-// 単位は blockSize * px
+/// 単位は blockSize * px
+// global
+export const gravity = 0.02;
+// Player 関連
 export const playerWidth = 0.6;
 export const playerHeight = 0.9;
-export const moveVX = 0.1;
+export const maxMoveVX = 0.1;
+export const playerAccelOnGround = 0.05;
+export const playerDecelOnGround = 0.05;
+export const playerAccelInAir = 0.01;
+export const playerDecelInAir = 0.01;
 export const jumpVY = 0.12;
 export const jumpFrames = 10;
-export const gravity = 0.02;
+// Fallable block 関連
 export const maxObjectFallSpeed = 2;
 
 export enum Block {
