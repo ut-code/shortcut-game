@@ -1,6 +1,6 @@
 import { type Container, Sprite, type Ticker } from "pixi.js";
 import { type Writable, get } from "svelte/store";
-import { Block } from "./constants.ts";
+import { Block, BlockDefinitionMap } from "./constants.ts";
 import * as consts from "./constants.ts";
 import { assert, warnIf } from "./lib.ts";
 import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
@@ -41,7 +41,7 @@ export type GridCell =
       switchId: string | undefined; // switchの上に置かれている場合
     }
   | {
-      block: null;
+      block: null; // air
       objectId?: unknown;
     }
   | {
@@ -558,7 +558,7 @@ export class Grid {
         const vcell = this.__vsom[y][x];
         const ccell = cells[y][x];
         if (ccell.block !== Block.fallable) continue;
-        assert(vcell !== null && vcell.block === ccell.block, "[Grid.tick] vcell is out of sync with ccell");
+        assert(vcell?.block === ccell.block, "[Grid.tick] vcell is out of sync with ccell");
 
         vcell.dy = (vcell.dy ?? 0) + (vcell.vy ?? 0) * ticker.deltaTime;
         vcell.vy = (vcell.vy ?? 0) + consts.gravity * blockSize * ticker.deltaTime;
@@ -567,34 +567,36 @@ export class Grid {
           vcell.vy = maxSpeed;
         }
 
-        let swapTargetY = y;
-        // 下にブロックがあるなどの要因で止まる
-        if (!isAvail(cells, x, swapTargetY + 1)) {
+        let swapDiff = 0;
+        while (swapDiff * blockSize <= vcell.dy) {
+          // 下にブロックがあるなどの要因で止まる
+          if (!isAvail(cells, x, y + swapDiff + 1)) break;
+          vcell.dy -= blockSize;
+          swapDiff++;
+        }
+        // これ以上下に行けない
+        if (!isAvail(cells, x, y + swapDiff)) {
+          // 着地 (dy はたいてい 0 未満なので、別で判定が必要)
           if (vcell.dy >= 0) {
-            // 着地 (dy はたいてい 0 未満なので、別で判定が必要)
             vcell.dy = 0;
             vcell.vy = 0;
           }
-        } else {
-          // 落下する
-          while ((swapTargetY - y) * blockSize <= vcell.dy) {
-            vcell.dy -= blockSize;
-            swapTargetY++;
-          }
         }
-        if (y !== swapTargetY) {
+
+        vcell.sprite.y = y * blockSize + marginY + vcell.dy;
+        if (swapDiff > 0) {
           this.setBlock(cx, x, y, { block: null });
-          this.setBlock(cx, x, swapTargetY, ccell);
-          const vSwapCell = this.__vsom[swapTargetY][x];
-          assert(vSwapCell !== null, "it should not happen");
+          this.setBlock(cx, x, y + swapDiff, ccell);
+          const vSwapCell = this.__vsom[y + swapDiff][x];
+          assert(vSwapCell != null, "it should not happen");
           vSwapCell.dy = vcell.dy;
           vSwapCell.vy = vcell.vy;
           vcell.dy = 0;
           vcell.vy = 0;
           // また抽象化失敗してる...
-          vSwapCell.sprite.y = y * blockSize + marginY + vSwapCell.dy;
+          vSwapCell.sprite.y = (y + swapDiff) * blockSize + marginY + vSwapCell.dy;
+          console.log("dy", vSwapCell.dy, "vy", vSwapCell.vy);
         }
-        vcell.sprite.y = y * blockSize + marginY + vcell.dy;
       }
     }
   }
@@ -611,7 +613,6 @@ function isAvail(cells: GridCell[][], x: number, y: number) {
       // 下にブロックがない
       return true;
     default:
-      // console.log("ブロックあり");
       // 下にブロックがある
       return false;
   }
@@ -626,7 +627,20 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
       const cellDef = rowDefinition[x];
       const block = blockFromDefinition(cellDef);
       switch (block) {
-        case Block.movable: {
+        // blocks that don't need additional initialization
+        case Block.block:
+        case null:
+        case Block.switchBase:
+        case Block.goal: {
+          const cell: GridCell = {
+            block,
+          };
+          row.push(cell);
+          break;
+        }
+        // movable blocks
+        case Block.movable:
+        case Block.fallable: {
           const group = stageDefinition.blockGroups.find((b) => b.x === x && b.y === y);
           const objectId = group ? group.objectId : Math.random().toString();
           const cell: GridCell = {
@@ -638,49 +652,13 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
 
           break;
         }
-        case Block.fallable: {
-          const group = stageDefinition.blockGroups.find((b) => b.x === x && b.y === y);
-          const objectId = group ? group.objectId : Math.random().toString();
-          const cell: GridCell = {
-            block,
-            objectId,
-            switchId: undefined,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.block:
-        case null: {
-          const cell: GridCell = {
-            block,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.switch: {
-          const group = stageDefinition.switchGroups.find((b) => b.x === x && b.y === y);
-          if (!group) {
-            throw new Error("switch must have switchGroup");
-          }
-          const switchId = group.switchId;
-          const cell: GridCell = {
-            block,
-            switchId,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.switchBase: {
-          const cell: GridCell = {
-            block,
-          };
-          row.push(cell);
-          break;
-        }
+        // switches
+        case Block.switch:
+        case Block.switchingBlockON:
         case Block.switchingBlockOFF: {
           const group = stageDefinition.switchGroups.find((b) => b.x === x && b.y === y);
           if (!group) {
-            throw new Error("switchingBlock must have switchGroup");
+            throw new Error("switch must have matching switchGroup");
           }
           const switchId = group.switchId;
           const cell: GridCell = {
@@ -690,14 +668,6 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
           row.push(cell);
           break;
         }
-        case Block.goal: {
-          const cell: GridCell = {
-            block,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.switchingBlockON:
         case Block.switchPressed: {
           throw new Error(`createCellsFromStageDefinition: block is not supported: ${block}`);
         }
@@ -711,27 +681,13 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
 }
 
 export function blockFromDefinition(d: string): Block | null {
-  switch (d) {
-    case ".":
-      return null;
-    case "b":
-      return Block.block;
-    case "m":
-      return Block.movable;
-    case "f":
-      return Block.fallable;
-    case "s":
-      return Block.switch;
-    case "S":
-      return Block.switchBase;
-    case "w":
-      return Block.switchingBlockOFF;
-    case "g":
-      return Block.goal;
-    default:
-      throw new Error(`[blockFromDefinition] no proper block: ${d}`);
+  const block = BlockDefinitionMap.get(d);
+  if (block === undefined) {
+    throw new Error(`[blockFromDefinition] no proper block: ${d}`);
   }
+  return block;
 }
+
 function createSprite(
   blockSize: number,
   block: Block,

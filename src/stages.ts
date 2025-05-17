@@ -16,6 +16,7 @@ export type StageDefinition = {
   isTutorial?: boolean;
   initialPlayerX: number; // 左端から0-indexed
   initialPlayerY: number; // 上端から0-indexed　+1すると浮かずに地面に立つ
+  // ブロックと fallable のグループ
   blockGroups: {
     // 複数ブロックからなるオブジェクトについては明示的に指定
     x: number;
@@ -431,11 +432,11 @@ export const stages = new Map<string, StageDefinition>([
         ".......b.....bbbbb",
         "......b......bbbbb",
         ".....b.......bbbbb",
-        "...fb........bbbbb",
+        "....b........bbbbb",
         "bbbbbbbbbb.bbbbbbb",
       ],
       initialPlayerX: 1,
-      initialPlayerY: 7,
+      initialPlayerY: 2,
       blockGroups: [],
       switchGroups: [],
     },

@@ -28,3 +28,14 @@ export enum Inputs {
   Up = 2,
   Ctrl = 3,
 }
+
+export const BlockDefinitionMap = new Map<string, Block | null>([
+  [".", null],
+  ["b", Block.block],
+  ["m", Block.movable],
+  ["f", Block.fallable],
+  ["s", Block.switch],
+  ["S", Block.switchBase],
+  ["w", Block.switchingBlockOFF],
+  ["g", Block.goal],
+]);
