@@ -89,8 +89,10 @@ onDestroy(() => bindings.destroy());
         />
       {/if}
     </div>
-    <span style="">x</span>
-    <span style="">{uiContext.inventoryIsInfinite ? "∞" : "1"}</span>
+    {#if !uiContext.inventoryIsInfinite}
+      <span style="">x</span>
+      <span style="">1</span>
+    {/if}
   </div>
   <div
     class="uiBackground"
