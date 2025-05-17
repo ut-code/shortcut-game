@@ -3,8 +3,9 @@ type Props = {
   paused: boolean;
   onresume: () => void;
   onpause: () => void;
+  onreset: () => void;
 };
-const { paused, onresume, onpause }: Props = $props();
+let { paused, onresume, onpause, onreset }: Props = $props();
 let el: HTMLDialogElement;
 $effect(() => {
   if (paused) {
@@ -36,7 +37,9 @@ document.addEventListener("keydown", (ev) => {
     <button
       style="font-size: 1.5rem;"
       class="btn btn-block"
-      onclick={() => window.location.reload()}
+      onclick={() => {
+        onreset();
+      }}
     >
       Restart
     </button>

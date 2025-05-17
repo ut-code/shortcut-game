@@ -39,7 +39,7 @@ export function init(
   Ability.init(cx, options?.ability);
   return {
     sprite,
-    coords() {
+    get coords() {
       return { x: this.x, y: this.y };
     },
     get x() {
@@ -65,7 +65,7 @@ export function init(
 
 export function getCoords(cx: Context) {
   const { blockSize, marginY } = get(cx.config);
-  const coords = cx.dynamic.player.coords();
+  const coords = cx.dynamic.player.coords;
   const x = Math.floor(coords.x / blockSize);
   const y = Math.round((coords.y - marginY) / blockSize) - 1; // it was not working well so take my patch
   return { x, y };
@@ -75,8 +75,7 @@ export function createHighlight(cx: Context) {
   const player = cx.dynamic.player;
   const { blockSize, marginY } = get(cx.config);
   if (!player.holdingKeys[Inputs.Ctrl] || !player.onGround) return;
-  const texture =
-    state.inventory === null ? highlightTexture : highlightHoldTexture;
+  const texture = state.inventory === null ? highlightTexture : highlightHoldTexture;
   const highlight: Sprite = new Sprite(texture);
   highlight.width = blockSize;
   highlight.height = blockSize;
@@ -86,11 +85,7 @@ export function createHighlight(cx: Context) {
   return highlight;
 }
 
-export function handleInput(
-  cx: Context,
-  event: KeyboardEvent,
-  eventIsKeyDown: boolean,
-) {
+export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
   const player = cx.dynamic.player;
   switch (event.key) {
     case "Control":
@@ -140,15 +135,12 @@ export function tick(cx: Context, ticker: Ticker) {
   if (player.holdingKeys[Inputs.Right]) {
     player.vx += consts.moveVX * blockSize;
   }
-  const elapsed = get(cx.elapsed);
+  const elapsed = cx.elapsed;
   if (player.holdingKeys[Inputs.Up]) {
     if (player.onGround) {
       player.vy = -consts.jumpVY * blockSize;
       player.jumpingBegin = elapsed;
-    } else if (
-      player.jumpingBegin &&
-      elapsed - player.jumpingBegin < consts.jumpFrames
-    ) {
+    } else if (player.jumpingBegin && elapsed - player.jumpingBegin < consts.jumpFrames) {
       player.vy = -consts.jumpVY * blockSize;
     } else {
       player.jumpingBegin = null;
@@ -158,13 +150,10 @@ export function tick(cx: Context, ticker: Ticker) {
   }
 
   const isBlock = (x: number, y: number) =>
-    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.air &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== null &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
-    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
-      Block.switchPressed &&
-    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !==
-      Block.switchingBlockON &&
-    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchPressed &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchingBlockON;
   const isSwitchBase = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) === Block.switchBase;
   const isOutOfWorldLeft = (x: number) => x < 0;
@@ -173,8 +162,7 @@ export function tick(cx: Context, ticker: Ticker) {
 
   // next〜 は次フレームの座標、inner〜 は前フレームでかつ1px内側の座標
   const nextX = (player.x + player.vx * ticker.deltaTime) / blockSize;
-  const nextBottomY =
-    (player.y - marginY + player.vy * ticker.deltaTime) / blockSize;
+  const nextBottomY = (player.y - marginY + player.vy * ticker.deltaTime) / blockSize;
   const nextTopY = nextBottomY - consts.playerHeight;
   const nextLeftX = nextX - consts.playerWidth / 2;
   const nextRightX = nextX + consts.playerWidth / 2;
@@ -184,19 +172,15 @@ export function tick(cx: Context, ticker: Ticker) {
   const innerRightX = (player.x - 1) / blockSize + consts.playerWidth / 2;
 
   // 天井
-  const hittingCeil =
-    isBlock(innerLeftX, nextTopY) || isBlock(innerRightX, nextTopY);
+  const hittingCeil = isBlock(innerLeftX, nextTopY) || isBlock(innerRightX, nextTopY);
   // プレイヤーの下がブロック
   // = プレイヤーの左下端がブロック or プレイヤーの右下端がブロック
   // 壁に触れている際にバグるのを避けるためx方向は±1
-  player.onGround =
-    player.vy >= 0 &&
-    (isBlock(innerLeftX, nextBottomY) || isBlock(innerRightX, nextBottomY));
+  player.onGround = player.vy >= 0 && (isBlock(innerLeftX, nextBottomY) || isBlock(innerRightX, nextBottomY));
   if (hittingCeil && player.onGround) {
     player.vy = 0;
   } else if (hittingCeil) {
-    player.y =
-      (Math.ceil(nextTopY) + consts.playerHeight) * blockSize + marginY;
+    player.y = (Math.ceil(nextTopY) + consts.playerHeight) * blockSize + marginY;
     player.vy = 0;
     player.jumpingBegin = null;
   } else if (player.onGround) {
@@ -207,15 +191,9 @@ export function tick(cx: Context, ticker: Ticker) {
   // プレイヤーの右上端または右下端がブロック または右画面端
   // = プレイヤーの右上端がブロック or 右下端がブロック or プレイヤーの右側が世界の外 (世界は長方形のため、チェックは 1 回でいい)
   // 地面に触れている際にバグるのを避けるためy方向は-1
-  const rightHit =
-    isBlock(nextRightX, innerBottomY) ||
-    isBlock(nextRightX, innerTopY) ||
-    isOutOfWorldRight(nextRightX);
+  const rightHit = isBlock(nextRightX, innerBottomY) || isBlock(nextRightX, innerTopY) || isOutOfWorldRight(nextRightX);
   // 左も同様
-  const leftHit =
-    isBlock(nextLeftX, innerBottomY) ||
-    isBlock(nextLeftX, innerTopY) ||
-    isOutOfWorldLeft(nextLeftX);
+  const leftHit = isBlock(nextLeftX, innerBottomY) || isBlock(nextLeftX, innerTopY) || isOutOfWorldLeft(nextLeftX);
   if (leftHit && rightHit) {
     // todo: この場合どうするべき?
     player.vx = 0;
@@ -238,16 +216,11 @@ export function tick(cx: Context, ticker: Ticker) {
   }
 
   if (isSwitchBase(nextX, nextBottomY)) {
-    const switchBlock = get(cx.state).cells[Math.floor(nextBottomY - 1)][
-      Math.floor(nextX)
-    ];
+    const switchBlock = get(cx.state).cells[Math.floor(nextBottomY - 1)][Math.floor(nextX)];
     if (switchBlock.block === Block.switch) {
       cx.state.update((prev) => {
         prev.switches = prev.switches.map((s) => {
-          if (
-            s.x === Math.floor(nextX) &&
-            s.y === Math.floor(nextBottomY - 1)
-          ) {
+          if (s.x === Math.floor(nextX) && s.y === Math.floor(nextBottomY - 1)) {
             return {
               ...s,
               pressedByPlayer: true,
@@ -271,16 +244,10 @@ export function tick(cx: Context, ticker: Ticker) {
   }
 
   for (const sw of get(cx.state).switches) {
-    if (
-      sw.pressedByPlayer &&
-      cx.grid.getBlock(cx, sw.x, sw.y) === Block.switch
-    ) {
+    if (sw.pressedByPlayer && cx.grid.getBlock(cx, sw.x, sw.y) === Block.switch) {
       cx.grid.setBlock(cx, sw.x, sw.y, { block: Block.switchPressed });
     }
-    if (
-      !sw.pressedByPlayer &&
-      cx.grid.getBlock(cx, sw.x, sw.y) === Block.switchPressed
-    ) {
+    if (!sw.pressedByPlayer && cx.grid.getBlock(cx, sw.x, sw.y) === Block.switchPressed) {
       cx.grid.setBlock(cx, sw.x, sw.y, { block: Block.switch });
     }
   }
@@ -288,9 +255,7 @@ export function tick(cx: Context, ticker: Ticker) {
   // スイッチの状態を反映
   const switches = get(cx.state).switches;
   for (const s of switches) {
-    const switchingBlock = get(cx.state).switchingBlocks.filter(
-      (sb) => sb.id === s.id,
-    );
+    const switchingBlock = get(cx.state).switchingBlocks.filter((sb) => sb.id === s.id);
     // スイッチが押されているとき
     if (s.pressedByPlayer || s.pressedByBlock) {
       for (const sb of switchingBlock) {
@@ -320,8 +285,7 @@ export function resize(cx: Context) {
   const cfg = get(cx.config);
   const player = cx.dynamic.player;
   player.x = (player.x / cfg.blockSize) * cfg.blockSize;
-  player.y =
-    ((player.y - cfg.marginY) / cfg.blockSize) * cfg.blockSize + cfg.marginY;
+  player.y = ((player.y - cfg.marginY) / cfg.blockSize) * cfg.blockSize + cfg.marginY;
   if (!player.sprite) return;
   player.sprite.width = consts.playerWidth * cfg.blockSize;
   player.sprite.height = consts.playerHeight * cfg.blockSize;
