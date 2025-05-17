@@ -143,17 +143,19 @@ export async function setup(
   );
 
   // Stage 1,2のチュートリアル表示実装機構
+  // isTutorialで表示の有無を決めている
   // Frm stands for Frames
-  let tutorialFrm = 0;
-  app.ticker.add((ticker) => {
-    tutorialFrm += ticker.deltaTime;
-    // 1秒ごとにチュートリアルの画像が変わる
-    createTutorialSprite(cx, Math.floor(tutorialFrm / 60 + 1));
-    if (tutorialFrm >= 180) {
-      tutorialFrm = 0;
-      //Todo: Stage 1,2のみにする
-    }
-  });
+  if (stageDefinition.isTutorial === true) {
+    let tutorialFrm = 0;
+    app.ticker.add((ticker) => {
+      tutorialFrm += ticker.deltaTime;
+      // 1秒ごとにチュートリアルの画像が変わる
+      createTutorialSprite(cx, Math.floor(tutorialFrm / 60 + 1));
+      if (tutorialFrm >= 180) {
+        tutorialFrm = 0;
+      }
+    });
+  }
 
   cx.dynamic.player = Player.init(cx, bunnyTexture);
   app.ticker.add(unlessPaused((ticker) => Player.tick(cx, ticker)));
