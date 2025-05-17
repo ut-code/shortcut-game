@@ -6,7 +6,7 @@ import * as History from "./history.ts";
 import * as Player from "./player.ts";
 import type { Context, GameState, UIInfo } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
-import type { StageDefinition } from "./stages.ts";
+import type { StageDefinition } from "./stages/type.ts";
 import { useUI } from "./ui-info.ts";
 
 export async function setup(
@@ -74,11 +74,10 @@ export async function setup(
   const initialGameState = {
     inventory: null,
     inventoryIsInfinite: false,
-    usage: {
-      // TODO
-      copy: Number.POSITIVE_INFINITY,
-      paste: Number.POSITIVE_INFINITY,
-      cut: Number.POSITIVE_INFINITY,
+    usage: stageDefinition.usage ?? {
+      copy: 0,
+      cut: Infinity,
+      paste: Infinity,
     },
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,

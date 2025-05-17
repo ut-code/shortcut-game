@@ -16,7 +16,7 @@ import {
   tutorialImg2,
   tutorialImg3,
 } from "./resources.ts";
-import type { StageDefinition } from "./stages.ts";
+import type { StageDefinition } from "./stages/type.ts";
 
 // structuredClone cannot clone Sprite so we need to store it separately
 type VirtualSpriteCell = {
