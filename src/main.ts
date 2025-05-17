@@ -152,6 +152,7 @@ export async function setup(
   // Stage 1,2のチュートリアル表示実装機構
   // isTutorialで表示の有無を決めている
   // Frm stands for Frames
+  // ToDo: 現在の仕様では、メニューを開いているときも動き続ける。それを直すべきかそのままにするべきか
   if (stageDefinition.isTutorial === true) {
     let tutorialFrm = 0;
     app.ticker.add((ticker) => {
