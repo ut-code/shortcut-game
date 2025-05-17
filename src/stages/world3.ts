@@ -75,8 +75,8 @@ export namespace world3 {
     stage: [
       // 2345678901234567890123
       "bbbbbbbbbbbbbbbbbbbbbbbb",
-      "bbbb..W..w......bmmmmW..", // 1
-      "bbbb..bb.w..........W...", // 2
+      "bbbb..W..w.....bmmmmW...", // 1
+      "bbbb..bb.w.........W....", // 2
       ".......b.bbbbbbbbbbb....", // 3
       ".s............w....w....", // 4
       "bSbbb.........w..m.w...b", // 5
