@@ -1,15 +1,15 @@
 <script lang="ts">
 type Props = {
-  goaled: boolean;
-  nextStage: string;
+  gameover: boolean;
 };
-const { goaled, nextStage }: Props = $props();
-let el: HTMLDialogElement;
+const { gameover }: Props = $props();
+let edl: HTMLDialogElement;
+let ebl: HTMLButtonElement;
 $effect(() => {
-  if (goaled) {
-    el.showModal();
+  if (gameover) {
+    edl.showModal();
   } else {
-    if (el.open) el.close();
+    if (edl.open) edl.close();
   }
 });
 document.addEventListener("keydown", (ev) => {
@@ -17,13 +17,11 @@ document.addEventListener("keydown", (ev) => {
 });
 </script>
 
-<dialog bind:this={el} class="modal">
+<dialog bind:this={edl} class="modal">
   <div class="uiBackground modal-box flex flex-col gap-1">
-    <h1 class="text-4xl text-center">Goal!</h1>
+    <h1 class="text-4xl text-center">Game Over</h1>
     <!-- todo: ボタンのスタイル -->
-    <a data-sveltekit-reload style="font-size: 1.5rem;" class="btn btn-block" href={`/game?stage=${nextStage}`}>
-      Next Stage
-    </a>
+    <p class="text-xl text-center">ctrl+Z で戻る</p>
     <!-- TODO; これもうちょいパフォーマンスいいやつにしたい -->
     <button
       style="font-size: 1.5rem;"

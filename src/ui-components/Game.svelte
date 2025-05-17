@@ -5,6 +5,7 @@ import type { StageDefinition } from "@/stages.ts";
 import Ability from "@/ui-components/Ability.svelte";
 import Key from "@/ui-components/Key.svelte";
 import { onDestroy } from "svelte";
+import GameOverMenu from "./GameOverMenu.svelte";
 import GoalMenu from "./GoalMenu.svelte";
 // client-only.
 import PauseMenu from "./PauseMenu.svelte";
@@ -18,6 +19,7 @@ const bindings = $state({
   ongoal: () => {},
   onresume: () => {},
   ondestroy: () => {},
+  ongameover: () => {},
   uiInfo: <UIInfo>{
     inventory: null,
     inventoryIsInfinite: false,
@@ -52,13 +54,16 @@ onDestroy(() => bindings.ondestroy());
 <div bind:this={container} id="container">
   <PauseMenu
     paused={uiContext.paused}
+    alreadyStopped={uiContext.goaled || uiContext.gameover}
     onpause={() => bindings.onpause()}
     onresume={() => bindings.onresume()}
   />
   <GoalMenu
     goaled={uiContext.goaled}
     nextStage={nextStage}
-    ongoal={() => bindings.ongoal()}
+  />
+  <GameOverMenu
+    gameover={uiContext.gameover}
   />
     <div
     class="uiBackground"

@@ -229,15 +229,12 @@ export function tick(cx: Context, ticker: Ticker) {
     player.x = (Math.ceil(nextLeftX) + consts.playerWidth / 2) * blockSize;
     player.vx = 0;
   }
-  // ステージの下の端にプレイヤーが落ちると、元の場所にもどる
-  // Todo: 本当はブロックの移動状況含むステージの状況すべてをリセットすべき
-  // Todo: ステージ個別に用意される初期座標に移動させる
-  // Todo: 直接移動させるのではなく、ゲームオーバー処理を切り分ける
+  // ステージの下の端にプレイヤーが落ちるとGameOver
   if (isOutOfWorldBottom(innerTopY)) {
-    player.x = 2 * blockSize;
-    player.y = 3 * blockSize + marginY;
-    player.vx = 0;
-    player.vy = 0;
+    cx.state.update((prev) => {
+      prev.gameover = true;
+      return prev;
+    });
   }
 
   if (isSwitchBase(nextX, nextBottomY)) {
@@ -317,6 +314,13 @@ export function tick(cx: Context, ticker: Ticker) {
       return prev;
     });
   }
+
+  // if (get(cx.state).gameover) {
+  //   cx.state.update((prev) => {
+  //     prev.gameover = true;
+  //     return prev;
+  //   });
+  // };
 
   // 当たり判定結果を反映する
   player.x += player.vx * ticker.deltaTime;

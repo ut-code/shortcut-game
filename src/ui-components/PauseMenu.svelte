@@ -1,13 +1,14 @@
 <script lang="ts">
 type Props = {
   paused: boolean;
+  alreadyStopped: boolean;
   onresume: () => void;
   onpause: () => void;
 };
-const { paused, onresume, onpause }: Props = $props();
+const { paused, alreadyStopped, onresume, onpause }: Props = $props();
 let el: HTMLDialogElement;
 $effect(() => {
-  if (paused) {
+  if (paused && !alreadyStopped) {
     el.showModal();
   } else {
     el.close();
@@ -16,7 +17,7 @@ $effect(() => {
 
 document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape")
-    if (!paused) {
+    if (!paused && !alreadyStopped) {
       onpause();
       ev.preventDefault();
     }

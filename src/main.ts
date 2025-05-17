@@ -14,7 +14,8 @@ export async function setup(
   bindings: {
     onpause: () => void;
     onresume: () => void;
-    ongoal: () => void;
+    // ongoal: () => void;
+    // ongameover: () => void;
     ondestroy: () => void;
     uiInfo: UIInfo;
   },
@@ -27,7 +28,8 @@ export async function setup(
   };
   const cleanups: (() => void)[] = [];
   const unlessStopped = (f: (ticker: Ticker) => void) => (ticker: Ticker) => {
-    const stopped = get(cx.state).paused || get(cx.state).goaled;
+    const stopped =
+      get(cx.state).paused || get(cx.state).goaled || get(cx.state).gameover;
     if (!stopped) {
       f(ticker);
     }
@@ -86,6 +88,7 @@ export async function setup(
     cells: createCellsFromStageDefinition(stageDefinition),
     paused: false,
     goaled: false,
+    gameover: false,
     switches: [],
     switchingBlocks: [],
   });
@@ -177,12 +180,18 @@ export async function setup(
       return prev;
     });
   };
-  bindings.ongoal = () => {
-    cx.state.update((prev) => {
-      prev.goaled = true;
-      return prev;
-    });
-  };
+  // bindings.ongoal = () => {
+  //   cx.state.update((prev) => {
+  //     prev.goaled = true;
+  //     return prev;
+  //   });
+  // };
+  // bindings.ongameover = () => {
+  //   cx.state.update((prev) => {
+  //     prev.gameover = true;
+  //     return prev;
+  //   });
+  // };
   uiContext.subscribe((uiInfo) => {
     bindings.uiInfo = uiInfo;
   });

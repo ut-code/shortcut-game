@@ -11,5 +11,6 @@ export function useUI(state: GameState, history: GameHistory): UIInfo {
     redo: (history.tree.length - 1 - history.index) / 2,
     paused: state.paused,
     goaled: state.goaled,
+    gameover: state.gameover,
   };
 }
