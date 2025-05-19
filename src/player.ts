@@ -4,7 +4,7 @@ import * as Ability from "./ability.ts";
 import * as consts from "./constants.ts";
 import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
-import type { AbilityInit, Context } from "./public-types.ts";
+import type { AbilityInit, Context, GameConfig } from "./public-types.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
 
 export function init(cx: Context, spriteOptions?: SpriteOptions | Texture) {
@@ -331,14 +331,14 @@ export function tick(cx: Context, ticker: Ticker) {
   cx.dynamic.focus = Ability.focusCoord(getCoords(cx), player.facing);
 }
 
-export function resize(cx: Context) {
-  const cfg = get(cx.config);
+export function resize(cx: Context, prevConfig: GameConfig) {
+  const newConfig = get(cx.config);
   const player = cx.dynamic.player;
-  player.x = (player.x / cfg.blockSize) * cfg.blockSize;
-  player.y = ((player.y - cfg.marginY) / cfg.blockSize) * cfg.blockSize + cfg.marginY;
+  player.x = (player.x / prevConfig.blockSize) * newConfig.blockSize;
+  player.y = ((player.y - prevConfig.marginY) / prevConfig.blockSize) * newConfig.blockSize + newConfig.marginY;
   if (!player.sprite) return;
-  player.sprite.width = consts.playerWidth * cfg.blockSize;
-  player.sprite.height = consts.playerHeight * cfg.blockSize;
+  player.sprite.width = consts.playerWidth * newConfig.blockSize;
+  player.sprite.height = consts.playerHeight * newConfig.blockSize;
 }
 
 // Todo: 直接リセットさせるのではなく、ゲームオーバーシーンを切り分ける
