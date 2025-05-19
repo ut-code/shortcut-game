@@ -106,7 +106,6 @@ export type Coords = {
 // Ability
 export type AbilityInit = {
   enabled?: AbilityUsage;
-  inventoryIsInfinite?: boolean;
 };
 export type AbilityUsage = {
   // 回数 or Number.POSITIVE_INFINITY

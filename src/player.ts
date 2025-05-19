@@ -13,13 +13,7 @@ import {
   highlightTexture,
 } from "./resources.ts";
 
-export function init(
-  cx: Context,
-  spriteOptions?: SpriteOptions | Texture,
-  options?: {
-    ability?: AbilityInit;
-  },
-) {
+export function init(cx: Context, spriteOptions?: SpriteOptions | Texture) {
   const sprite = new Sprite(spriteOptions);
   // Center the sprite's anchor point
   sprite.anchor.set(0.5, 1);
@@ -42,7 +36,7 @@ export function init(
   document.addEventListener("keydown", (event) => handleInput(cx, event, true));
   document.addEventListener("keyup", (event) => handleInput(cx, event, false));
   console.log("player init");
-  Ability.init(cx, options?.ability);
+  Ability.init(cx);
   return {
     sprite,
     get coords() {
@@ -135,18 +129,48 @@ export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: b
 export function tick(cx: Context, ticker: Ticker) {
   const { blockSize, gridX, gridY, marginY } = get(cx.config);
   const player = cx.dynamic.player;
-  player.vx = 0;
-  if (player.holdingKeys[Inputs.Left]) {
-    player.vx -= consts.moveVX * blockSize;
-  }
+  const grid = cx.grid;
+
+  // movement
+  const accel = player.onGround ? consts.playerAccelOnGround : consts.playerAccelInAir;
+  const decel = player.onGround ? consts.playerDecelOnGround : consts.playerDecelInAir;
+  let playerIntent = 0; // 0 -> no intent, 1 -> wants to go right, -1 -> wants to go left
+  // positive direction
   if (player.holdingKeys[Inputs.Right]) {
-    player.vx += consts.moveVX * blockSize;
+    playerIntent = 1;
+  }
+  if (player.holdingKeys[Inputs.Left]) {
+    playerIntent = -1;
+  }
+  switch (playerIntent) {
+    case 1:
+      if (player.vx < consts.maxMoveVX * blockSize) {
+        player.vx += accel * blockSize;
+      }
+      break;
+    case -1:
+      if (player.vx > -consts.maxMoveVX * blockSize) {
+        player.vx -= decel * blockSize;
+      }
+      break;
+    case 0:
+      if (player.vx > decel * blockSize) {
+        player.vx -= decel * blockSize;
+      } else if (player.vx < -decel * blockSize) {
+        player.vx += decel * blockSize;
+      } else {
+        player.vx = 0;
+      }
+      break;
+    default:
+      throw new Error(`[Player.tick] Invalid playerIntent, got ${playerIntent}`);
   }
   const elapsed = cx.elapsed;
   if (player.holdingKeys[Inputs.Up]) {
     if (player.onGround) {
       player.vy = -consts.jumpVY * blockSize;
       player.jumpingBegin = elapsed;
+      player.vx *= consts.jumpAccelRate;
     } else if (player.jumpingBegin && elapsed - player.jumpingBegin < consts.jumpFrames) {
       player.vy = -consts.jumpVY * blockSize;
     } else {
@@ -156,11 +180,13 @@ export function tick(cx: Context, ticker: Ticker) {
     player.jumpingBegin = null;
   }
 
+  // collision
   const isBlock = (x: number, y: number) =>
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== null &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchPressed &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchingBlockON &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.inverseSwitchingBlockOFF &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.goal &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isSwitchBase = (x: number, y: number) =>
@@ -218,6 +244,7 @@ export function tick(cx: Context, ticker: Ticker) {
     gameover(cx);
   }
 
+  // switch activation
   if (isSwitchBase(nextX, nextBottomY)) {
     const switchBlock = get(cx.state).cells[Math.floor(nextBottomY - 1)][Math.floor(nextX)];
     if (switchBlock.block === Block.switch) {
@@ -229,7 +256,10 @@ export function tick(cx: Context, ticker: Ticker) {
               pressedByPlayer: true,
             };
           }
-          return s;
+          return {
+            ...s,
+            pressedByPlayer: false,
+          };
         });
         return prev;
       });
@@ -257,13 +287,17 @@ export function tick(cx: Context, ticker: Ticker) {
 
   // スイッチの状態を反映
   const switches = get(cx.state).switches;
-  for (const s of switches) {
-    const switchingBlock = get(cx.state).switchingBlocks.filter((sb) => sb.id === s.id);
+  const switchIds = [...new Set(switches.map((s) => s.id))]; // 重複削除
+  for (const sId of switchIds) {
+    const switchingBlock = get(cx.state).switchingBlocks.filter((sb) => sb.id === sId);
     // スイッチが押されているとき
-    if (s.pressedByPlayer || s.pressedByBlock) {
+    if (switches.filter((s) => s.id === sId).some((s) => s.pressedByPlayer || s.pressedByBlock)) {
       for (const sb of switchingBlock) {
         if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockOFF) {
           cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockON });
+        }
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.inverseSwitchingBlockOFF) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.inverseSwitchingBlockON });
         }
       }
     } else {
@@ -272,15 +306,25 @@ export function tick(cx: Context, ticker: Ticker) {
         if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockON) {
           cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockOFF });
         }
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.inverseSwitchingBlockON) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.inverseSwitchingBlockOFF });
+        }
       }
     }
   }
 
+  // goal
   if (isGoal(nextX, nextTopY) && player.onGround) {
     cx.state.update((prev) => {
       prev.goaled = true;
       return prev;
     });
+  }
+
+  // gameover
+  const coords = getCoords(cx);
+  if (player.onGround && cx.grid.getBlock(cx, coords.x, coords.y + 1) === Block.spike) {
+    gameover(cx);
   }
 
   if (!player.sprite) throw new Error("Player sprite is null");

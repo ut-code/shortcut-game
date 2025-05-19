@@ -1,13 +1,14 @@
 import { AnimatedSprite, type Container, Sprite, type Ticker } from "pixi.js";
 import { type Writable, get } from "svelte/store";
-import { Block } from "./constants.ts";
+import { Block, BlockDefinitionMap } from "./constants.ts";
 import * as consts from "./constants.ts";
-import { assert, warnIf } from "./lib.ts";
+import { assert } from "./lib.ts";
 import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
 import {
   fallableTexture,
   goalTextures,
   rockTexture,
+  spikeTexture,
   switchBaseTexture,
   switchPressedTexture,
   switchTexture,
@@ -15,7 +16,7 @@ import {
   tutorialImg2,
   tutorialImg3,
 } from "./resources.ts";
-import type { StageDefinition } from "./stages.ts";
+import type { StageDefinition } from "./stages/type.ts";
 
 // structuredClone cannot clone Sprite so we need to store it separately
 type VirtualSpriteCell = {
@@ -27,49 +28,26 @@ type VirtualSpriteCell = {
 type VirtualSOM = (VirtualSpriteCell | null)[][];
 export type GridCell =
   | {
-      block: Block.block;
+      // blocks that don't have switchId
+      block: null | Block.block | Block.switchBase | Block.goal | Block.spike;
       objectId?: unknown;
     }
   | {
-      block: Block.movable;
-      objectId: string;
-      switchId: string | undefined;
-    }
-  | {
-      block: Block.fallable;
+      // movable blocks (can be placed on top of switch)
+      block: Block.movable | Block.fallable;
       objectId: string;
       switchId: string | undefined; // switchの上に置かれている場合
     }
   | {
-      block: null;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switch;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchBase;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchingBlockOFF;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchingBlockON;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.switchPressed;
-      switchId?: string;
-      objectId?: unknown;
-    }
-  | {
-      block: Block.goal;
+      // switches / triggerable blocks
+      block:
+        | Block.switch
+        | Block.switchingBlockOFF
+        | Block.switchingBlockON
+        | Block.inverseSwitchingBlockOFF
+        | Block.inverseSwitchingBlockON
+        | Block.switchPressed;
+      switchId?: string; // optional でいいの?
       objectId?: unknown;
     };
 
@@ -77,6 +55,7 @@ export class Grid {
   __vsom: VirtualSOM;
   marginY: number; // windowの上端とy=0上端の距離(px)
   oobSprites: Sprite[]; // グリッド定義の外を埋めるやつ
+  oobFallableSprites: { sprite: Sprite | null; vy: number }[]; // グリッド定義外に落ちたfallable
   constructor(
     cx: {
       _stage_container: Container;
@@ -89,6 +68,7 @@ export class Grid {
   ) {
     const stage = cx._stage_container;
     this.oobSprites = [];
+    this.oobFallableSprites = [];
     this.marginY = (height - cellSize * stageDefinition.stage.length) / 2;
     const vsprites: VirtualSOM = [];
 
@@ -102,19 +82,12 @@ export class Grid {
           case null: // air
             vspriteRow.push(null);
             break;
-          case Block.movable: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
-          case Block.fallable: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
-          case Block.block: {
+          case Block.block:
+          case Block.movable:
+          case Block.spike:
+          case Block.fallable:
+          case Block.goal:
+          case Block.switchBase: {
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
             stage.addChild(sprite);
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
@@ -139,12 +112,7 @@ export class Grid {
             });
             break;
           }
-          case Block.switchBase: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
+          case Block.inverseSwitchingBlockOFF:
           case Block.switchingBlockOFF: {
             const switchId = (
               get(cx.state).cells[y][x] as {
@@ -167,15 +135,10 @@ export class Grid {
             });
             break;
           }
-          case Block.goal: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
-            stage.addChild(sprite);
-            vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            break;
-          }
+          case Block.inverseSwitchingBlockON:
           case Block.switchingBlockON:
           case Block.switchPressed:
-            throw new Error(`createCellsFromStageDefinition: block is not supported: ${dblock}`);
+            throw new Error(`[Grid.constructor]: block is not supported: ${dblock}`);
           default:
             dblock satisfies never;
         }
@@ -204,6 +167,7 @@ export class Grid {
       }
     }
   }
+
   /**
     it uses object equality internally, therefore
     - object should be equal if they are the same.
@@ -272,6 +236,15 @@ export class Grid {
       }
     }
     this.initOOBSprites(cx, cellSize);
+    this.clearFallableSprites(cx);
+  }
+  // 画面外のfallableはステージ内のfallableのコピーでありhistoryの対象ではないので、
+  // undoなどでステージ全体に変更を加えるときに使う
+  clearFallableSprites(cx: { _stage_container: Container }) {
+    for (const sprite of this.oobFallableSprites) {
+      if (sprite.sprite) cx._stage_container.removeChild(sprite.sprite);
+    }
+    this.oobFallableSprites = [];
   }
   getBlock(cx: Context, x: number, y: number): Block | null {
     return get(cx.state).cells[y]?.[x]?.block ?? null;
@@ -384,7 +357,10 @@ export class Grid {
       stage.addChild(movableSprite);
       assert(cNewCell.objectId !== undefined, "movable block must have objectId");
       assert(
-        (cprev.block === Block.switch || cprev.block === Block.movable || cprev.block === Block.fallable) &&
+        (cprev.block === Block.switch ||
+          cprev.block === Block.switchPressed ||
+          cprev.block === Block.movable ||
+          cprev.block === Block.fallable) &&
           cprev.switchId !== undefined,
         "block is not switch",
       );
@@ -400,6 +376,7 @@ export class Grid {
       get(cx.state).switches.filter((s) => {
         if (s.x === x && s.y === y) {
           s.pressedByBlock = true;
+          s.pressedByPlayer = false;
         }
         return s;
       });
@@ -437,50 +414,60 @@ export class Grid {
       });
     }
     // switchingBlockOFFがONに切り替わるとき
-    else if (vprev?.block === Block.switchingBlockOFF) {
-      if (cNewCell.block !== Block.switchingBlockON) {
+    else if (vprev?.block === Block.switchingBlockOFF || vprev?.block === Block.inverseSwitchingBlockOFF) {
+      if (cNewCell.block !== Block.switchingBlockON && cNewCell.block !== Block.inverseSwitchingBlockON) {
         console.warn("No block other than switchingBlockON cannot replace the switchingBlockOFF");
         return;
       }
       assert(
-        cprev.block === Block.switchingBlockOFF || cprev.block === Block.switchingBlockON,
+        cprev.block === Block.switchingBlockOFF ||
+          cprev.block === Block.switchingBlockON ||
+          cprev.block === Block.inverseSwitchingBlockOFF ||
+          cprev.block === Block.inverseSwitchingBlockON,
         "block is not switchingBlock",
       );
+      const inversed = vprev.block === Block.inverseSwitchingBlockOFF;
+      const switchONBlock = inversed ? Block.inverseSwitchingBlockON : Block.switchingBlockON;
       const switchId = cprev.switchId;
       if (!switchId) throw new Error("switchId is undefined");
-      const blockSprite = createSprite(blockSize, Block.switchingBlockON, x, y, marginY, switchColor(switchId));
+      const blockSprite = createSprite(blockSize, switchONBlock, x, y, marginY, switchColor(switchId));
       stage.addChild(blockSprite);
       cells[y][x] = {
-        block: Block.switchingBlockON,
+        block: switchONBlock,
         switchId,
         objectId: undefined,
       };
       vprev.sprite = blockSprite;
-      vprev.block = Block.switchingBlockON;
+      vprev.block = switchONBlock;
       vprev.dy = 0;
       vprev.vy = 0;
     }
     // switchingBlockONがOFFに切り替わるとき
-    else if (vprev?.block === Block.switchingBlockON) {
-      if (cNewCell.block !== Block.switchingBlockOFF) {
+    else if (vprev?.block === Block.switchingBlockON || vprev?.block === Block.inverseSwitchingBlockON) {
+      if (cNewCell.block !== Block.switchingBlockOFF && cNewCell.block !== Block.inverseSwitchingBlockOFF) {
         console.warn("No block other than switchingBlockOFF cannot replace the switchingBlockON");
         return;
       }
       assert(
-        cprev.block === Block.switchingBlockOFF || cprev.block === Block.switchingBlockON,
+        cprev.block === Block.switchingBlockOFF ||
+          cprev.block === Block.switchingBlockON ||
+          cprev.block === Block.inverseSwitchingBlockOFF ||
+          cprev.block === Block.inverseSwitchingBlockON,
         "block is not switchingBlock",
       );
+      const inversed = vprev.block === Block.inverseSwitchingBlockON;
+      const switchOFFBlock = inversed ? Block.inverseSwitchingBlockOFF : Block.switchingBlockOFF;
       const switchId = cprev.switchId;
       if (!switchId) throw new Error("switchId is undefined");
-      const blockSprite = createSprite(blockSize, Block.switchingBlockOFF, x, y, marginY, switchColor(switchId));
+      const blockSprite = createSprite(blockSize, switchOFFBlock, x, y, marginY, switchColor(switchId));
       stage.addChild(blockSprite);
       cells[y][x] = {
-        block: Block.switchingBlockOFF,
+        block: switchOFFBlock,
         switchId,
         objectId: undefined,
       };
       vprev.sprite = blockSprite;
-      vprev.block = Block.switchingBlockOFF;
+      vprev.block = switchOFFBlock;
       vprev.dy = 0;
       vprev.vy = 0;
     } else {
@@ -553,12 +540,25 @@ export class Grid {
   tick(cx: Context, ticker: Ticker) {
     const { blockSize, gridX, gridY, marginY } = get(cx.config);
     const cells = get(cx.state).cells;
+
+    for (const s of this.oobFallableSprites) {
+      if (s.sprite) {
+        s.sprite.y += s.vy * ticker.deltaTime;
+        s.vy += consts.gravity * blockSize * ticker.deltaTime;
+        if (s.sprite.y > gridY * blockSize + marginY * 2) {
+          // 画面外に出たら消す
+          s.sprite.parent?.removeChild(s.sprite);
+          s.sprite = null;
+        }
+      }
+    }
+
     for (let y = gridY - 1; y >= 0; y--) {
       for (let x = 0; x < gridX; x++) {
         const vcell = this.__vsom[y][x];
         const ccell = cells[y][x];
         if (ccell.block !== Block.fallable) continue;
-        assert(vcell !== null && vcell.block === ccell.block, "[Grid.tick] vcell is out of sync with ccell");
+        assert(vcell?.block === ccell.block, "[Grid.tick] vcell is out of sync with ccell");
 
         vcell.dy = (vcell.dy ?? 0) + (vcell.vy ?? 0) * ticker.deltaTime;
         vcell.vy = (vcell.vy ?? 0) + consts.gravity * blockSize * ticker.deltaTime;
@@ -567,34 +567,53 @@ export class Grid {
           vcell.vy = maxSpeed;
         }
 
-        let swapTargetY = y;
-        // 下にブロックがあるなどの要因で止まる
-        if (!isAvail(cells, x, swapTargetY + 1)) {
+        let swapDiff = 0;
+        let goOOB = false;
+        while (swapDiff * blockSize <= vcell.dy) {
+          // 下にブロックがあるなどの要因で止まる
+          if (!isAvail(cells, x, y + swapDiff + 1)) break;
+          vcell.dy -= blockSize;
+          swapDiff++;
+          if (y + swapDiff >= cells.length) {
+            goOOB = true;
+            break;
+          }
+        }
+
+        // これ以上下に行けない
+        if (!goOOB && !isAvail(cells, x, y + swapDiff)) {
+          // 着地 (dy はたいてい 0 未満なので、別で判定が必要)
           if (vcell.dy >= 0) {
-            // 着地 (dy はたいてい 0 未満なので、別で判定が必要)
             vcell.dy = 0;
             vcell.vy = 0;
           }
-        } else {
-          // 落下する
-          while ((swapTargetY - y) * blockSize <= vcell.dy) {
-            vcell.dy -= blockSize;
-            swapTargetY++;
-          }
         }
-        if (y !== swapTargetY) {
+
+        vcell.sprite.y = y * blockSize + marginY + vcell.dy;
+
+        if (goOOB) {
+          // vcell.sprite はsetBlockで消えてしまうので、あたらしく作る
+          const oobSprite = createSprite(blockSize, Block.fallable, x, y, marginY);
+          oobSprite.y = (y + swapDiff) * blockSize + marginY + vcell.dy;
+          cx._stage_container.addChild(oobSprite);
+          this.oobFallableSprites.push({
+            sprite: oobSprite,
+            vy: vcell.vy,
+          });
           this.setBlock(cx, x, y, { block: null });
-          this.setBlock(cx, x, swapTargetY, ccell);
-          const vSwapCell = this.__vsom[swapTargetY][x];
-          assert(vSwapCell !== null, "it should not happen");
+        } else if (swapDiff > 0) {
+          this.setBlock(cx, x, y, { block: null });
+          this.setBlock(cx, x, y + swapDiff, ccell);
+          const vSwapCell = this.__vsom[y + swapDiff][x];
+          assert(vSwapCell != null, "it should not happen");
           vSwapCell.dy = vcell.dy;
           vSwapCell.vy = vcell.vy;
           vcell.dy = 0;
           vcell.vy = 0;
           // また抽象化失敗してる...
-          vSwapCell.sprite.y = y * blockSize + marginY + vSwapCell.dy;
+          vSwapCell.sprite.y = (y + swapDiff) * blockSize + marginY + vSwapCell.dy;
+          console.log("dy", vSwapCell.dy, "vy", vSwapCell.vy);
         }
-        vcell.sprite.y = y * blockSize + marginY + vcell.dy;
       }
     }
   }
@@ -605,13 +624,11 @@ function isAvail(cells: GridCell[][], x: number, y: number) {
   switch (true) {
     case y >= cells.length:
       // 床が抜けている
-      // どうする?
-      return false;
+      return true;
     case cell.block === null || cell.block === Block.switch:
       // 下にブロックがない
       return true;
     default:
-      // console.log("ブロックあり");
       // 下にブロックがある
       return false;
   }
@@ -626,7 +643,21 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
       const cellDef = rowDefinition[x];
       const block = blockFromDefinition(cellDef);
       switch (block) {
-        case Block.movable: {
+        // blocks that don't need additional initialization
+        case Block.block:
+        case null:
+        case Block.switchBase:
+        case Block.spike:
+        case Block.goal: {
+          const cell: GridCell = {
+            block,
+          };
+          row.push(cell);
+          break;
+        }
+        // movable blocks
+        case Block.movable:
+        case Block.fallable: {
           const group = stageDefinition.blockGroups.find((b) => b.x === x && b.y === y);
           const objectId = group ? group.objectId : Math.random().toString();
           const cell: GridCell = {
@@ -638,49 +669,15 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
 
           break;
         }
-        case Block.fallable: {
-          const group = stageDefinition.blockGroups.find((b) => b.x === x && b.y === y);
-          const objectId = group ? group.objectId : Math.random().toString();
-          const cell: GridCell = {
-            block,
-            objectId,
-            switchId: undefined,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.block:
-        case null: {
-          const cell: GridCell = {
-            block,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.switch: {
-          const group = stageDefinition.switchGroups.find((b) => b.x === x && b.y === y);
-          if (!group) {
-            throw new Error("switch must have switchGroup");
-          }
-          const switchId = group.switchId;
-          const cell: GridCell = {
-            block,
-            switchId,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.switchBase: {
-          const cell: GridCell = {
-            block,
-          };
-          row.push(cell);
-          break;
-        }
+        // switches
+        case Block.switch:
+        case Block.inverseSwitchingBlockON:
+        case Block.inverseSwitchingBlockOFF:
+        case Block.switchingBlockON:
         case Block.switchingBlockOFF: {
           const group = stageDefinition.switchGroups.find((b) => b.x === x && b.y === y);
           if (!group) {
-            throw new Error("switchingBlock must have switchGroup");
+            throw new Error("switch must have matching switchGroup");
           }
           const switchId = group.switchId;
           const cell: GridCell = {
@@ -690,14 +687,6 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
           row.push(cell);
           break;
         }
-        case Block.goal: {
-          const cell: GridCell = {
-            block,
-          };
-          row.push(cell);
-          break;
-        }
-        case Block.switchingBlockON:
         case Block.switchPressed: {
           throw new Error(`createCellsFromStageDefinition: block is not supported: ${block}`);
         }
@@ -711,27 +700,13 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
 }
 
 export function blockFromDefinition(d: string): Block | null {
-  switch (d) {
-    case ".":
-      return null;
-    case "b":
-      return Block.block;
-    case "m":
-      return Block.movable;
-    case "f":
-      return Block.fallable;
-    case "s":
-      return Block.switch;
-    case "S":
-      return Block.switchBase;
-    case "w":
-      return Block.switchingBlockOFF;
-    case "g":
-      return Block.goal;
-    default:
-      throw new Error(`[blockFromDefinition] no proper block: ${d}`);
+  const block = BlockDefinitionMap.get(d);
+  if (block === undefined) {
+    throw new Error(`[blockFromDefinition] no proper block: ${d}`);
   }
+  return block;
 }
+
 function createSprite(
   blockSize: number,
   block: Block,
@@ -770,6 +745,7 @@ function createSprite(
       updateSprite(switchBaseSprite, blockSize, x, y, marginY, 0);
       return switchBaseSprite;
     }
+    case Block.inverseSwitchingBlockON:
     case Block.switchingBlockOFF: {
       const sprite = new Sprite(rockTexture);
       if (switchColor) sprite.tint = switchColor;
@@ -777,6 +753,7 @@ function createSprite(
       updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }
+    case Block.inverseSwitchingBlockOFF:
     case Block.switchingBlockON: {
       const sprite = new Sprite(rockTexture);
       if (switchColor) sprite.tint = switchColor;
@@ -799,6 +776,11 @@ function createSprite(
       sprite.play();
       return sprite;
     }
+    case Block.spike: {
+      const sprite = new Sprite(spikeTexture);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
+    }
     default:
       block satisfies never;
       throw new Error("unreachable");
@@ -811,6 +793,7 @@ function updateSprite(sprite: Sprite, blockSize: number, x: number, y: number, m
   sprite.y = y * blockSize + marginY + dy;
 }
 
+//ToDo: 現在の仕様では、Escメニュー表示状態でも動き続ける。
 export function createTutorialSprite(cx: { _stage_container: Container }, order: number) {
   let sprite = new Sprite(tutorialImg1);
   switch (order) {
@@ -827,43 +810,11 @@ export function createTutorialSprite(cx: { _stage_container: Container }, order:
   sprite.y = 100;
   cx._stage_container.addChild(sprite);
 }
-//ToDo: 現在の仕様では、Escメニュー表示状態でも動き続ける。
 
 export function printCells(cells: GridCell[][], context?: string) {
   console.log(
     `${context ? context : "Grid"}:
-     ${cells
-       .map((row) =>
-         row
-           .map((cell) => {
-             switch (cell.block) {
-               case null:
-                 return ".";
-               case Block.block:
-                 return "b";
-               case Block.movable:
-                 return cell.switchId !== undefined ? "M" : "m";
-               case Block.fallable:
-                 return cell.switchId !== undefined ? "F" : "f";
-               case Block.switch:
-                 return "s";
-               case Block.switchBase:
-                 return "S";
-               case Block.switchingBlockOFF:
-                 return "w";
-               case Block.switchingBlockON:
-                 return "w";
-               case Block.switchPressed:
-                 return "s";
-               case Block.goal:
-                 return "g";
-               default:
-                 cell satisfies never;
-             }
-           })
-           .join(""),
-       )
-       .join("\n")}`,
+     ${cells.map((row) => row.map((cell) => consts.ReverseBlockMap.get(cell.block)).join("")).join("\n")}`,
   );
 }
 

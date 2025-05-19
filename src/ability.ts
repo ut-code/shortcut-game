@@ -5,17 +5,7 @@ import { createSnapshot } from "./history.ts";
 import * as History from "./history.ts";
 import type { AbilityInit, Context, Coords, MovableObject } from "./public-types.ts";
 
-export function init(cx: Context, options?: AbilityInit) {
-  cx.state.update((prev) => ({
-    ...prev,
-    usage: options?.enabled ?? {
-      copy: Number.POSITIVE_INFINITY,
-      paste: Number.POSITIVE_INFINITY,
-      cut: Number.POSITIVE_INFINITY,
-    },
-    inventoryIsInfinite: options?.inventoryIsInfinite ?? false,
-  }));
-
+export function init(cx: Context) {
   console.log("ability init");
   document.addEventListener("copy", (e) => {
     const { onGround } = cx.dynamic.player;
@@ -166,12 +156,13 @@ export function placeMovableObject(cx: Context, x: number, y: number, object: Mo
     console.error("[placeMovableObject] cannot place object");
     return;
   }
+  const newObjectId = Math.random().toString();
   for (const rel of object.relativePositions) {
     const positionX = x + rel.x;
     const positionY = y + rel.y;
     grid.setBlock(cx, positionX, positionY, {
       block: object.block,
-      objectId: object.objectId,
+      objectId: newObjectId,
       switchId: undefined,
     });
   }
