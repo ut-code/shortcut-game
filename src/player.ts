@@ -125,8 +125,10 @@ export function tick(cx: Context, ticker: Ticker) {
   const grid = cx.grid;
 
   // movement
-  const accel = player.onGround ? consts.playerAccelOnGround : consts.playerAccelInAir;
-  const decel = player.onGround ? consts.playerDecelOnGround : consts.playerDecelInAir;
+  // playerAccelInAirが遅すぎて空中で1マスの隙間に入ることができない問題があるため、
+  // 静止状態のときのみ大きいaccelを適用させるクソ仕様
+  const accel = player.onGround || player.vx === 0 ? consts.playerAccelOnGround : consts.playerAccelInAir;
+  const decel = player.onGround || player.vx === 0 ? consts.playerDecelOnGround : consts.playerDecelInAir;
   let playerIntent = 0; // 0 -> no intent, 1 -> wants to go right, -1 -> wants to go left
   // positive direction
   if (player.holdingKeys[Inputs.Right]) {
