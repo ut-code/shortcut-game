@@ -1,4 +1,4 @@
-import { type Container, Sprite, type Ticker } from "pixi.js";
+import { AnimatedSprite, type Container, Sprite, type Ticker } from "pixi.js";
 import { type Writable, get } from "svelte/store";
 import { Block } from "./constants.ts";
 import * as consts from "./constants.ts";
@@ -6,7 +6,7 @@ import { assert, warnIf } from "./lib.ts";
 import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
 import {
   fallableTexture,
-  goalTexture,
+  goalTextures,
   rockTexture,
   switchBaseTexture,
   switchPressedTexture,
@@ -793,8 +793,10 @@ function createSprite(
       return sprite;
     }
     case Block.goal: {
-      const sprite = new Sprite(goalTexture);
+      const sprite = new AnimatedSprite(Object.values(goalTextures));
       updateSprite(sprite, blockSize, x, y, marginY, 0);
+      sprite.animationSpeed = 0.03;
+      sprite.play();
       return sprite;
     }
     default:
