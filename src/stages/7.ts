@@ -1,6 +1,6 @@
-import type { PreprocessInput } from "@/stage-preprocessor.ts";
+import type { StageDefinition } from "./type.ts";
 
-export const stage7: PreprocessInput = {
+export const stage7: StageDefinition = {
   stage: [
     "bbbbbbbbbbbbbbbbbb",
     "..................",
@@ -13,21 +13,55 @@ export const stage7: PreprocessInput = {
     "...mm...s.........",
     "bbbbbbbbSbbbbbbbbb",
   ],
-  overlay: [
-    "bbbbbbbbbbbbbbbbbb",
-    "..................",
-    "................g.",
-    "........3......bbb",
-    "........3.....3bbb",
-    ".....b2.3....3.bbb",
-    ".....bbb...bbbbbbb",
-    "...1 bbb...bbbbbbb",
-    ".S.11...3.........",
-    "bbbbbbbbbbbbbbbbbb",
+  initialPlayerX: 1,
+  initialPlayerY: 9,
+  blockGroups: [
+    {
+      x: 3,
+      y: 7,
+      objectId: "1",
+    },
+    {
+      x: 3,
+      y: 8,
+      objectId: "1",
+    },
+    {
+      x: 4,
+      y: 8,
+      objectId: "1",
+    },
   ],
-  usage: {
-    copy: 0,
-    cut: 0,
-    paste: 0,
-  },
+  switchGroups: [
+    {
+      x: 8,
+      y: 3,
+      switchId: "1",
+    },
+    {
+      x: 8,
+      y: 4,
+      switchId: "1",
+    },
+    {
+      x: 8,
+      y: 5,
+      switchId: "1",
+    },
+    {
+      x: 8,
+      y: 8,
+      switchId: "1",
+    },
+    {
+      x: 13,
+      y: 5,
+      switchId: "1",
+    },
+    {
+      x: 14,
+      y: 4,
+      switchId: "1",
+    },
+  ],
 };
