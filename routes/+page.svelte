@@ -16,3 +16,7 @@
   <a href="/game?stage=3-1">Stage 3-1</a>
   <a href="/game?stage=3-2">Stage 3-2</a>
 </p>
+
+<p>
+  <a href="/stage-select">Stage-Select</a>
+</p>

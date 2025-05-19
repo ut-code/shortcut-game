@@ -1,87 +1,62 @@
-<style>
-  .container {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: #e03333;
-  }
-
-  .top {
-    height: 50%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
-    background-color: #d00777;
-  }
-
-  .gallery {
-    display: flex;
-    height: 100%;
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  .gallery img {
-    height: 100%;
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-
-  .bottom {
-    height: 50%;
-    overflow: hidden;
-    background-color: #e0f7fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-  }
-  .block-container {
-  display: flex;
-  align-items: center;
-  gap: 40px; /* ブロック間のスペース */
-  position: relative;
-  padding: 20px;
+<script lang="ts">
+import { onMount } from "svelte";
+interface Block {
+  label: string;
+  link: string;
 }
 
-.block {
-  position: relative;
-  background: #f0f0f0;
-  border: 2px solid #888;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 1.2rem;
-  font-weight: bold;
+const blocks: Block[] = [
+  { label: "1", link: "/page1" },
+  { label: "2", link: "/page2" },
+  { label: "3", link: "/page3" },
+  { label: "4", link: "/page4" },
+];
+
+let selected = 0;
+
+function handleKey(e: KeyboardEvent): void {
+  if (e.key === "ArrowRight") {
+    selected = (selected + 1) % blocks.length;
+  } else if (e.key === "ArrowLeft") {
+    selected = (selected - 1 + blocks.length) % blocks.length;
+  } else if (e.key === "Enter" || e.key === " ") {
+    window.location.href = blocks[selected].link;
+  }
 }
 
-/* 線の描画 */
-.block:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -20px;
-  width: 40px;
-  height: 2px;
-  background-color: #555;
-  transform: translateY(-50%);
+function handleClick(index: number): void {
+  selected = index;
 }
 
-</style>
+let container: HTMLDivElement | null = null;
 
-<div class="container">
-  <div class="top">
-<div><div class="block-container">
-  <div class="block">1</div>
-  <div class="block">2</div>
-  <div class="block">3</div>
-  <div class="block">4</div>
+onMount(() => {
+  container?.focus();
+});
+</script>
+
+<div class="p-10 text-8xl">W2</div>
+<div class="flex justify-center items-center h-64">
+<div
+  bind:this={container}
+  role="button"
+  tabindex="0"
+  on:keydown={handleKey}
+  class="flex gap-4 outline-none"
+>
+  {#each blocks as block, i}
+    <button
+      type="button"
+      class={`border-6 pt-8 pb-6 pl-8 pr-6  m-10 transition-colors duration-200 text-7xl ${
+        selected === i ? 'border-primary ring ring-primary' : 'border-base'
+      }`}
+      on:click={() => handleClick(i)}
+    >
+      {block.label}
+    </button>
+  {/each}
+</div></div>
+<div class="flex justify-center items-center">
+  <img src="/assets/thumbnaildev.png" alt="" />
+  <p>Enter</p>
 </div>
-</div>
-  </div>
-
-  <div class="bottom">
-    <p>下半分の固定</p>
-  </div>
-</div>
-
-
