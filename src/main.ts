@@ -53,7 +53,7 @@ export async function setup(
   const gridY = stageDefinition.stage.length;
 
   // Initialize the application
-  await app.init({ background: "white", resizeTo: window });
+  await app.init({ background: "rgb(34, 34, 48)", resizeTo: window });
   const blockSize = Math.min(app.screen.width / gridX, app.screen.height / gridY);
 
   const gridMarginY = (app.screen.height - blockSize * stageDefinition.stage.length) / 2;

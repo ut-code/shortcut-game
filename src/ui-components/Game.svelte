@@ -68,7 +68,7 @@ onDestroy(() => bindings.destroy());
   />
     <div
     class="uiBackground"
-    style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: baseline;"
+    style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: baseline; background-color:oklch(from color l c h)"
   >
     <span style="font-size: 2rem; margin-right:0.5rem;">Stage:</span>
     <span style="font-size: 2.5rem; margin-right: 1.5rem;">{stageNum}</span>
