@@ -684,6 +684,20 @@ export class Grid {
     }
     return false;
   }
+  clearLaser(cx: Context) {
+    const { gridX, gridY } = get(cx.config);
+    this.laserBeamHorizontalExists = [];
+    this.laserBeamVerticalExists = [];
+    for (let y = 0; y < gridY; y++) {
+      for (let x = 0; x < gridX; x++) {
+        const vsom = this.__vsom[y][x];
+        if (vsom?.beamSprite) {
+          cx._stage_container.removeChild(vsom.beamSprite);
+          vsom.beamSprite = null;
+        }
+      }
+    }
+  }
   laserTick(cx: Context) {
     const { blockSize, gridX, gridY, marginY } = get(cx.config);
     const cells = get(cx.state).cells;
