@@ -1,13 +1,14 @@
 <script lang="ts">
-import { page } from "$app/stores";
 import Key from "@/ui-components/Key.svelte";
 import { onMount } from "svelte";
-import { get } from "svelte/store";
 
-// クエリからwを取得、なければ"1"
-$: w = get(page).url.searchParams.get("w") ?? "1";
+let w = "1";
 
-// wに応じてblocksを生成
+onMount(() => {
+  const params = new URLSearchParams(window.location.search);
+  w = params.get("w") ?? "1";
+});
+
 $: blocks = [
   { label: "1", link: `/game?stage=${w}-1` },
   { label: "2", link: `/game?stage=${w}-2` },
