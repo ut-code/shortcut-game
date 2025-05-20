@@ -79,11 +79,11 @@ export namespace world3 {
       "bbbb..bb.w.........W....", // 2
       ".......b.bbbbbbbbbbb....", // 3
       ".s............w....w....", // 4
-      "bSbbb.........w..m.w...b", // 5
-      "bbbbb.........bbbbbb..bb", // 6
-      "bbbbb.........bg.....bbb", // 7
-      "bbbbbssss...f.b.....bbbb", // 8
-      "bbbbbSSSSbbbbbb....bbbbb",
+      "bSbbb.........w..m.w....", // 5
+      "bbbbb.........bbbbbb...b", // 6
+      "bbbbb.........bg......bb", // 7
+      "bbbbbssss...f.b......bbb", // 8
+      "bbbbbSSSSbbbbbb.....bbbb",
     ],
     isTutorial: false,
     initialPlayerX: 10,

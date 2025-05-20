@@ -4,7 +4,7 @@ import * as Ability from "./ability.ts";
 import * as consts from "./constants.ts";
 import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
-import type { AbilityInit, Context } from "./public-types.ts";
+import type { AbilityInit, Context, GameConfig } from "./public-types.ts";
 import {
   bunnyTexture,
   characterActivatedTexture,
@@ -132,8 +132,10 @@ export function tick(cx: Context, ticker: Ticker) {
   const grid = cx.grid;
 
   // movement
-  const accel = player.onGround ? consts.playerAccelOnGround : consts.playerAccelInAir;
-  const decel = player.onGround ? consts.playerDecelOnGround : consts.playerDecelInAir;
+  // playerAccelInAirが遅すぎて空中で1マスの隙間に入ることができない問題があるため、
+  // 静止状態のときのみ大きいaccelを適用させるクソ仕様
+  const accel = player.onGround || player.vx === 0 ? consts.playerAccelOnGround : consts.playerAccelInAir;
+  const decel = player.onGround || player.vx === 0 ? consts.playerDecelOnGround : consts.playerDecelInAir;
   let playerIntent = 0; // 0 -> no intent, 1 -> wants to go right, -1 -> wants to go left
   // positive direction
   if (player.holdingKeys[Inputs.Right]) {
@@ -361,14 +363,14 @@ export function tick(cx: Context, ticker: Ticker) {
   cx.dynamic.focus = Ability.focusCoord(getCoords(cx), player.facing);
 }
 
-export function resize(cx: Context) {
-  const cfg = get(cx.config);
+export function resize(cx: Context, prevConfig: GameConfig) {
+  const newConfig = get(cx.config);
   const player = cx.dynamic.player;
-  player.x = (player.x / cfg.blockSize) * cfg.blockSize;
-  player.y = ((player.y - cfg.marginY) / cfg.blockSize) * cfg.blockSize + cfg.marginY;
+  player.x = (player.x / prevConfig.blockSize) * newConfig.blockSize;
+  player.y = ((player.y - prevConfig.marginY) / prevConfig.blockSize) * newConfig.blockSize + newConfig.marginY;
   if (!player.sprite) return;
-  player.sprite.width = consts.playerWidth * cfg.blockSize;
-  player.sprite.height = consts.playerHeight * cfg.blockSize;
+  player.sprite.width = consts.playerWidth * newConfig.blockSize;
+  player.sprite.height = consts.playerHeight * newConfig.blockSize;
 }
 
 // Todo: 直接リセットさせるのではなく、ゲームオーバーシーンを切り分ける

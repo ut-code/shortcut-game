@@ -10,7 +10,7 @@ export const stage6: StageDefinition = {
     "bb..............w.....m..",
     "bb..............b....mm..",
     "bb.w....m..s...bb...mmm..",
-    "bbbbbbbbbbbSbbbbb^bbbbbbb",
+    "bbbbbbbbbbbSbbbbbbbbbbbbb",
   ],
   initialPlayerX: 5,
   initialPlayerY: 8,

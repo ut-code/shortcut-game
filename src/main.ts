@@ -231,14 +231,15 @@ export async function setup(
 
 function useOnResize(cx: Context, app: Application, grid: Grid, gridX: number, gridY: number) {
   return () => {
+    const prevConfig = { ...get(cx.config) };
     app.renderer.resize(window.innerWidth, window.innerHeight);
     const blockSize = Math.min(app.screen.width / gridX, app.screen.height / gridY);
+    grid.rerender(cx, app.screen.height, blockSize);
     cx.config.update((prev) => {
       prev.blockSize = blockSize;
       prev.marginY = grid.marginY;
       return prev;
     });
-    cx.grid.rerender(cx, app.screen.height, blockSize);
-    Player.resize(cx);
+    Player.resize(cx, prevConfig);
   };
 }
