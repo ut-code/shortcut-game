@@ -26,5 +26,4 @@ export const stages = new Map<string, StageDefinition>([
   ["3-4", world3.stage4],
   ["4-1", world4.stage1],
   ["4-2", world4.stage2],
-  ["4-3", world4.stage3],
 ]);
