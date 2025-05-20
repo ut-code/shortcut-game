@@ -1,7 +1,7 @@
 <script lang="ts">
 // can run on server side
 import { browser } from "$app/environment";
-import type { StageDefinition } from "@/stages";
+import type { StageDefinition } from "@/stages/type.ts";
 import type { Snippet } from "svelte";
 
 type Props = {

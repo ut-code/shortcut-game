@@ -4,16 +4,10 @@ import * as Ability from "./ability.ts";
 import * as consts from "./constants.ts";
 import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
-import type { AbilityInit, Context } from "./public-types.ts";
+import type { AbilityInit, Context, GameConfig } from "./public-types.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
 
-export function init(
-  cx: Context,
-  spriteOptions?: SpriteOptions | Texture,
-  options?: {
-    ability?: AbilityInit;
-  },
-) {
+export function init(cx: Context, spriteOptions?: SpriteOptions | Texture) {
   const sprite = new Sprite(spriteOptions);
   // Center the sprite's anchor point
   sprite.anchor.set(0.5, 1);
@@ -36,7 +30,7 @@ export function init(
   document.addEventListener("keydown", (event) => handleInput(cx, event, true));
   document.addEventListener("keyup", (event) => handleInput(cx, event, false));
   console.log("player init");
-  Ability.init(cx, options?.ability);
+  Ability.init(cx);
   return {
     sprite,
     get coords() {
@@ -131,8 +125,10 @@ export function tick(cx: Context, ticker: Ticker) {
   const grid = cx.grid;
 
   // movement
-  const accel = player.onGround ? consts.playerAccelOnGround : consts.playerAccelInAir;
-  const decel = player.onGround ? consts.playerDecelOnGround : consts.playerDecelInAir;
+  // playerAccelInAirが遅すぎて空中で1マスの隙間に入ることができない問題があるため、
+  // 静止状態のときのみ大きいaccelを適用させるクソ仕様
+  const accel = player.onGround || player.vx === 0 ? consts.playerAccelOnGround : consts.playerAccelInAir;
+  const decel = player.onGround || player.vx === 0 ? consts.playerDecelOnGround : consts.playerDecelInAir;
   let playerIntent = 0; // 0 -> no intent, 1 -> wants to go right, -1 -> wants to go left
   // positive direction
   if (player.holdingKeys[Inputs.Right]) {
@@ -185,6 +181,7 @@ export function tick(cx: Context, ticker: Ticker) {
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switch &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchPressed &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.switchingBlockON &&
+    cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.inverseSwitchingBlockOFF &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== Block.goal &&
     cx.grid.getBlock(cx, Math.floor(x), Math.floor(y)) !== undefined;
   const isSwitchBase = (x: number, y: number) =>
@@ -254,7 +251,10 @@ export function tick(cx: Context, ticker: Ticker) {
               pressedByPlayer: true,
             };
           }
-          return s;
+          return {
+            ...s,
+            pressedByPlayer: false,
+          };
         });
         return prev;
       });
@@ -282,13 +282,17 @@ export function tick(cx: Context, ticker: Ticker) {
 
   // スイッチの状態を反映
   const switches = get(cx.state).switches;
-  for (const s of switches) {
-    const switchingBlock = get(cx.state).switchingBlocks.filter((sb) => sb.id === s.id);
+  const switchIds = [...new Set(switches.map((s) => s.id))]; // 重複削除
+  for (const sId of switchIds) {
+    const switchingBlock = get(cx.state).switchingBlocks.filter((sb) => sb.id === sId);
     // スイッチが押されているとき
-    if (s.pressedByPlayer || s.pressedByBlock) {
+    if (switches.filter((s) => s.id === sId).some((s) => s.pressedByPlayer || s.pressedByBlock)) {
       for (const sb of switchingBlock) {
         if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockOFF) {
           cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockON });
+        }
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.inverseSwitchingBlockOFF) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.inverseSwitchingBlockON });
         }
       }
     } else {
@@ -296,6 +300,9 @@ export function tick(cx: Context, ticker: Ticker) {
       for (const sb of switchingBlock) {
         if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.switchingBlockON) {
           cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.switchingBlockOFF });
+        }
+        if (cx.grid.getBlock(cx, sb.x, sb.y) === Block.inverseSwitchingBlockON) {
+          cx.grid.setBlock(cx, sb.x, sb.y, { block: Block.inverseSwitchingBlockOFF });
         }
       }
     }
@@ -324,14 +331,14 @@ export function tick(cx: Context, ticker: Ticker) {
   cx.dynamic.focus = Ability.focusCoord(getCoords(cx), player.facing);
 }
 
-export function resize(cx: Context) {
-  const cfg = get(cx.config);
+export function resize(cx: Context, prevConfig: GameConfig) {
+  const newConfig = get(cx.config);
   const player = cx.dynamic.player;
-  player.x = (player.x / cfg.blockSize) * cfg.blockSize;
-  player.y = ((player.y - cfg.marginY) / cfg.blockSize) * cfg.blockSize + cfg.marginY;
+  player.x = (player.x / prevConfig.blockSize) * newConfig.blockSize;
+  player.y = ((player.y - prevConfig.marginY) / prevConfig.blockSize) * newConfig.blockSize + newConfig.marginY;
   if (!player.sprite) return;
-  player.sprite.width = consts.playerWidth * cfg.blockSize;
-  player.sprite.height = consts.playerHeight * cfg.blockSize;
+  player.sprite.width = consts.playerWidth * newConfig.blockSize;
+  player.sprite.height = consts.playerHeight * newConfig.blockSize;
 }
 
 // Todo: 直接リセットさせるのではなく、ゲームオーバーシーンを切り分ける
