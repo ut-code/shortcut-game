@@ -20,6 +20,10 @@
   <a href="/game?stage=3-4">Stage 4</a>
 </section>
 
+<p>
+  <a href="/stage-select">Stage-Select</a>
+</p>
+
 <style>
   section {
     margin: 2rem;
