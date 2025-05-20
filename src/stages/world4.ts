@@ -13,7 +13,7 @@ export namespace world4 {
       "bbbbbbbbbbbbbbbbbb",
     ],
     initialPlayerX: 3,
-    initialPlayerY: 5,
+    initialPlayerY: 6,
     usage: usages.allInf,
     blockGroups: [],
     switchGroups: [],

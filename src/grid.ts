@@ -71,6 +71,8 @@ export class Grid {
   marginY: number; // windowの上端とy=0上端の距離(px)
   oobSprites: Sprite[]; // グリッド定義の外を埋めるやつ
   oobFallableSprites: { sprite: Sprite | null; vy: number }[]; // グリッド定義外に落ちたfallable
+  laserBeamHorizontalExists: boolean[][]; // laser beamが存在する場所をtrueにする
+  laserBeamVerticalExists: boolean[][];
   constructor(
     cx: {
       _stage_container: Container;
@@ -84,6 +86,8 @@ export class Grid {
     const stage = cx._stage_container;
     this.oobSprites = [];
     this.oobFallableSprites = [];
+    this.laserBeamHorizontalExists = [];
+    this.laserBeamVerticalExists = [];
     this.marginY = (height - cellSize * stageDefinition.stage.length) / 2;
     const vsprites: VirtualSOM = [];
 
@@ -646,9 +650,31 @@ export class Grid {
       }
     }
   }
+  getLaserBeam(cx: Context, bottomY: number, topY: number, leftX: number, rightX: number): boolean {
+    const { gridX, gridY } = get(cx.config);
+    for (let y = 0; y < gridY; y++) {
+      for (let x = 0; x < gridX; x++) {
+        if (this.laserBeamHorizontalExists[y]?.[x]) {
+          // レーザーの範囲: y + lazerWidth 〜 y + 1 - lazerWidth
+          if (!(leftX > x + 1 || rightX < x || topY > y + consts.laserWidth || bottomY < y + 1 - consts.laserWidth)) {
+            return true;
+          }
+        }
+        if (this.laserBeamVerticalExists[y]?.[x]) {
+          // レーザーの範囲: x + lazerWidth 〜 x + 1 - lazerWidth
+          if (!(leftX > x + consts.laserWidth || rightX < x + 1 - consts.laserWidth || topY > y + 1 || bottomY < y)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
   laserTick(cx: Context) {
     const { blockSize, gridX, gridY, marginY } = get(cx.config);
     const cells = get(cx.state).cells;
+    this.laserBeamHorizontalExists = Array.from({ length: gridY }, () => Array.from({ length: gridX }, () => false));
+    this.laserBeamVerticalExists = Array.from({ length: gridY }, () => Array.from({ length: gridX }, () => false));
     for (let y = 0; y < gridY; y++) {
       for (let x = 0; x < gridX; x++) {
         const cell = cells[y][x];
@@ -665,10 +691,10 @@ export class Grid {
           let endX = beginX;
           let endY = beginY;
           while (
-            endX >= 0 &&
-            endX < gridX &&
-            endY >= 0 &&
-            endY < gridY &&
+            endX + directionX >= 0 &&
+            endX + directionX < gridX &&
+            endY + directionY >= 0 &&
+            endY + directionY < gridY &&
             isAvail(cells, endX + directionX, endY + directionY)
           ) {
             endX += directionX;
@@ -689,10 +715,16 @@ export class Grid {
               vsom.beamSprite.height = blockSize * (Math.abs(endX - beginX) + 1); // これは回転前のheight=回転後のwidth
               vsom.beamSprite.width = blockSize * consts.laserWidth;
               vsom.beamSprite.y -= (blockSize * (1 - consts.laserWidth)) / 2;
+              for (let bx = Math.min(beginX, endX); bx <= Math.max(beginX, endX); bx++) {
+                this.laserBeamHorizontalExists[beginY][bx] = true;
+              }
             } else {
               vsom.beamSprite.height = blockSize * (Math.abs(endY - beginY) + 1);
               vsom.beamSprite.width = blockSize * consts.laserWidth;
               vsom.beamSprite.x += (blockSize * (1 - consts.laserWidth)) / 2;
+              for (let by = Math.min(beginY, endY); by <= Math.max(beginY, endY); by++) {
+                this.laserBeamVerticalExists[by][beginX] = true;
+              }
             }
             cx._stage_container.addChild(vsom.beamSprite);
           }
