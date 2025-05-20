@@ -1,19 +1,19 @@
 <script lang="ts">
+import { page } from "$app/stores";
 import Key from "@/ui-components/Key.svelte";
 import { onMount } from "svelte";
-interface Block {
-  label: string;
-  link: string;
-}
+import { get } from "svelte/store";
 
-const blocks: Block[] = [
-  { label: "1", link: "/game?stage=1" },
-  { label: "2", link: "/game?stage=2" },
-  { label: "3", link: "/game?stage=3" },
-  { label: "4", link: "/game?stage=4" },
+// クエリからwを取得、なければ"1"
+$: w = get(page).url.searchParams.get("w") ?? "1";
+
+// wに応じてblocksを生成
+$: blocks = [
+  { label: "1", link: `/game?stage=${w}-1` },
+  { label: "2", link: `/game?stage=${w}-2` },
+  { label: "3", link: `/game?stage=${w}-3` },
+  { label: "4", link: `/game?stage=${w}-4` },
 ];
-// ToDo: リンクを実際の仕様にする
-// ToDo: ステージのサムネイルを選択しているBlockに応じて変更する
 
 let selected = 0;
 let lastKeyTime = 0;
@@ -46,9 +46,47 @@ let container: HTMLDivElement | null = null;
 onMount(() => {
   container?.focus();
 });
+
+// Todo?: ワールド選択の矢印をクリックすると、矢印キーを押してもステージが移動できない(＝ブロックをクリックする必要あり)
+// TODO?: Enterキーを押すと、カーソルがある場所のブロックの色が変わる(正しいステージには飛ぶから実害はない)
+// Todo: 画像をステージごとに変える
+// TODO: ゲームメニューからstage-selectに飛ばす
 </script>
 
-<div class="p-10 text-8xl text-center">＜ W2 ＞</div>
+<div class="p-10 text-8xl text-center flex items-center justify-center gap-8">
+  <!-- 左矢印ボタン -->
+  <button
+    class="px-4 select-none cursor-pointer"
+    aria-label="前のワールド"
+    on:click={() => {
+      // wを数値として1減らす（1未満にはしない）
+      const next = Math.max(1, Number(w) - 1);
+      const url = new URL(window.location.href);
+      url.searchParams.set("w", String(next));
+      window.location.href = url.toString();
+    }}
+    disabled={Number(w) <= 1}
+  >
+    &lt;
+  </button>
+  <span>W{w}</span>
+  <!-- 右矢印ボタン -->
+  <button
+    class="px-4 select-none cursor-pointer"
+    aria-label="次のワールド"
+    on:click={() => {
+      // wを数値として1増やす（4より大きくしない）
+      const next = Math.min(4, Number(w) + 1);
+      const url = new URL(window.location.href);
+      url.searchParams.set("w", String(next));
+      window.location.href = url.toString();
+    }}
+    disabled={Number(w) >= 4}
+  >
+    &gt;
+  </button>
+</div>
+
 <div class="flex justify-center items-center h-64">
   <div
     bind:this={container}
