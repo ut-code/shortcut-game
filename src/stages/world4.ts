@@ -5,11 +5,11 @@ export namespace world4 {
   export const stage1: StageDefinition = {
     stage: [
       "bbbbbbbbbbbbbbbbbb",
-      "b.....b...........",
-      "b.....b........G..",
-      "b.....b.......bbbb",
-      "b.....b.......bbbb",
-      "b ....m.......bbb",
+      "..................",
+      "..z....z..........",
+      "..................",
+      ".........z.....z..",
+      "...........mmm....",
       "bbbbbbbbbbbbbbbbbb",
     ],
     initialPlayerX: 3,
@@ -17,6 +17,12 @@ export namespace world4 {
     usage: usages.allInf,
     blockGroups: [],
     switchGroups: [],
+    laserDirections: [
+      { x: 2, y: 2, direction: "down" },
+      { x: 7, y: 2, direction: "right" },
+      { x: 9, y: 4, direction: "left" },
+      { x: 15, y: 4, direction: "up" },
+    ],
   };
 
   export const stage2: StageDefinition = {

@@ -7,6 +7,11 @@ import type { Context, GameConfig, GameState, MovableObject } from "./public-typ
 import {
   fallableTexture,
   goalTexture,
+  laserBeamTexture,
+  laserTextureDown,
+  laserTextureLeft,
+  laserTextureRight,
+  laserTextureUp,
   rockTexture,
   spikeTexture,
   switchBaseTexture,
@@ -24,12 +29,22 @@ type VirtualSpriteCell = {
   block: Block;
   dy: number; // fallableで用いる 本来のマスからの表示位置のずれ in pixels, dy < 0
   vy: number;
+  beamSprite?: Sprite | null; // laser beam
 };
 type VirtualSOM = (VirtualSpriteCell | null)[][];
 export type GridCell =
   | {
       // blocks that don't have switchId
-      block: null | Block.block | Block.switchBase | Block.goal | Block.spike;
+      block:
+        | null
+        | Block.block
+        | Block.switchBase
+        | Block.goal
+        | Block.spike
+        | Block.laserUp
+        | Block.laserDown
+        | Block.laserLeft
+        | Block.laserRight;
       objectId?: unknown;
     }
   | {
@@ -91,6 +106,20 @@ export class Grid {
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
             stage.addChild(sprite);
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
+            break;
+          }
+          case Block.laserUp:
+          case Block.laserDown:
+          case Block.laserLeft:
+          case Block.laserRight: {
+            // blockFromDefinitionにdirectionの情報は含まれず、cellsのほうが正しい
+            const blockWithDirection = get(cx.state).cells[y][x]?.block;
+            if (!blockWithDirection) {
+              throw new Error("blockWithDirection is null");
+            }
+            const sprite = createSprite(cellSize, blockWithDirection, x, y, this.marginY);
+            stage.addChild(sprite);
+            vspriteRow.push({ sprite, block: blockWithDirection, dy: 0, vy: 0 });
             break;
           }
           case Block.switch: {
@@ -537,7 +566,7 @@ export class Grid {
       cells: cells,
     }));
   }
-  tick(cx: Context, ticker: Ticker) {
+  fallableTick(cx: Context, ticker: Ticker) {
     const { blockSize, gridX, gridY, marginY } = get(cx.config);
     const cells = get(cx.state).cells;
 
@@ -617,12 +646,66 @@ export class Grid {
       }
     }
   }
+  laserTick(cx: Context) {
+    const { blockSize, gridX, gridY, marginY } = get(cx.config);
+    const cells = get(cx.state).cells;
+    for (let y = 0; y < gridY; y++) {
+      for (let x = 0; x < gridX; x++) {
+        const cell = cells[y][x];
+        if (
+          cell.block === Block.laserUp ||
+          cell.block === Block.laserDown ||
+          cell.block === Block.laserLeft ||
+          cell.block === Block.laserRight
+        ) {
+          const directionX = cell.block === Block.laserLeft ? -1 : cell.block === Block.laserRight ? 1 : 0;
+          const directionY = cell.block === Block.laserUp ? -1 : cell.block === Block.laserDown ? 1 : 0;
+          const beginX = x + directionX;
+          const beginY = y + directionY;
+          let endX = beginX;
+          let endY = beginY;
+          while (
+            endX >= 0 &&
+            endX < gridX &&
+            endY >= 0 &&
+            endY < gridY &&
+            isAvail(cells, endX + directionX, endY + directionY)
+          ) {
+            endX += directionX;
+            endY += directionY;
+          }
+          const vsom = this.__vsom[y][x];
+          assert(vsom != null, "laser vsom is null");
+          if (vsom.beamSprite) {
+            cx._stage_container.removeChild(vsom.beamSprite);
+            vsom.beamSprite = null;
+          }
+          if (isAvail(cells, beginX, beginY)) {
+            vsom.beamSprite = new Sprite(laserBeamTexture);
+            updateSprite(vsom.beamSprite, blockSize, Math.min(beginX, endX), Math.min(beginY, endY), marginY, 0);
+            if (cell.block === Block.laserLeft || cell.block === Block.laserRight) {
+              vsom.beamSprite.rotation = -Math.PI / 2;
+              vsom.beamSprite.y += blockSize; // 回転中心が中心でないので補正
+              vsom.beamSprite.height = blockSize * (Math.abs(endX - beginX) + 1); // これは回転前のheight=回転後のwidth
+              vsom.beamSprite.width = blockSize * consts.laserWidth;
+              vsom.beamSprite.y -= (blockSize * (1 - consts.laserWidth)) / 2;
+            } else {
+              vsom.beamSprite.height = blockSize * (Math.abs(endY - beginY) + 1);
+              vsom.beamSprite.width = blockSize * consts.laserWidth;
+              vsom.beamSprite.x += (blockSize * (1 - consts.laserWidth)) / 2;
+            }
+            cx._stage_container.addChild(vsom.beamSprite);
+          }
+        }
+      }
+    }
+  }
 }
 // 落下ブロック / 人用
 function isAvail(cells: GridCell[][], x: number, y: number) {
   const cell = cells[y]?.[x];
   switch (true) {
-    case y >= cells.length:
+    case y < 0 || y >= cells.length || x < 0 || x >= cells[y].length:
       // 床が抜けている
       return true;
     case cell.block === null || cell.block === Block.switch:
@@ -689,6 +772,35 @@ export function createCellsFromStageDefinition(stageDefinition: StageDefinition)
         }
         case Block.switchPressed: {
           throw new Error(`createCellsFromStageDefinition: block is not supported: ${block}`);
+        }
+        case Block.laserUp:
+        case Block.laserDown:
+        case Block.laserLeft:
+        case Block.laserRight: {
+          const direction = stageDefinition.laserDirections?.find((b) => b.x === x && b.y === y);
+          if (!direction) {
+            throw new Error("laser must have matching laserDirection");
+          }
+          let blockWithDirection: Block;
+          switch (direction.direction) {
+            case "up":
+              blockWithDirection = Block.laserUp;
+              break;
+            case "down":
+              blockWithDirection = Block.laserDown;
+              break;
+            case "left":
+              blockWithDirection = Block.laserLeft;
+              break;
+            case "right":
+              blockWithDirection = Block.laserRight;
+              break;
+          }
+          const cell: GridCell = {
+            block: blockWithDirection,
+          };
+          row.push(cell);
+          break;
         }
         default:
           block satisfies never;
@@ -776,6 +888,26 @@ function createSprite(
     }
     case Block.spike: {
       const sprite = new Sprite(spikeTexture);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
+    }
+    case Block.laserUp: {
+      const sprite = new Sprite(laserTextureUp);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
+    }
+    case Block.laserDown: {
+      const sprite = new Sprite(laserTextureDown);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
+    }
+    case Block.laserLeft: {
+      const sprite = new Sprite(laserTextureLeft);
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
+    }
+    case Block.laserRight: {
+      const sprite = new Sprite(laserTextureRight);
       updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
     }

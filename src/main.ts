@@ -180,7 +180,8 @@ export async function setup(
     }),
   );
 
-  app.ticker.add(unlessStopped((ticker) => grid.tick(cx, ticker)));
+  app.ticker.add(unlessStopped((ticker) => grid.fallableTick(cx, ticker)));
+  app.ticker.add(unlessStopped((ticker) => grid.laserTick(cx)));
 
   // Append the application canvas to the document body
   el.appendChild(app.canvas);
