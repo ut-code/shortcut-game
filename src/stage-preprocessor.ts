@@ -85,7 +85,8 @@ function handleGrouping(input: PreprocessInput, id: string): handleGroupingRet |
           break;
         }
         case "s":
-        case "w": {
+        case "w":
+        case "W": {
           assert(blockType !== "groupId", `${id} seems to be used for blockGroup, but there's a switch at that place`);
           blockType = "switchId";
           switchGroups.push({

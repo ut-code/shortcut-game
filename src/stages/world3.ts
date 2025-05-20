@@ -1,3 +1,4 @@
+import { stagePreprocess } from "@/stage-preprocessor.ts";
 import type { StageDefinition } from "./type.ts";
 
 export namespace world3 {
@@ -71,50 +72,36 @@ export namespace world3 {
       paste: Number.POSITIVE_INFINITY,
     },
   };
-  export const stage4: StageDefinition = {
+  export const stage4: StageDefinition = stagePreprocess({
     stage: [
-      // 2345678901234567890123
       "bbbbbbbbbbbbbbbbbbbbbbbb",
-      "bbbb..W..w.....bmmmmW...", // 1
-      "bbbb..bb.w.........W....", // 2
-      ".......b.bbbbbbbbbbb....", // 3
-      ".s............w....w....", // 4
-      "bSbbb.........w..m.w....", // 5
-      "bbbbb.........bbbbbb...b", // 6
-      "bbbbb.........bg......bb", // 7
-      "bbbbbssss...f.b......bbb", // 8
+      "bbbb..W..w.....bmmmmW...",
+      "bbbb..bb.w.........W....",
+      ".......b.bbbbbbbbbbb....",
+      ".s............w....w....",
+      "bSbbb.........w..m.w....",
+      "bbbbb.........bbbbbb...b",
+      "bbbbb.........bg......bb",
+      "bbbbbssss...f.b......bbb",
       "bbbbbSSSSbbbbbb.....bbbb",
     ],
+    overlay: [
+      "bbbbbbbbbbbbbbbbbbbbbbbb",
+      "bbbb..2..2.....b11113...",
+      "bbbb..bb.2.........3....",
+      ".......b.bbbbbbbbbbb....",
+      ".3............3....3....",
+      "b-bbb.........3..m.3....",
+      "bbbbb.........bbbbbb...b",
+      "bbbbb.........bg......bb",
+      "bbbbb2222.S.f.b......bbb",
+      "bbbbb----bbbbbb.....bbbb",
+    ],
     isTutorial: false,
-    initialPlayerX: 10,
-    initialPlayerY: 8,
-    inventoryIsInfinite: true,
-    blockGroups: [
-      { x: 16, y: 1, objectId: "1" },
-      { x: 17, y: 1, objectId: "1" },
-      { x: 18, y: 1, objectId: "1" },
-      { x: 19, y: 1, objectId: "1" },
-    ],
-    switchGroups: [
-      { x: 5, y: 8, switchId: "1" },
-      { x: 6, y: 8, switchId: "1" },
-      { x: 7, y: 8, switchId: "1" },
-      { x: 8, y: 8, switchId: "1" },
-      { x: 1, y: 4, switchId: "2" },
-      { x: 6, y: 1, switchId: "1" },
-      { x: 9, y: 1, switchId: "1" },
-      { x: 9, y: 2, switchId: "1" },
-      { x: 14, y: 4, switchId: "2" },
-      { x: 14, y: 5, switchId: "2" },
-      { x: 19, y: 4, switchId: "2" },
-      { x: 19, y: 5, switchId: "2" },
-      { x: 19, y: 2, switchId: "2" },
-      { x: 20, y: 1, switchId: "2" },
-    ],
     usage: {
       copy: Number.POSITIVE_INFINITY,
       cut: Number.POSITIVE_INFINITY,
       paste: Number.POSITIVE_INFINITY,
     },
-  };
+  });
 }
