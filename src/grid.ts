@@ -655,14 +655,28 @@ export class Grid {
     for (let y = 0; y < gridY; y++) {
       for (let x = 0; x < gridX; x++) {
         if (this.laserBeamHorizontalExists[y]?.[x]) {
-          // レーザーの範囲: y + lazerWidth 〜 y + 1 - lazerWidth
-          if (!(leftX > x + 1 || rightX < x || topY > y + consts.laserWidth || bottomY < y + 1 - consts.laserWidth)) {
+          // レーザーの範囲: y + (1 - consts.laserWidth) / 2 〜 y + 1 - (1 - consts.laserWidth) / 2
+          if (
+            !(
+              leftX > x + 1 ||
+              rightX < x ||
+              topY > y + 1 - (1 - consts.laserWidth) / 2 ||
+              bottomY < y + (1 - consts.laserWidth) / 2
+            )
+          ) {
             return true;
           }
         }
         if (this.laserBeamVerticalExists[y]?.[x]) {
-          // レーザーの範囲: x + lazerWidth 〜 x + 1 - lazerWidth
-          if (!(leftX > x + consts.laserWidth || rightX < x + 1 - consts.laserWidth || topY > y + 1 || bottomY < y)) {
+          // レーザーの範囲: yと同様
+          if (
+            !(
+              leftX > x + 1 - (1 - consts.laserWidth) / 2 ||
+              rightX < x + (1 - consts.laserWidth) / 2 ||
+              topY > y + 1 ||
+              bottomY < y
+            )
+          ) {
             return true;
           }
         }
