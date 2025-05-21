@@ -3,9 +3,9 @@ import { printCells } from "./grid.ts";
 import { assert } from "./lib.ts";
 import type { Context, StateSnapshot } from "./public-types.ts";
 
-export function init(cx: Context) {
+export function init(cx: Context): () => void {
   // there is no such thing as undo / redo event
-  document.addEventListener("keydown", (e) => {
+  function onKeyDown(e: KeyboardEvent) {
     if (!e.ctrlKey && !e.metaKey) return;
     switch (e.key) {
       case "z":
@@ -17,8 +17,12 @@ export function init(cx: Context) {
         redo(cx);
         break;
     }
-  });
+  }
+  document.addEventListener("keydown", onKeyDown);
   record(cx);
+  return () => {
+    document.removeEventListener("keydown", onKeyDown);
+  };
 }
 
 // History については、 Discord の中川さんの画像を参照のこと
@@ -101,6 +105,7 @@ export function redo(cx: Context) {
 // 状態を巻き戻す
 function restore(cx: Context, ss: StateSnapshot) {
   cx.state.set(structuredClone(ss.game));
+  assert(cx.dynamic.player !== null, "player is not initialized");
   cx.dynamic.player.x = ss.playerX;
   cx.dynamic.player.y = ss.playerY;
   cx.dynamic.player.facing = ss.playerFacing;
@@ -130,6 +135,7 @@ function popStash(cx: Context): StateSnapshot | undefined {
 
 export function createSnapshot(cx: Context): StateSnapshot {
   const game = get(cx.state);
+  assert(cx.dynamic.player !== null, "player is not initialized");
   const playerX = cx.dynamic.player.x;
   const playerY = cx.dynamic.player.y;
   const playerFacing = cx.dynamic.player.facing;

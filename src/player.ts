@@ -4,8 +4,10 @@ import * as Ability from "./ability.ts";
 import * as consts from "./constants.ts";
 import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
+import { assert } from "./lib.ts";
 import type { AbilityInit, Context, GameConfig } from "./public-types.ts";
 import { highlightHoldTexture, highlightTexture } from "./resources.ts";
+import type { StageDefinition } from "./stages/type.ts";
 
 export function init(cx: Context, spriteOptions?: SpriteOptions | Texture) {
   const sprite = new Sprite(spriteOptions);
@@ -22,43 +24,65 @@ export function init(cx: Context, spriteOptions?: SpriteOptions | Texture) {
   sprite.y = coords.y;
   sprite.width = consts.playerWidth * blockSize;
   sprite.height = consts.playerHeight * blockSize;
-  cx.dynamic.player.x = coords.x;
-  cx.dynamic.player.y = coords.y;
   cx._stage_container.addChild(sprite);
 
   // Move the sprite to the center of the screen
   document.addEventListener("keydown", (event) => handleInput(cx, event, true));
   document.addEventListener("keyup", (event) => handleInput(cx, event, false));
   console.log("player init");
-  Ability.init(cx);
-  return {
-    sprite,
-    get coords() {
-      return { x: this.x, y: this.y };
-    },
-    get x() {
-      return this.sprite.x;
-    },
-    set x(v) {
-      this.sprite.x = v;
-    },
-    get y() {
-      return this.sprite.y;
-    },
-    set y(v) {
-      this.sprite.y = v;
-    },
-    vx: 0,
-    vy: 0,
-    onGround: false,
-    jumpingBegin: null,
-    holdingKeys: {},
-    facing: consts.Facing.right,
-  };
+  return new Player(sprite);
 }
-
+export class Player {
+  _sprite: Sprite;
+  vx: number;
+  vy: number;
+  onGround: boolean;
+  jumpingBegin: number | null;
+  holdingKeys: Record<string, boolean>;
+  facing: consts.Facing;
+  constructor(sprite: Sprite) {
+    this._sprite = sprite;
+    this.vx = 0;
+    this.vy = 0;
+    this.onGround = false;
+    this.jumpingBegin = null;
+    this.holdingKeys = {};
+    this.facing = consts.Facing.right;
+  }
+  reset(cx: Context, d: StageDefinition) {
+    this.x = get(cx.config).blockSize * d.initialPlayerX;
+    this.y = get(cx.config).blockSize * d.initialPlayerY + get(cx.config).marginY;
+    this.facing = consts.Facing.right;
+    this.vx = 0;
+    this.vy = 0;
+    this.jumpingBegin = null;
+  }
+  get sprite() {
+    assert(!this._sprite.destroyed, "sprite is destroyed"); // appが破棄されたあとにどこかのイベントハンドラーがplayerやcontextへの参照を持ち続けていると起きる
+    return this._sprite;
+  }
+  // MEMO: `coords` は抽象化失敗してるので、直すか消すほうが良い
+  get coords() {
+    return { x: this.x, y: this.y };
+  }
+  get x() {
+    return this.sprite.x;
+  }
+  set x(v) {
+    this.sprite.x = v;
+  }
+  get y() {
+    return this.sprite.y;
+  }
+  set y(v) {
+    this.sprite.y = v;
+  }
+}
 export function getCoords(cx: Context) {
   const { blockSize, marginY } = get(cx.config);
+  if (!cx.dynamic.player) {
+    return { x: 0, y: 0 };
+  }
   const coords = cx.dynamic.player.coords;
   const x = Math.floor(coords.x / blockSize);
   const y = Math.round((coords.y - marginY) / blockSize) - 1; // it was not working well so take my patch
@@ -68,7 +92,7 @@ export function createHighlight(cx: Context) {
   const state = get(cx.state);
   const player = cx.dynamic.player;
   const { blockSize, marginY } = get(cx.config);
-  if (!player.holdingKeys[Inputs.Ctrl] || !player.onGround) return;
+  if (!player || !player.holdingKeys[Inputs.Ctrl] || !player.onGround) return;
   const texture = state.inventory === null ? highlightTexture : highlightHoldTexture;
   const highlight: Sprite = new Sprite(texture);
   highlight.width = blockSize;
@@ -81,6 +105,7 @@ export function createHighlight(cx: Context) {
 
 export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
   const player = cx.dynamic.player;
+  if (!player) return;
   switch (event.key) {
     case "Control":
       player.holdingKeys[Inputs.Ctrl] = eventIsKeyDown;
@@ -122,6 +147,7 @@ export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: b
 export function tick(cx: Context, ticker: Ticker) {
   const { blockSize, gridX, gridY, marginY } = get(cx.config);
   const player = cx.dynamic.player;
+  if (!player) return;
   const grid = cx.grid;
 
   // movement
@@ -337,9 +363,9 @@ export function tick(cx: Context, ticker: Ticker) {
 export function resize(cx: Context, prevConfig: GameConfig) {
   const newConfig = get(cx.config);
   const player = cx.dynamic.player;
+  if (!player) return;
   player.x = (player.x / prevConfig.blockSize) * newConfig.blockSize;
   player.y = ((player.y - prevConfig.marginY) / prevConfig.blockSize) * newConfig.blockSize + newConfig.marginY;
-  if (!player.sprite) return;
   player.sprite.width = consts.playerWidth * newConfig.blockSize;
   player.sprite.height = consts.playerHeight * newConfig.blockSize;
 }
