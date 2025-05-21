@@ -1008,9 +1008,9 @@ export function printCells(cells: GridCell[][], context?: string) {
   );
 }
 
-function switchColor(switchId: string): number | undefined {
+function switchColor(switchId: string): number {
   // TODO: 暫定的
   if (switchId === "1") return 0xffa500;
   if (switchId === "2") return 0x00ff00;
-  return undefined;
+  throw new Error(`switchId ${switchId} is not implemented`);
 }
