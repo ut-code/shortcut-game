@@ -9,6 +9,7 @@ import {
   bunnyTexture,
   characterActivatedTexture,
   characterCtrlTexture,
+  highlightErrorTexture,
   highlightHoldTexture,
   highlightTexture,
 } from "./resources.ts";
@@ -81,7 +82,10 @@ export function createHighlight(cx: Context): Sprite[] | undefined {
   // インベントリがあるとき
   if (state.inventory) {
     const highlightCoords = Ability.findSafeObjectPlace(player.facing, focus.x, focus.y, state.inventory);
-    const texture = highlightHoldTexture;
+    let texture = highlightHoldTexture;
+    if (!Ability.canPlaceMovableObject(cx, highlightCoords.x, highlightCoords.y, state.inventory)) {
+      texture = highlightErrorTexture;
+    }
     for (const coords of state.inventory.relativePositions) {
       const highlight: Sprite = new Sprite(texture);
       if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {

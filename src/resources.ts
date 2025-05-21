@@ -19,6 +19,7 @@ export const spikeTexture = await Assets.load("/assets/spike.png");
 // UI
 export const highlightTexture = await Assets.load("/assets/highlight.png");
 export const highlightHoldTexture = await Assets.load("/assets/highlight-hold.png");
+export const highlightErrorTexture = await Assets.load("/assets/highlight-error.png");
 export const tutorialImg1 = await Assets.load("/assets/tutorial1.png");
 export const tutorialImg2 = await Assets.load("/assets/tutorial2.png");
 export const tutorialImg3 = await Assets.load("/assets/tutorial3.png");
