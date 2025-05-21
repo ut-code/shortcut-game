@@ -3,7 +3,14 @@ import { type Writable, get } from "svelte/store";
 import { Block, BlockDefinitionMap } from "./constants.ts";
 import * as consts from "./constants.ts";
 import { assert } from "./lib.ts";
-import type { Context, GameConfig, GameState, MovableObject } from "./public-types.ts";
+import type {
+  Context,
+  GameConfig,
+  GameState,
+  MovableObject,
+  SwitchState,
+  SwitchingBlockState,
+} from "./public-types.ts";
 import {
   fallableTexture,
   goalTexture,
@@ -73,6 +80,8 @@ export class Grid {
   oobFallableSprites: { sprite: Sprite | null; vy: number }[]; // グリッド定義外に落ちたfallable
   laserBeamHorizontalExists: boolean[][]; // laser beamが存在する場所をtrueにする
   laserBeamVerticalExists: boolean[][];
+  initialSwitches: SwitchState[];
+  initialSwitchingBlocks: SwitchingBlockState[];
   constructor(
     cx: {
       _stage_container: Container;
@@ -88,6 +97,8 @@ export class Grid {
     this.oobFallableSprites = [];
     this.laserBeamHorizontalExists = [];
     this.laserBeamVerticalExists = [];
+    this.initialSwitches = [];
+    this.initialSwitchingBlocks = [];
     this.marginY = (height - cellSize * stageDefinition.stage.length) / 2;
     const vsprites: VirtualSOM = [];
 
@@ -136,7 +147,7 @@ export class Grid {
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY, switchColor(switchId));
             stage.addChild(sprite);
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            get(cx.state).switches.push({
+            this.initialSwitches.push({
               id: switchId,
               x,
               y,
@@ -156,7 +167,7 @@ export class Grid {
             const sprite = createSprite(cellSize, dblock, x, y, this.marginY, switchColor(switchId));
             stage.addChild(sprite);
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
-            get(cx.state).switchingBlocks.push({
+            this.initialSwitchingBlocks.push({
               id: (
                 get(cx.state).cells[y][x] as {
                   block: Block.switch;
@@ -179,6 +190,11 @@ export class Grid {
       vsprites.push(vspriteRow);
     }
     this.__vsom = vsprites;
+    cx.state.update((prev) => ({
+      ...prev,
+      switches: structuredClone(this.initialSwitches),
+      switchingBlocks: structuredClone(this.initialSwitchingBlocks),
+    }));
 
     this.initOOBSprites(cx, cellSize);
   }

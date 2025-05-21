@@ -141,7 +141,12 @@ export async function setup(
     cx.dynamic.player.jumpingBegin = null;
     cx.dynamic.focus = null;
     cx.elapsed = 0;
-    cx.state.set(structuredClone(initialGameState));
+    cx.state.set({
+      ...structuredClone(initialGameState),
+      // switchはgridのコンストラクタで初期化されるので、初期状態はinitialGameStateではなくgridが持っている
+      switches: cx.grid.initialSwitches,
+      switchingBlocks: cx.grid.initialSwitchingBlocks,
+    });
     cx.grid.clearLaser(cx);
     cx.grid.diffAndUpdateTo(cx, createCellsFromStageDefinition(stageDefinition));
     // 上に同じく。 init を使う？でも init は中で document.addEventListener してるので...
