@@ -30,13 +30,17 @@ export async function setup(
 
   function tick() {
     // highlight is re-rendered every tick
-    const highlight = Player.createHighlight(cx);
-    if (highlight) {
-      stage.addChild(highlight);
+    const highlights = Player.createHighlight(cx);
+    if (highlights) {
+      for (const highlight of highlights) {
+        stage.addChild(highlight);
+      }
     }
     return () => {
-      if (highlight) {
-        stage.removeChild(highlight);
+      if (highlights) {
+        for (const highlight of highlights) {
+          stage.removeChild(highlight);
+        }
       }
     };
   }

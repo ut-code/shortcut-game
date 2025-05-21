@@ -14,6 +14,8 @@ export const jumpVY = 0.12;
 export const jumpFrames = 10;
 // Fallable block 関連
 export const maxObjectFallSpeed = 2;
+// アニメーション関連
+export const elapsedTimePerFrame = 30; // highlightはrerenderするためAnimatedSpriteは使えない
 
 export enum Block {
   block = "block",

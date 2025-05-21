@@ -125,7 +125,7 @@ export function cut(cx: Context) {
 }
 
 // 左向きのときにブロックを配置する位置を変更するのに使用
-function findSafeObjectPlace(facing: Facing, x: number, y: number, obj: MovableObject) {
+export function findSafeObjectPlace(facing: Facing, x: number, y: number, obj: MovableObject) {
   const width =
     obj.relativePositions.reduce((acc, i) => Math.max(acc, i.x), 0) -
     obj.relativePositions.reduce((acc, i) => Math.min(acc, i.x), 1000) +

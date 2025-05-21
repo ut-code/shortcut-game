@@ -71,19 +71,69 @@ export function getCoords(cx: Context) {
   const y = Math.round((coords.y - marginY) / blockSize) - 1; // it was not working well so take my patch
   return { x, y };
 }
-export function createHighlight(cx: Context) {
+export function createHighlight(cx: Context): Sprite[] | undefined {
   const state = get(cx.state);
-  const player = cx.dynamic.player;
+  const { focus, player } = cx.dynamic;
+  if (!focus) throw new Error("focus is null");
   const { blockSize, marginY } = get(cx.config);
   if (!player.holdingKeys[Inputs.Ctrl] || !player.onGround) return;
-  const texture = state.inventory === null ? highlightTexture : highlightHoldTexture;
-  const highlight: Sprite = new Sprite(texture);
-  highlight.width = blockSize;
-  highlight.height = blockSize;
-  const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
-  highlight.x = highlightCoords.x * blockSize;
-  highlight.y = highlightCoords.y * blockSize + marginY;
-  return highlight;
+  const highlights: Sprite[] = [];
+  // インベントリがあるとき
+  if (state.inventory) {
+    const highlightCoords = Ability.findSafeObjectPlace(player.facing, focus.x, focus.y, state.inventory);
+    const texture = highlightHoldTexture;
+    for (const coords of state.inventory.relativePositions) {
+      const highlight: Sprite = new Sprite(texture);
+      if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {
+        highlight.rotation = Math.PI / 2;
+      }
+      highlight.anchor.set(0.5);
+      highlight.width = blockSize;
+      highlight.height = blockSize;
+      highlight.alpha = 1;
+      highlight.x = (coords.x + highlightCoords.x + 1 / 2) * blockSize;
+      highlight.y = (coords.y + highlightCoords.y + 1 / 2) * blockSize + marginY;
+      highlights.push(highlight);
+    }
+  } else {
+    // インベントリがないとき
+    const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
+    const object = cx.grid.getMovableObject(cx, highlightCoords.x, highlightCoords.y);
+    const texture = highlightTexture;
+    if (!object) {
+      // focusの位置にオブジェクトがないときはfocusだけハイライト
+      const highlight: Sprite = new Sprite(texture);
+      if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {
+        highlight.rotation = Math.PI / 2;
+      }
+      highlight.anchor.set(0.5);
+      const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
+      highlight.width = blockSize;
+      highlight.height = blockSize;
+      highlight.alpha = 0.5;
+      highlight.x = (highlightCoords.x + 1 / 2) * blockSize;
+      highlight.y = (highlightCoords.y + 1 / 2) * blockSize + marginY;
+      highlights.push(highlight);
+    } else {
+      // focusの位置にオブジェクトがあるときはオブジェクトをカバーするようにハイライト
+      const highlightCoords = Ability.findSafeObjectPlace(player.facing, focus.x, focus.y, object);
+      for (const coords of object.relativePositions) {
+        const highlight: Sprite = new Sprite(texture);
+        if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {
+          highlight.rotation = Math.PI / 2;
+        }
+        highlight.anchor.set(0.5);
+
+        highlight.width = blockSize;
+        highlight.height = blockSize;
+        highlight.alpha = 1;
+        highlight.x = (coords.x + highlightCoords.x + 1 / 2) * blockSize;
+        highlight.y = (coords.y + highlightCoords.y + 1 / 2) * blockSize + marginY;
+        highlights.push(highlight);
+      }
+    }
+  }
+  return highlights;
 }
 
 export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
