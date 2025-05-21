@@ -16,18 +16,20 @@ export type GameState = {
   gameover: boolean;
 
   // about the gimmick
-  switches: {
-    id: string;
-    x: number;
-    y: number;
-    pressedByPlayer: boolean;
-    pressedByBlock: boolean;
-  }[];
-  switchingBlocks: {
-    id: string;
-    x: number;
-    y: number;
-  }[];
+  switches: SwitchState[];
+  switchingBlocks: SwitchingBlockState[];
+};
+export type SwitchState = {
+  id: string;
+  x: number;
+  y: number;
+  pressedByPlayer: boolean;
+  pressedByBlock: boolean;
+};
+export type SwitchingBlockState = {
+  id: string;
+  x: number;
+  y: number;
 };
 
 // config - things that won't update very often

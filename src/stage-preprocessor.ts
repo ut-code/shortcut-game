@@ -6,7 +6,8 @@ export type PreprocessInput = {
   stage: Stage;
   overlay: string[]; // same as stage
   isTutorial?: boolean;
-  usage: {
+  inventoryIsInfinite?: boolean;
+  usage?: {
     cut: number;
     copy: number;
     paste: number;
@@ -30,7 +31,7 @@ export function stagePreprocess(input: PreprocessInput): StageDefinition {
 
   const switchGroups: SwitchGroup[] = [];
   const blockGroups: BlockGroup[] = [];
-  for (const groupId of "123456789") {
+  for (const groupId of "0123456789") {
     const group = handleGrouping(input, groupId);
     if (!group) continue;
     switch (group.type) {
@@ -85,7 +86,8 @@ function handleGrouping(input: PreprocessInput, id: string): handleGroupingRet |
           break;
         }
         case "s":
-        case "w": {
+        case "w":
+        case "W": {
           assert(blockType !== "groupId", `${id} seems to be used for blockGroup, but there's a switch at that place`);
           blockType = "switchId";
           switchGroups.push({

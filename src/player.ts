@@ -382,6 +382,9 @@ export function tick(cx: Context, ticker: Ticker) {
   if (player.onGround && cx.grid.getBlock(cx, coords.x, coords.y + 1) === Block.spike) {
     gameover(cx);
   }
+  if (cx.grid.getLaserBeam(cx, nextBottomY, nextTopY, nextLeftX, nextRightX)) {
+    gameover(cx);
+  }
 
   if (!player.sprite) throw new Error("Player sprite is null");
 
