@@ -106,6 +106,7 @@ function restore(cx: Context, ss: StateSnapshot) {
   cx.dynamic.player.facing = ss.playerFacing;
   cx.grid.diffAndUpdateTo(cx, ss.game.cells);
   cx.grid.clearFallableSprites(cx);
+  cx.grid.clearLaser(cx);
   printCells(ss.game.cells, "restore");
 }
 function stash(cx: Context) {

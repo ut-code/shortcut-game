@@ -21,6 +21,11 @@ export type BlockGroup = {
   y: number;
   objectId: string;
 };
+export type LaserDirections = {
+  x: number;
+  y: number;
+  direction: "up" | "down" | "left" | "right";
+};
 export type StageDefinition = {
   stage: Stage;
   isTutorial?: boolean;
@@ -32,6 +37,7 @@ export type StageDefinition = {
   blockGroups: BlockGroup[];
   // スイッチに関わるブロックはすべて指定
   switchGroups: SwitchGroup[];
+  laserDirections?: LaserDirections[];
   // defaults to 0, Infinity, Infinity
   usage?: {
     copy: number;

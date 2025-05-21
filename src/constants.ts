@@ -15,6 +15,8 @@ export const jumpFrames = 10;
 // Fallable block 関連
 export const maxObjectFallSpeed = 2;
 
+export const laserWidth = 0.5;
+
 export enum Block {
   block = "block",
   movable = "movable",
@@ -27,6 +29,10 @@ export enum Block {
   inverseSwitchingBlockON = "inverse-switching-block-on", // スイッチを押すと出現する
   switchPressed = "switch-pressed",
   spike = "spike",
+  laserUp = "laser-up",
+  laserDown = "laser-down",
+  laserLeft = "laser-left",
+  laserRight = "laser-right",
   goal = "goal",
 }
 export enum Facing {
@@ -50,6 +56,7 @@ export const BlockDefinitionMap = new Map<string, Block | null>([
   ["w", Block.switchingBlockOFF],
   ["W", Block.inverseSwitchingBlockOFF],
   ["^", Block.spike],
+  ["z", Block.laserUp],
   ["g", Block.goal],
 ]);
 

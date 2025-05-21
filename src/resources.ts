@@ -1,4 +1,4 @@
-import { Assets } from "pixi.js";
+import { Assets, Texture } from "pixi.js";
 // assets
 
 // entities
@@ -12,6 +12,11 @@ export const switchBaseTexture = await Assets.load("/assets/switch-base.png");
 export const switchPressedTexture = await Assets.load("/assets/switch-pressed.png");
 export const goalTexture = await Assets.load("/assets/goal.png");
 export const spikeTexture = await Assets.load("/assets/spike.png");
+export const laserTextureUp = await Assets.load("/assets/laserUp.png");
+export const laserTextureDown = await Assets.load("/assets/laserDown.png");
+export const laserTextureLeft = await Assets.load("/assets/laserLeft.png");
+export const laserTextureRight = await Assets.load("/assets/laserRight.png");
+export const laserBeamTexture = await Assets.load("/assets/laserBeam.png");
 
 // UI
 export const highlightTexture = await Assets.load("/assets/highlight.svg");

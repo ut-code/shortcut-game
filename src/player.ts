@@ -321,6 +321,9 @@ export function tick(cx: Context, ticker: Ticker) {
   if (player.onGround && cx.grid.getBlock(cx, coords.x, coords.y + 1) === Block.spike) {
     gameover(cx);
   }
+  if (cx.grid.getLaserBeam(cx, nextBottomY, nextTopY, nextLeftX, nextRightX)) {
+    gameover(cx);
+  }
 
   // movement? again?
   // 当たり判定結果を反映する
