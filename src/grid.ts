@@ -757,15 +757,15 @@ export class Grid {
               vsom.beamSprite.rotation = -Math.PI / 2;
               vsom.beamSprite.y += blockSize; // 回転中心が中心でないので補正
               vsom.beamSprite.height = blockSize * (Math.abs(endX - beginX) + 1); // これは回転前のheight=回転後のwidth
-              vsom.beamSprite.width = blockSize * consts.laserWidth;
-              vsom.beamSprite.y -= (blockSize * (1 - consts.laserWidth)) / 2;
+              vsom.beamSprite.width = blockSize /* * consts.laserWidth*/;
+              // vsom.beamSprite.y -= (blockSize * (1 - consts.laserWidth)) / 2;
               for (let bx = Math.min(beginX, endX); bx <= Math.max(beginX, endX); bx++) {
                 this.laserBeamHorizontalExists[beginY][bx] = true;
               }
             } else {
               vsom.beamSprite.height = blockSize * (Math.abs(endY - beginY) + 1);
-              vsom.beamSprite.width = blockSize * consts.laserWidth;
-              vsom.beamSprite.x += (blockSize * (1 - consts.laserWidth)) / 2;
+              vsom.beamSprite.width = blockSize /* * consts.laserWidth*/;
+              // vsom.beamSprite.x += (blockSize * (1 - consts.laserWidth)) / 2;
               for (let by = Math.min(beginY, endY); by <= Math.max(beginY, endY); by++) {
                 this.laserBeamVerticalExists[by][beginX] = true;
               }
