@@ -255,11 +255,11 @@ export class Grid {
         }
       }
     }
-    // y > gridY にはy=gridY-1のblockをコピー
+    // y > gridY にはBlock.blockを設置
     for (let y = cells.length; y < cells.length + Math.ceil(this.marginY / cellSize); y++) {
       for (let x = 0; x < cells[cells.length - 1].length; x++) {
         const cell = cells[cells.length - 1][x];
-        if (cell.block === Block.block || cell.block === Block.switchBase) {
+        if (cell.block === Block.block || cell.block === Block.switchBase || cell.block === Block.spike) {
           const sprite = createSprite(cellSize, Block.block, x, y, this.marginY);
           stage.addChild(sprite);
           this.oobSprites.push(sprite);
