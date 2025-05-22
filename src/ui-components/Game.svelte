@@ -1,6 +1,7 @@
 <script lang="ts">
 // client-only.
 
+import { Block } from "@/constants";
 import { setup } from "@/main.ts";
 import type { UIInfo } from "@/public-types.ts";
 import type { StageDefinition } from "@/stages/type.ts";
@@ -81,11 +82,17 @@ onDestroy(() => bindings.destroy());
     <span style="flex-grow: 1"></span>
     <span style="">Clipboard:</span>
     <div class="inventory">
-      {#if uiContext.inventory !== null}
+      {#if uiContext.inventory?.block === Block.movable}
         <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
-
         <img
-          src="/assets/block.png"
+          src="/assets/block-red.png"
+          alt="inventory"
+          width="100%"
+          height="100%"
+        />
+      {:else if uiContext.inventory?.block === Block.fallable}
+        <img
+          src="/assets/woodenbox.png"
           alt="inventory"
           width="100%"
           height="100%"
