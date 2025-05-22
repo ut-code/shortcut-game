@@ -44,6 +44,7 @@ export function focusCoord(playerAt: Coords, facing: Facing) {
 }
 export function copy(cx: Context) {
   const state = get(cx.state);
+  if (state.gameover || state.paused || state.goaled) return;
   if (state.usage.copy <= 0) return;
   const { focus } = cx.dynamic;
   if (!focus) return;
@@ -69,6 +70,7 @@ export function copy(cx: Context) {
 }
 export function paste(cx: Context) {
   const state = get(cx.state);
+  if (state.gameover || state.paused || state.goaled) return;
   const { focus, player } = cx.dynamic;
   const { inventory } = state;
   if (!focus) return;
@@ -95,6 +97,8 @@ export function paste(cx: Context) {
 }
 export function cut(cx: Context) {
   const { focus } = cx.dynamic;
+  const state = get(cx.state);
+  if (state.gameover || state.paused || state.goaled) return;
   if (!focus) return;
 
   const x = focus.x;
