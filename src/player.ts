@@ -159,17 +159,11 @@ export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: b
     case "a":
       player.holdingKeys[Inputs.Left] = eventIsKeyDown;
       event.preventDefault();
-      if (eventIsKeyDown) {
-        player.facing = consts.Facing.left;
-      }
       break;
     case "ArrowRight":
     case "d":
       player.holdingKeys[Inputs.Right] = eventIsKeyDown;
       event.preventDefault();
-      if (eventIsKeyDown) {
-        player.facing = consts.Facing.right;
-      }
       break;
     case "ArrowUp":
     case "w":
@@ -235,6 +229,12 @@ export function tick(cx: Context, ticker: Ticker) {
   } else {
     player.jumpingBegin = null;
   }
+
+  // facing
+  if (player.holdingKeys[Inputs.Left]) player.facing = consts.Facing.left;
+  if (player.holdingKeys[Inputs.Right]) player.facing = consts.Facing.right;
+  if (player.onGround && player.vx > 0) player.facing = consts.Facing.right;
+  if (player.onGround && player.vx < 0) player.facing = consts.Facing.left;
 
   // collision
   const isBlock = (x: number, y: number) =>
