@@ -145,8 +145,12 @@ export function createHighlight(cx: Context): Sprite[] | undefined {
       highlights.push(highlight);
     } else {
       // focusの位置にオブジェクトがあるときはオブジェクトをカバーするようにハイライト
-      const highlightCoords = Ability.findSafeObjectPlace(player.facing, focus.x, focus.y, object);
-      for (const coords of object.relativePositions) {
+      const focusCoord = object.originPosition;
+      const highlightCoords = object.relativePositions.map((coords) => ({
+        x: coords.x + focusCoord.x,
+        y: coords.y + focusCoord.y,
+      }));
+      for (const coords of highlightCoords) {
         const highlight: Sprite = new Sprite(texture);
         if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {
           highlight.rotation = Math.PI / 2;
@@ -156,8 +160,8 @@ export function createHighlight(cx: Context): Sprite[] | undefined {
         highlight.width = blockSize;
         highlight.height = blockSize;
         highlight.alpha = 1;
-        highlight.x = (coords.x + highlightCoords.x + 1 / 2) * blockSize;
-        highlight.y = (coords.y + highlightCoords.y + 1 / 2) * blockSize + marginY;
+        highlight.x = (coords.x + 1 / 2) * blockSize;
+        highlight.y = (coords.y + 1 / 2) * blockSize + marginY;
         highlights.push(highlight);
       }
     }

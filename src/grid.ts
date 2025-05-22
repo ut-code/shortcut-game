@@ -320,6 +320,10 @@ export class Grid {
     const retrievedObject: MovableObject = {
       block: cell.block,
       objectId,
+      originPosition: {
+        x: minX,
+        y: maxY,
+      },
       relativePositions: retrievedBlocks.map((block) => ({
         x: block.x - minX,
         y: block.y - maxY,

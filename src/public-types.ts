@@ -111,6 +111,11 @@ export type AbilityUsage = {
 export type MovableObject = {
   block: Block;
   objectId: string;
+  originPosition: {
+    // 基準ブロックの位置
+    x: number;
+    y: number;
+  };
   // 基準ブロックからの相対位置
   // 基準ブロックは原則オブジェクトの左下で
   // 右を向くときに目の前に来るブロック
