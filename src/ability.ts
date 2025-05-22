@@ -3,26 +3,38 @@ import { Block, Facing } from "./constants.ts";
 import { printCells } from "./grid.ts";
 import { createSnapshot } from "./history.ts";
 import * as History from "./history.ts";
+import { assert } from "./lib.ts";
 import type { AbilityInit, Context, Coords, MovableObject } from "./public-types.ts";
 
-export function init(cx: Context) {
+export function init(cx: Context): () => void {
   console.log("ability init");
-  document.addEventListener("copy", (e) => {
+  assert(cx.dynamic.player !== null, "player is not initialized");
+  function onCopy(e: ClipboardEvent) {
+    assert(cx.dynamic.player !== null, "player is not initialized");
     const { onGround } = cx.dynamic.player;
     e.preventDefault();
     if (get(cx.state).usage.copy > 0 && onGround) copy(cx);
-  });
-  document.addEventListener("cut", (e) => {
+  }
+  function onCut(e: ClipboardEvent) {
+    assert(cx.dynamic.player !== null, "player is not initialized");
     const { onGround } = cx.dynamic.player;
     e.preventDefault();
     if (get(cx.state).usage.cut > 0 && onGround) cut(cx);
-  });
-  document.addEventListener("paste", (e) => {
+  }
+  function onPaste(e: ClipboardEvent) {
+    assert(cx.dynamic.player !== null, "player is not initialized");
     const { onGround } = cx.dynamic.player;
     e.preventDefault();
     if (get(cx.state).usage.paste > 0 && onGround) paste(cx);
-  });
-  History.init(cx);
+  }
+  document.addEventListener("copy", onCopy);
+  document.addEventListener("cut", onCut);
+  document.addEventListener("paste", onPaste);
+  return () => {
+    document.removeEventListener("copy", onCopy);
+    document.removeEventListener("cut", onCut);
+    document.removeEventListener("paste", onPaste);
+  };
 }
 
 export function focusCoord(playerAt: Coords, facing: Facing) {
@@ -48,6 +60,7 @@ export function copy(cx: Context) {
   if (state.usage.copy <= 0) return;
   const { focus } = cx.dynamic;
   if (!focus) return;
+  if (!cx.dynamic.player) return;
   const x = focus.x;
   const y = focus.y;
   const target = cx.grid.getBlock(cx, x, y);
@@ -75,7 +88,9 @@ export function paste(cx: Context) {
   const { inventory } = state;
   if (!focus) return;
   if (!inventory) return;
+  if (!cx.dynamic.player) return;
   if (state.usage.paste <= 0) return;
+  assert(player !== null, "player is not initialized");
 
   const { x, y } = findSafeObjectPlace(player.facing, focus.x, focus.y, inventory);
   if (!canPlaceMovableObject(cx, x, y, inventory)) {
@@ -100,6 +115,7 @@ export function cut(cx: Context) {
   const state = get(cx.state);
   if (state.gameover || state.paused || state.goaled) return;
   if (!focus) return;
+  if (!cx.dynamic.player) return;
 
   const x = focus.x;
   const y = focus.y;

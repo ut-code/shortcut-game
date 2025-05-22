@@ -2,6 +2,7 @@ import type { Container, Sprite } from "pixi.js";
 import type { Readable, Writable } from "svelte/store";
 import type { Block, Facing, Inputs } from "./constants.ts";
 import type { Grid, GridCell } from "./grid.ts";
+import type { Player } from "./player.ts";
 
 // GameState must be serializable
 // because it is used in undo/redo
@@ -54,6 +55,11 @@ export type GameHistory = {
   index: number;
 };
 
+export type GameDynamic = {
+  focus: Coords | null; // current focus coordinates
+  player: Player | null;
+};
+
 export type Context = {
   _stage_container: Container;
 
@@ -68,22 +74,7 @@ export type Context = {
 
   // dynamic data used for communication between modules (aka just sparkling variables)
   // no need to serialize.
-  dynamic: {
-    focus: Coords | null; // current focus coordinates
-    player: {
-      holdingKeys: { [key in Inputs]?: boolean };
-      coords: { x: number; y: number };
-      sprite: Sprite | null;
-      x: number;
-      y: number;
-      facing: Facing;
-      jumpingBegin: number | null;
-      onGround: boolean;
-      vx: number;
-      vy: number;
-      activated: boolean;
-    };
-  };
+  dynamic: GameDynamic;
   // about time
   elapsed: number;
 };

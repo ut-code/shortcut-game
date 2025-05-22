@@ -1,10 +1,10 @@
 import { Application, Container, type Ticker } from "pixi.js";
 import { derived, get, writable } from "svelte/store";
-import { Facing } from "./constants.ts";
+import * as Ability from "./ability.ts";
 import { Grid, createCellsFromStageDefinition, createTutorialSprite } from "./grid.ts";
 import * as History from "./history.ts";
 import * as Player from "./player.ts";
-import type { Context, GameState, UIInfo } from "./public-types.ts";
+import type { Context, GameDynamic, GameState, UIInfo } from "./public-types.ts";
 import { bunnyTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages/type.ts";
 import { useUI } from "./ui-info.ts";
@@ -58,6 +58,7 @@ export async function setup(
 
   // Initialize the application
   await app.init({ background: "rgb(34, 34, 48)", resizeTo: window });
+  destroyer.push(() => app.destroy(true, { children: true }));
   const blockSize = Math.min(app.screen.width / gridX, app.screen.height / gridY);
 
   const gridMarginY = (app.screen.height - blockSize * stageDefinition.stage.length) / 2;
@@ -89,27 +90,11 @@ export async function setup(
     gameover: false,
     switches: [],
     switchingBlocks: [],
-  };
+  } satisfies GameState;
   const initialDynamic = {
     focus: null,
-    player: {
-      // HACK: these values are immediately overwritten inside Player.init().
-      sprite: null,
-      coords: {
-        x: stageDefinition.initialPlayerX,
-        y: stageDefinition.initialPlayerY,
-      },
-      x: 0,
-      y: 0,
-      vx: 0,
-      vy: 0,
-      onGround: false,
-      jumpingBegin: null,
-      activated: false,
-      holdingKeys: {},
-      facing: Facing.right,
-    },
-  };
+    player: null,
+  } satisfies GameDynamic;
   const state = writable<GameState>(structuredClone(initialGameState));
   const grid = new Grid(
     {
@@ -135,15 +120,8 @@ export async function setup(
   };
 
   function reset() {
-    const d = stageDefinition;
     cx.history = writable(structuredClone(initialHistory));
-    // 内部実装ゴリゴリに知ってるリセットなので、直したかったら直して。多分 coords の各プロパティのセッターをいい感じにしてやれば良い
-    // MEMO: `coords` は抽象化失敗してるので、直すか消すほうが良い
-    cx.dynamic.player.x = blockSize * d.initialPlayerX;
-    cx.dynamic.player.y = blockSize * d.initialPlayerY + get(cx.config).marginY;
-    cx.dynamic.player.vx = 0;
-    cx.dynamic.player.vy = 0;
-    cx.dynamic.player.jumpingBegin = null;
+    cx.dynamic.player?.reset(cx, stageDefinition);
     cx.dynamic.focus = null;
     cx.elapsed = 0;
     cx.state.set({
@@ -182,6 +160,9 @@ export async function setup(
 
   cx.dynamic.player = Player.init(cx, bunnyTexture);
   app.ticker.add(unlessStopped((ticker) => Player.tick(cx, ticker)));
+
+  destroyer.push(Ability.init(cx)); // playerの初期化のあと
+  destroyer.push(History.init(cx));
 
   let cleanup: undefined | (() => void) = undefined;
   app.ticker.add(
