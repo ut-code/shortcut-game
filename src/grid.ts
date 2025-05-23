@@ -964,7 +964,7 @@ function createSprite(
     case Block.goal: {
       const sprite = new AnimatedSprite(Object.values(goalTextures));
       updateSprite(sprite, blockSize, x, y, marginY, 0);
-      sprite.animationSpeed = 0.03;
+      sprite.animationSpeed = 1 / consts.elapsedTimePerFrame;
       sprite.play();
       return sprite;
     }

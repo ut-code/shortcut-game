@@ -5,7 +5,7 @@ import { Grid, createCellsFromStageDefinition, createTutorialSprite } from "./gr
 import * as History from "./history.ts";
 import * as Player from "./player.ts";
 import type { Context, GameDynamic, GameState, UIInfo } from "./public-types.ts";
-import { bunnyTexture } from "./resources.ts";
+import { characterNormalTexture } from "./resources.ts";
 import type { StageDefinition } from "./stages/type.ts";
 import { useUI } from "./ui-info.ts";
 
@@ -158,7 +158,7 @@ export async function setup(
     });
   }
 
-  cx.dynamic.player = Player.init(cx, bunnyTexture);
+  cx.dynamic.player = Player.init(cx, characterNormalTexture);
   app.ticker.add(unlessStopped((ticker) => Player.tick(cx, ticker)));
 
   destroyer.push(Ability.init(cx)); // playerの初期化のあと

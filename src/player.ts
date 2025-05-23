@@ -7,9 +7,9 @@ import { Block } from "./constants.ts";
 import { assert } from "./lib.ts";
 import type { AbilityInit, Context, GameConfig } from "./public-types.ts";
 import {
-  bunnyTexture,
   characterActivatedTexture,
   characterCtrlTexture,
+  characterNormalTexture,
   highlightErrorTexture,
   highlightHoldTexture,
   highlightTexture,
@@ -437,7 +437,7 @@ export function tick(cx: Context, ticker: Ticker) {
       player.sprite.width = consts.playerWidth * blockSize;
       player.sprite.height = (32 / 27) * consts.playerHeight * blockSize;
     } else {
-      player.sprite.texture = bunnyTexture;
+      player.sprite.texture = characterNormalTexture;
       player.sprite.width = consts.playerWidth * blockSize;
       player.sprite.height = consts.playerHeight * blockSize;
     }

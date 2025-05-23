@@ -3,7 +3,7 @@ import { AnimatedSprite, Assets, Texture } from "pixi.js";
 // assets
 
 // entities
-export const bunnyTexture = await Assets.load("/assets/character-normal.png");
+export const characterNormalTexture = await Assets.load("/assets/character-normal.png");
 export const characterCtrlTexture = await Assets.load("/assets/character-ctrl.png");
 export const characterActivatedTexture = await Assets.load("/assets/character-activated.png");
 
