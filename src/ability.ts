@@ -44,10 +44,9 @@ export function init(cx: Context): () => void {
 export function focusCoord(cx: Context, player: Player) {
   const { blockSize, marginY } = get(cx.config);
   const middleX = Math.floor(player.x / blockSize);
-  const outerBottomX = Math.floor((player.y - marginY) / blockSize);
 
-  // 空中にブロックを置けないように
-  const middleBlock = cx.grid.getBlock(cx, middleX, outerBottomX);
+  // 自分が空中にいる状態でブロックを置けないように
+  const middleBlock = cx.grid.getBlock(cx, middleX, getCoords(cx).y + 1);
   const playerIsTryingToPlaceInAir = middleBlock === null;
   if (playerIsTryingToPlaceInAir) {
     return null;
