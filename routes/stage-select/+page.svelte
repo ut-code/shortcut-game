@@ -5,7 +5,12 @@ import "@/ui-components/menu/menu.css";
 import { goto } from "$app/navigation";
 import { MAX_WORLD, SearchParamState } from "./params.svelte.ts";
 
-const search = new SearchParamState(1);
+const search = $state(new SearchParamState());
+onMount(() => {
+  const params = new URLSearchParams(window.location.search);
+  search.world = Number(params.get("world") || "1");
+  search.selected = Number(params.get("selected") || "1");
+});
 
 const blocks = $derived(
   new Array(search.maxStage).fill(null).map((_, idx) => ({
@@ -75,10 +80,11 @@ onMount(() => {
       <button
         class={[
           "appearance-none focus:outline-none px-4 select-none cursor-pointer",
-          search.world <= 1 && 'invisible',
-          "hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"]}
-        onclick={() => search.world--}
-        disabled={search.world <= 1}
+          (search.world === null || search.world <= 1) && "invisible",
+          "hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black",
+        ]}
+        onclick={() => search.world !== null && search.world--}
+        disabled={search.world === null || search.world <= 1}
       >
         &lt;
       </button>
@@ -86,12 +92,12 @@ onMount(() => {
       <!-- 右矢印ボタン -->
       <button
         aria-label="次のワールド"
-        onclick={() => search.world++}
-        disabled={search.world >= MAX_WORLD}
+        onclick={() => search.world !== null && search.world++}
+        disabled={search.world === null || search.world >= MAX_WORLD}
         class={[
           "appearance-none focus:outline-none px-4 select-none cursor-pointer",
-          search.world >= MAX_WORLD && 'invisible',
-          "hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
+          (search.world === null || search.world >= MAX_WORLD) && "invisible",
+          "hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black",
         ]}
       >
         &gt;
@@ -101,7 +107,7 @@ onMount(() => {
     <div class="flex justify-center items-center grow-1">
       <div role="button" tabindex="0" class="flex outline-none items-center">
         {#each blocks as block, idx}
-        {@const stage = idx + 1}
+          {@const stage = idx + 1}
           <button
             type="button"
             class={`appearance-none focus:outline-none bg-white border-6 pt-8 pb-6 pl-8 pr-6 transition-colors duration-200 text-7xl cursor-pointer ${
@@ -109,7 +115,7 @@ onMount(() => {
                 ? "border-red-500 ring ring-red-500 bg-amber-100!"
                 : "border-base"
             }`}
-            onmouseenter={() => search.selected = stage}
+            onmouseenter={() => (search.selected = stage)}
             onclick={() => goto(block.link)}
           >
             {block.label}
@@ -129,11 +135,14 @@ onMount(() => {
         {#if search.selected !== null}
           {#key search.world}
             {#each blocks as block, idx}
-            {@const stage = idx + 1}
+              {@const stage = idx + 1}
               <img
                 src={block.thumbnail}
                 alt=""
-                class={["h-full skeleton", stage !== search.selected && "hidden"]}
+                class={[
+                  "h-full skeleton",
+                  stage !== search.selected && "hidden",
+                ]}
               />
             {/each}
           {/key}
@@ -143,17 +152,12 @@ onMount(() => {
       <div
         class="flex-none w-70 max-h-full bg-white/90 p-4 m-4 rounded-lg border-2"
       >
-      <div>
-        Click,
-      </div>
-      <div>
-        Press <Key key="Enter" enabled />
-      </div>
-      <div>or Press <Key key="Space" enabled />
-      </div>
-      <div>
-        To Start
-      </div>
+        <div>Click,</div>
+        <div>
+          Press <Key key="Enter" enabled />
+        </div>
+        <div>or Press <Key key="Space" enabled /></div>
+        <div>To Start</div>
       </div>
     </div>
   </div>

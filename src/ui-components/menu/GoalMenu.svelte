@@ -85,6 +85,6 @@ onDestroy(() => {
     >
       Restart
     </button>
-    <a class="btn modal-btn" href="/stage-select?w={stageNum.split("-")[0]}&s={stageNum.split("-")[1]}" bind:this={btn3} tabindex="3" > Back to Stage Select </a>
+    <a class="btn modal-btn" href="/stage-select?world={stageNum.split("-")[0]}&selected={stageNum.split("-")[1]}" bind:this={btn3} tabindex="3"> Back to Stage Select </a>
   </div>
 </dialog>

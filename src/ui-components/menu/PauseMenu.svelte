@@ -71,6 +71,6 @@ $effect(() => {
       <button class="btn modal-btn" type="submit" bind:this={btn1} tabindex="1">Resume</button>
     </form>
     <button class="btn modal-btn" onclick={() => onreset()} bind:this={btn2} tabindex="2">Restart</button>
-    <a class="btn modal-btn" href="/stage-select?w={stageNum.split("-")[0]}&s={stageNum.split("-")[1]}" bind:this={btn3} tabindex="3"> Back to Stage Select </a>
+    <a class="btn modal-btn" href="/stage-select?world={stageNum.split("-")[0]}&selected={stageNum.split("-")[1]}" bind:this={btn3} tabindex="3"> Back to Stage Select </a>
   </div>
 </dialog>
