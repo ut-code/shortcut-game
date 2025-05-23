@@ -64,9 +64,9 @@ onMount(() => {
 </script>
 
 <div id="container" class="fixed inset-0">
-  <div class="fixed inset-0 backdrop-blur-xs">
+  <div class="w-full h-full py-8 backdrop-blur-xs flex flex-col justify-around ">
 
-    <div class="p-10 text-8xl text-center flex items-center justify-center gap-8">
+    <div class="text-8xl text-center flex items-center justify-center gap-8">
       <!-- 左矢印ボタン -->
       <button
         class="px-4 select-none cursor-pointer"
@@ -100,7 +100,7 @@ onMount(() => {
       </button>
     </div>
 
-    <div class="flex justify-center items-center h-64">
+    <div class="flex justify-center items-center ">
       <div
         role="button"
         tabindex="0"
@@ -123,11 +123,13 @@ onMount(() => {
         {/each}
       </div>
     </div>
-    <div class="relative flex justify-center items-center h-96 mb-10">
+    <div class="flex justify-center items-center basis-2/5 shrink ">
       <!-- 画像を中央に配置 -->
-      <img src="/assets/thumbnaildev.png" alt="" class="h-80 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+      <div class="">
+        <img src="/assets/thumbnaildev.png" alt="" class="" />
+      </div>
       <!-- テキストを画像の右側に配置 -->
-      <div class="absolute left-1/2 top-1/2 -translate-y-1/2 ml-80 flex flex-col items-start bg-white/90 p-4 rounded-lg border-2">
+      <div class="flex-none w-max flex flex-col items-start bg-white/90 p-4 m-4 rounded-lg border-2">
         Press <Key key="Enter" enabled /> or <Key key="Space" enabled /> to start
       </div>
     </div>
