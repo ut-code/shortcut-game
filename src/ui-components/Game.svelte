@@ -101,21 +101,25 @@ onDestroy(() => bindings.destroy());
         />
       {/if}
     </div>
-    {#if !uiContext.inventoryIsInfinite}
-      <span style="">x</span>
-      <span style="">1</span>
-    {/if}
+    <span style="margin-right: 0.5rem;">x</span>
+    <span style="">{uiContext.inventoryIsInfinite ? "Inf" : "1"}</span>
   </div>
   <div
     class="uiBackground"
     style="position: fixed; left: 0; bottom: 0; right: 0; display: flex; align-items: end;"
   >
     <span style="margin-right: 1rem;">Abilities:</span>
-    <Ability key="C" name="Copy" count={uiContext.copy} />
-    <Ability key="X" name="Cut" count={uiContext.cut} />
-    <Ability key="V" name="Paste" count={uiContext.paste} />
-    <Ability key="Z" name="Undo" count={uiContext.undo} />
-    <Ability key="Y" name="Redo" count={uiContext.redo} />
+    {#if uiContext.copy}
+      <Ability key="C" name="Copy" enabled />
+    {/if}
+    {#if uiContext.cut}
+      <Ability key="X" name="Cut" enabled />
+    {/if}
+    {#if uiContext.paste}
+      <Ability key="V" name="Paste" enabled />
+    {/if}
+    <Ability key="Z" name="Undo" enabled={uiContext.undo > 0} />
+    <Ability key="Y" name="Redo" enabled={uiContext.redo > 0} />
   </div>
 </div>
 
