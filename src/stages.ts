@@ -13,6 +13,7 @@ import { world2 } from "./stages/world2.ts";
 import { world3 } from "./stages/world3.ts";
 import { world4 } from "./stages/world4.ts";
 import { world5 } from "./stages/world5.ts";
+import { world6 } from "./stages/world6.ts";
 
 export const stages = new Map<string, StageDefinition>([
   ["1", stage1],
@@ -41,6 +42,10 @@ export const stages = new Map<string, StageDefinition>([
   ["4-4", world4.stage4],
   ["5-1", world5.stage1],
   ["5-2", world5.stage2],
-  // ["5-3", world5.stage3],
-  // ["5-4", world5.stage4],
+  ["5-3", world5.stage3],
+  ["5-4", world5.stage4],
+  ["6-1", world6.stage1],
+  ["6-2", world6.stage2],
+  // ["6-3", world6.stage3],
+  // ["6-4", world6.stage4],
 ]);
