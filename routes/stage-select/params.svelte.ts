@@ -10,8 +10,8 @@ const WORLD_STAGES_MAP = new Map([
 ]);
 
 export class SearchParamState {
-  #world: number = $state(1);
-  #selected: number | null = $state(null);
+  #world: number = $state(1); // starts from 1
+  #selected: number | null = $state(null); // starts from 1
   maxStage: number = $derived(WORLD_STAGES_MAP.get(this.#world) ?? 0);
   constructor(private defaultWorld: number) {
     if (!browser) {
@@ -49,21 +49,29 @@ export class SearchParamState {
   }
 
   set selected(val: number | null) {
-    this.#selected = val;
     if (!browser) return;
     if (val === null) return;
 
     if (val > (WORLD_STAGES_MAP.get(this.#world) ?? 0)) {
-      this.#selected = 1;
-      this.nextWorld();
-    }
-    if (val < 1) {
-      this.prevWorld();
-      this.#selected = WORLD_STAGES_MAP.get(this.#world) ?? 0;
+      if (this.#world === MAX_WORLD) {
+        // do not change
+      } else {
+        this.#selected = 1;
+        this.nextWorld();
+      }
+    } else if (val < 1) {
+      if (this.#world === 1) {
+        // do not change
+      } else {
+        this.prevWorld();
+        this.#selected = WORLD_STAGES_MAP.get(this.#world) ?? 0;
+      }
+    } else {
+      this.#selected = val;
     }
 
     const url = new URL(window.location.href);
-    url.searchParams.set("selected", String(val));
+    url.searchParams.set("selected", String(this.#selected));
     replaceState(url.toString(), {});
   }
 

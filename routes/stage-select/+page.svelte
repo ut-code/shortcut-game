@@ -34,47 +34,14 @@ function handleKey(e: KeyboardEvent): void {
   }
 
   if (e.key === "ArrowRight") {
-    if (search.selected === blocks.length - 1) {
-      if (search.world !== 4) {
-        search.nextWorld();
-        search.selected = 1;
-      }
-    } else {
-      search.selected += 1;
-    }
+    search.selected += 1;
   } else if (e.key === "ArrowLeft") {
-    if (search.selected === 0) {
-      if (search.world !== 1) {
-        search.prevWorld();
-        search.selected = blocks.length - 1;
-      }
-    } else {
-      search.selected -= 1;
-    }
+    search.selected -= 1;
   } else if (e.key === "Enter" || e.key === " ") {
     goto(`/game?stage=${search.world}-${search.selected}`);
   } else if (e.key === "Escape") {
     goto("/");
     e.preventDefault();
-    if (search.selected === blocks.length - 1) {
-      if (search.world !== 4) {
-        search.nextWorld();
-        search.selected = 1;
-      }
-    } else {
-      search.selected += 1;
-    }
-  } else if (e.key === "ArrowLeft") {
-    if (search.selected === 0) {
-      if (search.world !== 1) {
-        search.prevWorld();
-        search.selected = blocks.length - 1;
-      }
-    } else {
-      search.selected -= 1;
-    }
-  } else if (e.key === "Enter" || e.key === " ") {
-    goto(blocks[search.selected].link);
   }
 }
 function handleKeyUp() {
