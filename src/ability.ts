@@ -56,9 +56,11 @@ export function focusCoord(playerAt: Coords, facing: Facing) {
 }
 export function copy(cx: Context) {
   const state = get(cx.state);
+  if (state.gameover || state.paused || state.goaled) return;
   if (state.usage.copy <= 0) return;
   const { focus } = cx.dynamic;
   if (!focus) return;
+  if (!cx.dynamic.player) return;
   const x = focus.x;
   const y = focus.y;
   const target = cx.grid.getBlock(cx, x, y);
@@ -76,13 +78,17 @@ export function copy(cx: Context) {
   });
 
   History.record(cx);
+
+  cx.dynamic.player.activated = true;
 }
 export function paste(cx: Context) {
   const state = get(cx.state);
+  if (state.gameover || state.paused || state.goaled) return;
   const { focus, player } = cx.dynamic;
   const { inventory } = state;
   if (!focus) return;
   if (!inventory) return;
+  if (!cx.dynamic.player) return;
   if (state.usage.paste <= 0) return;
   assert(player !== null, "player is not initialized");
 
@@ -101,10 +107,15 @@ export function paste(cx: Context) {
 
   printCells(createSnapshot(cx).game.cells, "paste");
   History.record(cx);
+
+  cx.dynamic.player.activated = true;
 }
 export function cut(cx: Context) {
   const { focus } = cx.dynamic;
+  const state = get(cx.state);
+  if (state.gameover || state.paused || state.goaled) return;
   if (!focus) return;
+  if (!cx.dynamic.player) return;
 
   const x = focus.x;
   const y = focus.y;
@@ -129,10 +140,12 @@ export function cut(cx: Context) {
 
   printCells(createSnapshot(cx).game.cells, "cut");
   History.record(cx);
+
+  cx.dynamic.player.activated = true;
 }
 
 // 左向きのときにブロックを配置する位置を変更するのに使用
-function findSafeObjectPlace(facing: Facing, x: number, y: number, obj: MovableObject) {
+export function findSafeObjectPlace(facing: Facing, x: number, y: number, obj: MovableObject) {
   const width =
     obj.relativePositions.reduce((acc, i) => Math.max(acc, i.x), 0) -
     obj.relativePositions.reduce((acc, i) => Math.min(acc, i.x), 1000) +

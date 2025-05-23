@@ -2,7 +2,7 @@
 // global
 export const gravity = 0.02;
 // Player 関連
-export const playerWidth = 0.6;
+export const playerWidth = 0.9;
 export const playerHeight = 0.9;
 export const maxMoveVX = 0.1; // これを超えると player の入力では加速しなくなるが、ジャンプで加速できる
 export const playerAccelOnGround = 0.05;
@@ -14,8 +14,10 @@ export const jumpVY = 0.12;
 export const jumpFrames = 10;
 // Fallable block 関連
 export const maxObjectFallSpeed = 2;
+// アニメーション関連
+export const elapsedTimePerFrame = 30;
 
-export const laserWidth = 0.5;
+export const laserWidth = 0.3;
 
 export enum Block {
   block = "block",

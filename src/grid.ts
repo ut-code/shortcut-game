@@ -1,4 +1,4 @@
-import { type Container, Sprite, type Ticker } from "pixi.js";
+import { AnimatedSprite, type Container, Sprite, type Ticker } from "pixi.js";
 import { type Writable, get } from "svelte/store";
 import { Block, BlockDefinitionMap } from "./constants.ts";
 import * as consts from "./constants.ts";
@@ -13,7 +13,7 @@ import type {
 } from "./public-types.ts";
 import {
   fallableTexture,
-  goalTexture,
+  goalTextures,
   laserBeamTexture,
   laserTextureDown,
   laserTextureLeft,
@@ -255,11 +255,11 @@ export class Grid {
         }
       }
     }
-    // y > gridY にはy=gridY-1のblockをコピー
+    // y > gridY にはBlock.blockを設置
     for (let y = cells.length; y < cells.length + Math.ceil(this.marginY / cellSize); y++) {
       for (let x = 0; x < cells[cells.length - 1].length; x++) {
         const cell = cells[cells.length - 1][x];
-        if (cell.block === Block.block || cell.block === Block.switchBase) {
+        if (cell.block === Block.block || cell.block === Block.switchBase || cell.block === Block.spike) {
           const sprite = createSprite(cellSize, Block.block, x, y, this.marginY);
           stage.addChild(sprite);
           this.oobSprites.push(sprite);
@@ -320,6 +320,10 @@ export class Grid {
     const retrievedObject: MovableObject = {
       block: cell.block,
       objectId,
+      originPosition: {
+        x: minX,
+        y: maxY,
+      },
       relativePositions: retrievedBlocks.map((block) => ({
         x: block.x - minX,
         y: block.y - maxY,
@@ -378,7 +382,7 @@ export class Grid {
     } else if (vprev?.block === Block.switchPressed && cNewCell.block === Block.switch) {
       // switchがプレイヤーに押されているのが戻るとき
       assert(
-        cprev.block === Block.switchPressed || cprev.block === Block.switch,
+        cprev.block === Block.switchPressed || cprev.block === Block.switch || cprev.block === Block.movable,
         "block is not switch or switchPressed",
       );
       const switchId = cprev.switchId;
@@ -757,15 +761,15 @@ export class Grid {
               vsom.beamSprite.rotation = -Math.PI / 2;
               vsom.beamSprite.y += blockSize; // 回転中心が中心でないので補正
               vsom.beamSprite.height = blockSize * (Math.abs(endX - beginX) + 1); // これは回転前のheight=回転後のwidth
-              vsom.beamSprite.width = blockSize * consts.laserWidth;
-              vsom.beamSprite.y -= (blockSize * (1 - consts.laserWidth)) / 2;
+              vsom.beamSprite.width = blockSize /* * consts.laserWidth*/;
+              // vsom.beamSprite.y -= (blockSize * (1 - consts.laserWidth)) / 2;
               for (let bx = Math.min(beginX, endX); bx <= Math.max(beginX, endX); bx++) {
                 this.laserBeamHorizontalExists[beginY][bx] = true;
               }
             } else {
               vsom.beamSprite.height = blockSize * (Math.abs(endY - beginY) + 1);
-              vsom.beamSprite.width = blockSize * consts.laserWidth;
-              vsom.beamSprite.x += (blockSize * (1 - consts.laserWidth)) / 2;
+              vsom.beamSprite.width = blockSize /* * consts.laserWidth*/;
+              // vsom.beamSprite.x += (blockSize * (1 - consts.laserWidth)) / 2;
               for (let by = Math.min(beginY, endY); by <= Math.max(beginY, endY); by++) {
                 this.laserBeamVerticalExists[by][beginX] = true;
               }
@@ -958,8 +962,10 @@ function createSprite(
       return sprite;
     }
     case Block.goal: {
-      const sprite = new Sprite(goalTexture);
+      const sprite = new AnimatedSprite(Object.values(goalTextures));
       updateSprite(sprite, blockSize, x, y, marginY, 0);
+      sprite.animationSpeed = 1 / consts.elapsedTimePerFrame;
+      sprite.play();
       return sprite;
     }
     case Block.spike: {

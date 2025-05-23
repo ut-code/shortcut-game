@@ -7,7 +7,7 @@
   height: max-content;
 }
 .modal-box {
-  background: oklch(82.8% 0.189 84.429 / 40%);
+  background: oklch(82.8% 0.189 84.429 / 70%);
   backdrop-filter: blur(2px);
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;

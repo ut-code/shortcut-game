@@ -6,7 +6,14 @@ import { Inputs } from "./constants.ts";
 import { Block } from "./constants.ts";
 import { assert } from "./lib.ts";
 import type { AbilityInit, Context, GameConfig } from "./public-types.ts";
-import { highlightHoldTexture, highlightTexture } from "./resources.ts";
+import {
+  characterActivatedTexture,
+  characterCtrlTexture,
+  characterNormalTexture,
+  highlightErrorTexture,
+  highlightHoldTexture,
+  highlightTexture,
+} from "./resources.ts";
 import type { StageDefinition } from "./stages/type.ts";
 
 export function init(cx: Context, spriteOptions?: SpriteOptions | Texture) {
@@ -40,6 +47,7 @@ export class Player {
   jumpingBegin: number | null;
   holdingKeys: Record<string, boolean>;
   facing: consts.Facing;
+  activated: boolean;
   constructor(sprite: Sprite) {
     this._sprite = sprite;
     this.vx = 0;
@@ -48,6 +56,7 @@ export class Player {
     this.jumpingBegin = null;
     this.holdingKeys = {};
     this.facing = consts.Facing.right;
+    this.activated = false;
   }
   reset(cx: Context, d: StageDefinition) {
     this.x = get(cx.config).blockSize * d.initialPlayerX;
@@ -88,19 +97,76 @@ export function getCoords(cx: Context) {
   const y = Math.round((coords.y - marginY) / blockSize) - 1; // it was not working well so take my patch
   return { x, y };
 }
-export function createHighlight(cx: Context) {
+export function createHighlight(cx: Context): Sprite[] | undefined {
   const state = get(cx.state);
-  const player = cx.dynamic.player;
+  const { focus, player } = cx.dynamic;
+  if (!focus) throw new Error("focus is null");
   const { blockSize, marginY } = get(cx.config);
   if (!player || !player.holdingKeys[Inputs.Ctrl] || !player.onGround) return;
-  const texture = state.inventory === null ? highlightTexture : highlightHoldTexture;
-  const highlight: Sprite = new Sprite(texture);
-  highlight.width = blockSize;
-  highlight.height = blockSize;
-  const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
-  highlight.x = highlightCoords.x * blockSize;
-  highlight.y = highlightCoords.y * blockSize + marginY;
-  return highlight;
+  const highlights: Sprite[] = [];
+  // インベントリがあるとき
+  if (state.inventory) {
+    const highlightCoords = Ability.findSafeObjectPlace(player.facing, focus.x, focus.y, state.inventory);
+    let texture = highlightHoldTexture;
+    if (!Ability.canPlaceMovableObject(cx, highlightCoords.x, highlightCoords.y, state.inventory)) {
+      texture = highlightErrorTexture;
+    }
+    for (const coords of state.inventory.relativePositions) {
+      const highlight: Sprite = new Sprite(texture);
+      if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {
+        highlight.rotation = Math.PI / 2;
+      }
+      highlight.anchor.set(0.5);
+      highlight.width = blockSize;
+      highlight.height = blockSize;
+      highlight.alpha = 1;
+      highlight.x = (coords.x + highlightCoords.x + 1 / 2) * blockSize;
+      highlight.y = (coords.y + highlightCoords.y + 1 / 2) * blockSize + marginY;
+      highlights.push(highlight);
+    }
+  } else {
+    // インベントリがないとき
+    const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
+    const object = cx.grid.getMovableObject(cx, highlightCoords.x, highlightCoords.y);
+    const texture = highlightTexture;
+    if (!object) {
+      // focusの位置にオブジェクトがないときはfocusだけハイライト
+      const highlight: Sprite = new Sprite(texture);
+      if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {
+        highlight.rotation = Math.PI / 2;
+      }
+      highlight.anchor.set(0.5);
+      const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
+      highlight.width = blockSize;
+      highlight.height = blockSize;
+      highlight.alpha = 0.5;
+      highlight.x = (highlightCoords.x + 1 / 2) * blockSize;
+      highlight.y = (highlightCoords.y + 1 / 2) * blockSize + marginY;
+      highlights.push(highlight);
+    } else {
+      // focusの位置にオブジェクトがあるときはオブジェクトをカバーするようにハイライト
+      const focusCoord = object.originPosition;
+      const highlightCoords = object.relativePositions.map((coords) => ({
+        x: coords.x + focusCoord.x,
+        y: coords.y + focusCoord.y,
+      }));
+      for (const coords of highlightCoords) {
+        const highlight: Sprite = new Sprite(texture);
+        if (Math.floor(cx.elapsed / consts.elapsedTimePerFrame) % 2 === 0) {
+          highlight.rotation = Math.PI / 2;
+        }
+        highlight.anchor.set(0.5);
+
+        highlight.width = blockSize;
+        highlight.height = blockSize;
+        highlight.alpha = 1;
+        highlight.x = (coords.x + 1 / 2) * blockSize;
+        highlight.y = (coords.y + 1 / 2) * blockSize + marginY;
+        highlights.push(highlight);
+      }
+    }
+  }
+  return highlights;
 }
 
 export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: boolean) {
@@ -123,17 +189,11 @@ export function handleInput(cx: Context, event: KeyboardEvent, eventIsKeyDown: b
     case "a":
       player.holdingKeys[Inputs.Left] = eventIsKeyDown;
       event.preventDefault();
-      if (eventIsKeyDown) {
-        player.facing = consts.Facing.left;
-      }
       break;
     case "ArrowRight":
     case "d":
       player.holdingKeys[Inputs.Right] = eventIsKeyDown;
       event.preventDefault();
-      if (eventIsKeyDown) {
-        player.facing = consts.Facing.right;
-      }
       break;
     case "ArrowUp":
     case "w":
@@ -200,6 +260,12 @@ export function tick(cx: Context, ticker: Ticker) {
   } else {
     player.jumpingBegin = null;
   }
+
+  // facing
+  if (player.holdingKeys[Inputs.Left]) player.facing = consts.Facing.left;
+  if (player.holdingKeys[Inputs.Right]) player.facing = consts.Facing.right;
+  if (player.onGround && player.vx > 0) player.facing = consts.Facing.right;
+  if (player.onGround && player.vx < 0) player.facing = consts.Facing.left;
 
   // collision
   const isBlock = (x: number, y: number) =>
@@ -351,7 +417,32 @@ export function tick(cx: Context, ticker: Ticker) {
     gameover(cx);
   }
 
-  // movement? again?
+  if (!player.sprite) throw new Error("Player sprite is null");
+
+  if (player.facing === consts.Facing.left) {
+    player.sprite.scale.x = -1 * Math.abs(player.sprite.scale.x);
+  } else {
+    player.sprite.scale.x = Math.abs(player.sprite.scale.x);
+  }
+
+  // プレイヤーの能力使用状況を反映
+  if (player.activated && player.holdingKeys[Inputs.Ctrl] && player.onGround) {
+    player.sprite.texture = characterActivatedTexture;
+    player.sprite.width = (29 / 26) * consts.playerWidth * blockSize;
+    player.sprite.height = (24 / 27) * consts.playerHeight * blockSize;
+  } else {
+    player.activated = false;
+    if (player.holdingKeys[Inputs.Ctrl]) {
+      player.sprite.texture = characterCtrlTexture;
+      player.sprite.width = consts.playerWidth * blockSize;
+      player.sprite.height = (32 / 27) * consts.playerHeight * blockSize;
+    } else {
+      player.sprite.texture = characterNormalTexture;
+      player.sprite.width = consts.playerWidth * blockSize;
+      player.sprite.height = consts.playerHeight * blockSize;
+    }
+  }
+
   // 当たり判定結果を反映する
   player.x += player.vx * ticker.deltaTime;
   player.y += player.vy * ticker.deltaTime;
