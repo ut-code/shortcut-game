@@ -4,44 +4,34 @@ import { onMount } from "svelte";
 import "@/ui-components/menu/menu.css";
 import { replaceState } from "$app/navigation";
 
-let world: string | null = null;
-let selected: number | null = null;
+// starts from 1
+let world = $state<number | null>(null);
+let stage = $state<number | null>(null);
+const maxWorld = 4;
+const maxStage = 4;
 
 onMount(() => {
   const params = new URLSearchParams(window.location.search);
-  world = params.get("w") ?? "1";
-  selected = Number(params.get("s") ?? "1") - 1;
+  world = Number(params.get("w") ?? "1");
+  stage = Number(params.get("s") ?? "1");
 });
-
-$: blocks = [
-  { label: "1", link: `/game?stage=${world}-1` },
-  { label: "2", link: `/game?stage=${world}-2` },
-  { label: "3", link: `/game?stage=${world}-3` },
-  { label: "4", link: `/game?stage=${world}-4` },
-];
 
 let lastKeyTime = 0;
 let lastKey: string | null = null;
 const KEY_REPEAT_DELAY = 180; // ms
 
-function prevWorld() {
-  // wを数値として1減らす（1未満にはしない）
-  world = String(Math.max(1, Number(world) - 1));
+function changeStage(worldNum: number, stageNum: number): void {
+  if (worldNum < 1 || worldNum > maxWorld) {
+    throw new Error(`World number must be between 1 and ${maxWorld}, but got ${worldNum}`);
+  }
+  if (stageNum < 1 || stageNum > maxStage) {
+    throw new Error(`Stage number must be between 1 and ${maxStage}, but got ${stageNum}`);
+  }
+  world = worldNum;
+  stage = stageNum;
   const url = new URL(window.location.href);
-  url.searchParams.set("w", world);
-  replaceState(url.toString(), {});
-}
-function nextWorld() {
-  // wを数値として1増やす（4より大きくしない）
-  world = String(Math.min(4, Number(world) + 1));
-  const url = new URL(window.location.href);
-  url.searchParams.set("w", world);
-  replaceState(url.toString(), {});
-}
-function select(index: number): void {
-  selected = index;
-  const url = new URL(window.location.href);
-  url.searchParams.set("s", String(index + 1));
+  url.searchParams.set("w", String(world));
+  url.searchParams.set("s", String(stageNum));
   replaceState(url.toString(), {});
 }
 
@@ -55,30 +45,28 @@ function handleKey(e: KeyboardEvent): void {
     lastKey = e.key;
   }
 
-  if (selected === null) {
+  if (stage === null || world === null) {
     return;
   }
 
   if (e.key === "ArrowRight") {
-    if (selected === blocks.length - 1) {
-      if (world !== "4") {
-        nextWorld();
-        select(0);
+    if (stage === maxStage) {
+      if (world < maxWorld) {
+        changeStage(world + 1, 1);
       }
     } else {
-      select(selected + 1);
+      changeStage(world, stage + 1);
     }
   } else if (e.key === "ArrowLeft") {
-    if (selected === 0) {
-      if (world !== "1") {
-        prevWorld();
-        select(blocks.length - 1);
+    if (stage === 1) {
+      if (world > 1) {
+        changeStage(world - 1, maxStage);
       }
     } else {
-      select(selected - 1);
+      changeStage(world, stage - 1);
     }
   } else if (e.key === "Enter" || e.key === " ") {
-    window.location.href = blocks[selected].link;
+    window.location.href = `/game?stage=${world}-${stage}`;
   } else if (e.key === "Escape") {
     window.location.href = "/";
     e.preventDefault();
@@ -88,8 +76,6 @@ function handleKeyUp() {
   lastKeyTime = 0;
   lastKey = null;
 }
-
-let container: HTMLDivElement | null = null;
 
 onMount(() => {
   document.addEventListener("keydown", handleKey);
@@ -119,7 +105,7 @@ onMount(() => {
           ? 'invisible'
           : ''} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
         aria-label="前のワールド"
-        on:click={prevWorld}
+        onclick={() => world !== null && world > 1 && changeStage(world - 1, 1)}
         disabled={Number(world) <= 1}
       >
         &lt;
@@ -127,12 +113,12 @@ onMount(() => {
       <span>World {world}</span>
       <!-- 右矢印ボタン -->
       <button
-        class="appearance-none focus:outline-none px-4 select-none cursor-pointer {Number(world) >= 4
+        class="appearance-none focus:outline-none px-4 select-none cursor-pointer {Number(world) >= maxWorld
           ? 'invisible'
           : ''} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
         aria-label="次のワールド"
-        on:click={nextWorld}
-        disabled={Number(world) >= 4}
+        onclick={() => world !== null && world < maxWorld && changeStage(world + 1, 1)}
+        disabled={Number(world) >= maxWorld}
       >
         &gt;
       </button>
@@ -140,19 +126,19 @@ onMount(() => {
 
     <div class="flex justify-center items-center grow-1">
       <div role="button" tabindex="0" class="flex outline-none items-center">
-        {#each blocks as block, i}
+        {#each { length: maxStage } as _, idx}
           <button
             type="button"
             class={`appearance-none focus:outline-none bg-white border-6 pt-8 pb-6 pl-8 pr-6 transition-colors duration-200 text-7xl cursor-pointer ${
-              selected === i
+              stage === idx + 1
                 ? "border-red-500 ring ring-red-500 bg-amber-100!"
                 : "border-base"
             }`}
-            on:click={() => select(i)}
+            onclick={() => world !== null && changeStage(world, idx + 1)}
           >
-            {block.label}
+            {idx + 1}
           </button>
-          {#if i < blocks.length - 1}
+          {#if idx + 1 < maxStage}
             <!-- 線（矢印や線） -->
             <div class="w-20 h-3 bg-black"></div>
           {/if}
@@ -164,13 +150,13 @@ onMount(() => {
     >
       <!-- 画像を中央に配置 -->
       <div class="h-full">
-        {#if selected !== null}
+        {#if stage !== null}
           {#key world}
             {#each { length: 4 } as _, idx}
               <img
                 src="/assets/thumbnail{world}-{idx + 1}.png"
                 alt=""
-                class={["h-full skeleton", idx !== selected && "hidden"]}
+                class={["h-full skeleton", idx + 1 !== stage && "hidden"]}
               />
             {/each}
           {/key}
