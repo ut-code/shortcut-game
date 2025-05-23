@@ -63,13 +63,15 @@ onDestroy(() => bindings.destroy());
       // if this isn't working well, we can use window.location.reload(); instead
       bindings.reset();
     }}
+    stageNum={stageNum}
   />
   <GoalMenu
     goaled={uiContext.goaled}
     {nextStage}
     reset={() => bindings.reset()}
+    stageNum={stageNum}
   />
-  <GameOverMenu gameover={uiContext.gameover} reset={() => bindings.reset()} />
+  <GameOverMenu gameover={uiContext.gameover} reset={() => bindings.reset()} stageNum={stageNum} />
   <div
     class="uiBackground"
     style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: end; "

@@ -5,8 +5,9 @@ import "./menu.css";
 type Props = {
   gameover: boolean;
   reset: () => void;
+  stageNum: string;
 };
-const { gameover, reset }: Props = $props();
+const { gameover, reset, stageNum }: Props = $props();
 let el: HTMLDialogElement;
 $effect(() => {
   if (gameover) {
@@ -36,6 +37,6 @@ document.addEventListener("keydown", (ev) => {
     >
       Restart
     </button>
-    <a class="btn modal-btn" href="/stage-select">Back to Stage Select</a>
+    <a class="btn modal-btn" href="/stage-select?w={stageNum.split("-")[0]}&s={stageNum.split("-")[1]}"> Back to Stage Select </a>
   </div>
 </dialog>

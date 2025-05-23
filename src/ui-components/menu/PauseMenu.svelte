@@ -6,8 +6,9 @@ type Props = {
   onresume: () => void;
   onpause: () => void;
   onreset: () => void;
+  stageNum: string;
 };
-let { paused, alreadyStopped, onresume, onpause, onreset }: Props = $props();
+let { paused, alreadyStopped, onresume, onpause, onreset, stageNum }: Props = $props();
 let el: HTMLDialogElement;
 $effect(() => {
   if (paused && !alreadyStopped) {
@@ -33,6 +34,6 @@ document.addEventListener("keydown", (ev) => {
       <button class="btn modal-btn" type="submit">Resume</button>
     </form>
     <button class="btn modal-btn" onclick={() => onreset()}>Restart</button>
-    <a class="btn modal-btn" href="/stage-select"> Back to Stage Select </a>
+    <a class="btn modal-btn" href="/stage-select?w={stageNum.split("-")[0]}&s={stageNum.split("-")[1]}"> Back to Stage Select </a>
   </div>
 </dialog>

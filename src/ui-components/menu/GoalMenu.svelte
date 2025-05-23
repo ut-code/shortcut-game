@@ -7,8 +7,9 @@ type Props = {
   goaled: boolean;
   nextStage: string;
   reset: () => void;
+  stageNum: string;
 };
-const { goaled, nextStage, reset }: Props = $props();
+const { goaled, nextStage, reset, stageNum }: Props = $props();
 let el: HTMLDialogElement;
 $effect(() => {
   if (goaled) {
@@ -41,6 +42,6 @@ onDestroy(() => {
     >
       Restart
     </button>
-    <a class="btn modal-btn" href="/stage-select">Back to Stage Select</a>
+    <a class="btn modal-btn" href="/stage-select?w={stageNum.split("-")[0]}&s={stageNum.split("-")[1]}"> Back to Stage Select </a>
   </div>
 </dialog>

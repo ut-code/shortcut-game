@@ -2,12 +2,15 @@
 import Key from "@/ui-components/Key.svelte";
 import { onMount } from "svelte";
 import "@/ui-components/menu/menu.css";
+import { replaceState } from "$app/navigation";
 
-let w = "1";
+let w: string | null = null;
+let selected: number | null = null;
 
 onMount(() => {
   const params = new URLSearchParams(window.location.search);
   w = params.get("w") ?? "1";
+  selected = Number(params.get("s") ?? "1") - 1;
 });
 
 $: blocks = [
@@ -17,7 +20,6 @@ $: blocks = [
   { label: "4", link: `/game?stage=${w}-4` },
 ];
 
-let selected = 0;
 let lastKeyTime = 0;
 let lastKey: string | null = null;
 const KEY_REPEAT_DELAY = 180; // ms
@@ -27,15 +29,22 @@ function prevWorld() {
   w = String(Math.max(1, Number(w) - 1));
   const url = new URL(window.location.href);
   url.searchParams.set("w", w);
-  window.history.replaceState(null, "", url.toString());
+  replaceState(url.toString(), {});
 }
 function nextWorld() {
   // wを数値として1増やす（4より大きくしない）
   w = String(Math.min(4, Number(w) + 1));
   const url = new URL(window.location.href);
   url.searchParams.set("w", w);
-  window.history.replaceState(null, "", url.toString());
+  replaceState(url.toString(), {});
 }
+function select(index: number): void {
+  selected = index;
+  const url = new URL(window.location.href);
+  url.searchParams.set("s", String(index + 1));
+  replaceState(url.toString(), {});
+}
+
 function handleKey(e: KeyboardEvent): void {
   const now = Date.now();
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -46,23 +55,27 @@ function handleKey(e: KeyboardEvent): void {
     lastKey = e.key;
   }
 
+  if (selected === null) {
+    return;
+  }
+
   if (e.key === "ArrowRight") {
     if (selected === blocks.length - 1) {
       if (w !== "4") {
         nextWorld();
-        selected = 0;
+        select(0);
       }
     } else {
-      selected += 1;
+      select(selected + 1);
     }
   } else if (e.key === "ArrowLeft") {
     if (selected === 0) {
       if (w !== "1") {
         prevWorld();
-        selected = blocks.length - 1;
+        select(blocks.length - 1);
       }
     } else {
-      selected -= 1;
+      select(selected - 1);
     }
   } else if (e.key === "Enter" || e.key === " ") {
     window.location.href = blocks[selected].link;
@@ -71,10 +84,6 @@ function handleKey(e: KeyboardEvent): void {
 function handleKeyUp() {
   lastKeyTime = 0;
   lastKey = null;
-}
-
-function handleClick(index: number): void {
-  selected = index;
 }
 
 let container: HTMLDivElement | null = null;
@@ -131,7 +140,7 @@ onMount(() => {
             class={`appearance-none focus:outline-none bg-white border-6 pt-8 pb-6 pl-8 pr-6 transition-colors duration-200 text-7xl cursor-pointer ${
               selected === i ? 'border-red-500 ring ring-red-500' : 'border-base'
             }`}
-            on:click={() => handleClick(i)}
+            on:click={() => select(i)}
           >
             {block.label}
           </button>
@@ -145,7 +154,13 @@ onMount(() => {
     <div class="flex justify-center items-center basis-2/5 min-h-0 shrink grow-2">
       <!-- 画像を中央に配置 -->
       <div class="h-full ">
-        <img src="/assets/thumbnail{w}-{selected+1}.png" alt="" class="h-full " />
+        {#if selected !== null}
+          <img
+            src="/assets/thumbnail{w}-{selected+1}.png"
+            alt=""
+            class="h-full "
+          />
+        {/if}
       </div>
       <!-- テキストを画像の右側に配置 -->
       <div class="flex-none w-max max-h-full flex flex-col items-start bg-white/90 p-4 m-4 rounded-lg border-2">
