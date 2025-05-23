@@ -90,14 +90,14 @@ onMount(() => {
 </script>
 
 <div id="container" class="fixed inset-0">
-  <div class="w-full h-full py-8 backdrop-blur-xs flex flex-col justify-around ">
+  <div class="w-full h-full py-8 backdrop-blur-xs flex flex-col ">
 
-    <div>
+    <div class="">
     <button class="btn modal-btn text-xl ml-8 mb-6 w-max! px-4! ">
       <a href="/">&lt; Back to Main Menu</a>
     </button>
   </div>
-    <div class="text-8xl text-center flex items-center justify-center gap-8">
+    <div class="text-7xl text-center flex items-center justify-center gap-8">
       <!-- 左矢印ボタン -->
       <button
         class="px-4 select-none cursor-pointer {Number(w) <= 1 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 "
@@ -107,7 +107,7 @@ onMount(() => {
       >
         &lt;
       </button>
-      <span>W{w}</span>
+      <span>World {w}</span>
       <!-- 右矢印ボタン -->
       <button
         class="px-4 select-none cursor-pointer {Number(w) >= 4 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 "
@@ -119,7 +119,7 @@ onMount(() => {
       </button>
     </div>
 
-    <div class="flex justify-center items-center ">
+    <div class="flex justify-center items-center grow-1 ">
       <div
         role="button"
         tabindex="0"
@@ -142,13 +142,13 @@ onMount(() => {
         {/each}
       </div>
     </div>
-    <div class="flex justify-center items-center basis-2/5 shrink ">
+    <div class="flex justify-center items-center basis-2/5 min-h-0 shrink grow-2">
       <!-- 画像を中央に配置 -->
-      <div class="">
-        <img src="/assets/thumbnail{w}-{selected+1}.png" alt="" class="" />
+      <div class="h-full ">
+        <img src="/assets/thumbnail{w}-{selected+1}.png" alt="" class="h-full " />
       </div>
       <!-- テキストを画像の右側に配置 -->
-      <div class="flex-none w-max flex flex-col items-start bg-white/90 p-4 m-4 rounded-lg border-2">
+      <div class="flex-none w-max max-h-full flex flex-col items-start bg-white/90 p-4 m-4 rounded-lg border-2">
         Press <Key key="Enter" enabled /> or <Key key="Space" enabled /> to start
       </div>
     </div>
