@@ -2,12 +2,14 @@ import { browser } from "$app/environment";
 import { replaceState } from "$app/navigation";
 import { onMount } from "svelte";
 
-export const MAX_WORLD = 4;
+export const MAX_WORLD = 6;
 const WORLD_STAGES_MAP = new Map([
   [1, 4],
   [2, 4],
   [3, 4],
-  [4, 2],
+  [4, 4],
+  [5, 4],
+  [6, 4],
 ]);
 
 export class SearchParamState {

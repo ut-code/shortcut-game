@@ -12,7 +12,7 @@ export namespace world2 {
       "bb.....m.....bbbbb",
       "bbbbbbbbbbbbbbbbbb",
     ],
-    isTutorial: true,
+    isTutorial: false,
     initialPlayerX: 3,
     initialPlayerY: 6,
     blockGroups: [],
