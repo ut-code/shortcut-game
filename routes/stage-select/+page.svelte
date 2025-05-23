@@ -1,6 +1,7 @@
 <script lang="ts">
 import Key from "@/ui-components/Key.svelte";
 import { onMount } from "svelte";
+import "@/ui-components/menu/menu.css";
 
 let w = "1";
 
@@ -21,6 +22,20 @@ let lastKeyTime = 0;
 let lastKey: string | null = null;
 const KEY_REPEAT_DELAY = 180; // ms
 
+function prevWorld() {
+  // wを数値として1減らす（1未満にはしない）
+  w = String(Math.max(1, Number(w) - 1));
+  const url = new URL(window.location.href);
+  url.searchParams.set("w", w);
+  window.history.replaceState(null, "", url.toString());
+}
+function nextWorld() {
+  // wを数値として1増やす（4より大きくしない）
+  w = String(Math.min(4, Number(w) + 1));
+  const url = new URL(window.location.href);
+  url.searchParams.set("w", w);
+  window.history.replaceState(null, "", url.toString());
+}
 function handleKey(e: KeyboardEvent): void {
   const now = Date.now();
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -32,9 +47,23 @@ function handleKey(e: KeyboardEvent): void {
   }
 
   if (e.key === "ArrowRight") {
-    selected = (selected + 1) % blocks.length;
+    if (selected === blocks.length - 1) {
+      if (w !== "4") {
+        nextWorld();
+        selected = 0;
+      }
+    } else {
+      selected += 1;
+    }
   } else if (e.key === "ArrowLeft") {
-    selected = (selected - 1 + blocks.length) % blocks.length;
+    if (selected === 0) {
+      if (w !== "1") {
+        prevWorld();
+        selected = blocks.length - 1;
+      }
+    } else {
+      selected -= 1;
+    }
   } else if (e.key === "Enter" || e.key === " ") {
     window.location.href = blocks[selected].link;
   }
@@ -58,25 +87,22 @@ onMount(() => {
     document.removeEventListener("keyup", handleKeyUp);
   };
 });
-
-// TODO: ゲームメニューからstage-selectに飛ばす
 </script>
 
 <div id="container" class="fixed inset-0">
   <div class="w-full h-full py-8 backdrop-blur-xs flex flex-col justify-around ">
 
+    <div>
+    <button class="btn modal-btn text-xl ml-8 mb-6 w-max! px-4! ">
+      <a href="/">&lt; Back to Main Menu</a>
+    </button>
+  </div>
     <div class="text-8xl text-center flex items-center justify-center gap-8">
       <!-- 左矢印ボタン -->
       <button
-        class="px-4 select-none cursor-pointer"
+        class="px-4 select-none cursor-pointer {Number(w) <= 1 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 "
         aria-label="前のワールド"
-        on:click={() => {
-          // wを数値として1減らす（1未満にはしない）
-          const next = Math.max(1, Number(w) - 1);
-          const url = new URL(window.location.href);
-          url.searchParams.set("w", String(next));
-          window.location.href = url.toString();
-        }}
+        on:click={prevWorld}
         disabled={Number(w) <= 1}
       >
         &lt;
@@ -84,15 +110,9 @@ onMount(() => {
       <span>W{w}</span>
       <!-- 右矢印ボタン -->
       <button
-        class="px-4 select-none cursor-pointer"
+        class="px-4 select-none cursor-pointer {Number(w) >= 4 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 "
         aria-label="次のワールド"
-        on:click={() => {
-          // wを数値として1増やす（4より大きくしない）
-          const next = Math.min(4, Number(w) + 1);
-          const url = new URL(window.location.href);
-          url.searchParams.set("w", String(next));
-          window.location.href = url.toString();
-        }}
+        on:click={nextWorld}
         disabled={Number(w) >= 4}
       >
         &gt;

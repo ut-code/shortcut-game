@@ -33,6 +33,6 @@ document.addEventListener("keydown", (ev) => {
       <button class="btn modal-btn" type="submit">Resume</button>
     </form>
     <button class="btn modal-btn" onclick={() => onreset()}>Restart</button>
-    <a class="btn modal-btn" href="/"> Back to Stage Select </a>
+    <a class="btn modal-btn" href="/stage-select"> Back to Stage Select </a>
   </div>
 </dialog>

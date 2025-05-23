@@ -41,6 +41,6 @@ onDestroy(() => {
     >
       Restart
     </button>
-    <a class="btn modal-btn" href="/">Back to Stage Select</a>
+    <a class="btn modal-btn" href="/stage-select">Back to Stage Select</a>
   </div>
 </dialog>
