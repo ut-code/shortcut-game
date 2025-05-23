@@ -1,10 +1,12 @@
+import { stagePreprocess } from "@/stage-preprocessor.ts";
 import type { StageDefinition } from "./type.ts";
 
-export const stage6: StageDefinition = {
+export const stage6: StageDefinition = stagePreprocess({
   stage: [
     "bbbbbbbbbbbbbbbbbbbbbbbbb",
     ".........................",
     "......................g..",
+    "................bbbbbbbbb",
     "...............wbbbbbbbbb",
     "m...............bbbbbbbbb",
     "bb..............w.....m..",
@@ -12,60 +14,16 @@ export const stage6: StageDefinition = {
     "bb.w....m..s...bb...mmm..",
     "bbbbbbbbbbbSbbbbbbbbbbbbb",
   ],
-  initialPlayerX: 5,
-  initialPlayerY: 8,
-  blockGroups: [
-    {
-      x: 20,
-      y: 7,
-      objectId: "1",
-    },
-    {
-      x: 21,
-      y: 7,
-      objectId: "1",
-    },
-    {
-      x: 21,
-      y: 6,
-      objectId: "1",
-    },
-    {
-      x: 22,
-      y: 5,
-      objectId: "1",
-    },
-    {
-      x: 22,
-      y: 6,
-      objectId: "1",
-    },
-    {
-      x: 22,
-      y: 7,
-      objectId: "1",
-    },
+  overlay: [
+    "bbbbbbbbbbbbbbbbbbbbbbbbb",
+    ".........................",
+    "......................g..",
+    "................bbbbbbbbb",
+    "...............1bbbbbbbbb",
+    "m...............bbbbbbbbb",
+    "bb..............1.....2..",
+    "bb..............b....22..",
+    "bb.1..S.m..1...bb...222..",
+    "bbbbbbbbbbb-bbbbbbbbbbbbb",
   ],
-  switchGroups: [
-    {
-      x: 3,
-      y: 7,
-      switchId: "1",
-    },
-    {
-      x: 11,
-      y: 7,
-      switchId: "1",
-    },
-    {
-      x: 15,
-      y: 3,
-      switchId: "1",
-    },
-    {
-      x: 16,
-      y: 5,
-      switchId: "1",
-    },
-  ],
-};
+});
