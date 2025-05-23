@@ -138,7 +138,7 @@ onMount(() => {
           <button
             type="button"
             class={`appearance-none focus:outline-none bg-white border-6 pt-8 pb-6 pl-8 pr-6 transition-colors duration-200 text-7xl cursor-pointer ${
-              selected === i ? 'border-red-500 ring ring-red-500' : 'border-base'
+              selected === i ? 'border-red-500 ring ring-red-500 bg-amber-100!' : 'border-base'
             }`}
             on:click={() => select(i)}
           >

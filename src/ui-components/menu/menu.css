@@ -6,8 +6,14 @@
   font-size: inherit;
   height: max-content;
 }
+.modal-btn:focus-visible {
+  outline-width: 6px;
+  outline-style: solid;
+  outline-color: oklch(63.7% 0.237 25.331); /* red-500 */
+  background: oklch(96.2% 0.059 95.617); /* amber-100 */
+}
 .modal-box {
-  background: oklch(82.8% 0.189 84.429 / 70%);
+  background: oklch(82.8% 0.189 84.429 / 70%); /* amber-400 */
   backdrop-filter: blur(2px);
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
