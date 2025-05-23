@@ -49,8 +49,8 @@ $effect(() => {
 </script>
 
 <div id="container" class="fixed inset-0">
-  <div class="fixed inset-0 backdrop-blur-xs">
-    <div class="flex flex-col gap-5 mt-30 m-10 p-5 bg-yellow-400/85 rounded-lg">
+  <div class="fixed inset-0 backdrop-blur-xs flex flex-col justify-center">
+    <div class="flex flex-col gap-5 mb-20 m-10 p-5 bg-yellow-400/85 rounded-lg">
       <h1 class="text-center mt-6 mb-2">Shortcut Game</h1>
       <!--TODO: 題名-->
       <a class="btn modal-btn text-2xl" href="/game?stage=1-1" bind:this={btn1} tabindex="1"> Start from 1-1 </a>
