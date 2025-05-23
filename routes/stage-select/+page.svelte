@@ -18,15 +18,17 @@ $: blocks = [
 
 let selected = 0;
 let lastKeyTime = 0;
+let lastKey: string | null = null;
 const KEY_REPEAT_DELAY = 180; // ms
 
 function handleKey(e: KeyboardEvent): void {
   const now = Date.now();
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-    if (now - lastKeyTime < KEY_REPEAT_DELAY) {
+    if (lastKey === e.key && now - lastKeyTime < KEY_REPEAT_DELAY) {
       return;
     }
     lastKeyTime = now;
+    lastKey = e.key;
   }
 
   if (e.key === "ArrowRight") {
@@ -37,6 +39,10 @@ function handleKey(e: KeyboardEvent): void {
     window.location.href = blocks[selected].link;
   }
 }
+function handleKeyUp() {
+  lastKeyTime = 0;
+  lastKey = null;
+}
 
 function handleClick(index: number): void {
   selected = index;
@@ -45,10 +51,14 @@ function handleClick(index: number): void {
 let container: HTMLDivElement | null = null;
 
 onMount(() => {
-  container?.focus();
+  document.addEventListener("keydown", handleKey);
+  document.addEventListener("keyup", handleKeyUp);
+  return () => {
+    document.removeEventListener("keydown", handleKey);
+    document.removeEventListener("keyup", handleKeyUp);
+  };
 });
 
-// Todo?: ワールド選択の矢印をクリックすると、矢印キーを押してもステージが移動できない(＝ブロックをクリックする必要あり)
 // TODO?: Enterキーを押すと、カーソルがある場所のブロックの色が変わる(正しいステージには飛ぶから実害はない)
 // Todo: 画像をステージごとに変える
 // TODO: ゲームメニューからstage-selectに飛ばす
@@ -93,10 +103,8 @@ onMount(() => {
 
     <div class="flex justify-center items-center h-64">
       <div
-        bind:this={container}
         role="button"
         tabindex="0"
-        on:keydown={handleKey}
         class="flex outline-none items-center"
       >
         {#each blocks as block, i}
