@@ -176,8 +176,8 @@ export function canPlaceMovableObject(cx: Context, x: number, y: number, object:
     const positionX = x + i.x;
     const positionY = y + i.y;
     const target = grid.getBlock(cx, positionX, positionY);
-    if (target && target !== Block.switch) {
-      // すでに何かある場合は、ペーストできない
+    if (target === undefined || (target && target !== Block.switch)) {
+      // すでに何かある場合or範囲外は、ペーストできない
       return false;
     }
   }

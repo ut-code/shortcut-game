@@ -295,7 +295,10 @@ export class Grid {
     }
     this.oobFallableSprites = [];
   }
-  getBlock(cx: Context, x: number, y: number): Block | null {
+  getBlock(cx: Context, x: number, y: number): Block | null | undefined {
+    const cells = get(cx.state).cells;
+    if (y < 0 || y >= cells.length) return undefined;
+    if (x < 0 || x >= cells[y].length) return undefined;
     return get(cx.state).cells[y]?.[x]?.block ?? null;
   }
   // satisfies: every(MovableObject.relativePositions, (pos) => pos.x >= 0)
