@@ -1,9 +1,10 @@
 import { get } from "svelte/store";
-import { Block, Facing } from "./constants.ts";
+import { Block, Facing, playerHeight, playerWidth } from "./constants.ts";
 import { printCells } from "./grid.ts";
 import { createSnapshot } from "./history.ts";
 import * as History from "./history.ts";
 import { assert } from "./lib.ts";
+import { type Player, getCoords } from "./player.ts";
 import type { AbilityInit, Context, Coords, MovableObject } from "./public-types.ts";
 
 export function init(cx: Context): () => void {
@@ -37,9 +38,22 @@ export function init(cx: Context): () => void {
   };
 }
 
-export function focusCoord(playerAt: Coords, facing: Facing) {
-  let dx: number;
-  switch (facing) {
+/** @returns focus座標
+ * @returns null if player is not on ground
+ */
+export function focusCoord(cx: Context, player: Player) {
+  const { blockSize, marginY } = get(cx.config);
+  const middleX = Math.floor(player.x / blockSize);
+
+  // 自分が空中にいる状態でブロックを置けないように
+  const middleBlock = cx.grid.getBlock(cx, middleX, getCoords(cx).y + 1);
+  const playerIsTryingToPlaceInAir = middleBlock === null;
+  if (playerIsTryingToPlaceInAir) {
+    return null;
+  }
+
+  let dx = 0;
+  switch (player.facing) {
     case Facing.left:
       dx = -1;
       break;
@@ -47,11 +61,11 @@ export function focusCoord(playerAt: Coords, facing: Facing) {
       dx = 1;
       break;
     default:
-      dx = facing satisfies never;
+      player.facing satisfies never;
   }
   return {
-    ...playerAt,
-    x: playerAt.x + dx,
+    x: middleX + dx,
+    y: getCoords(cx).y,
   };
 }
 export function copy(cx: Context) {
@@ -144,8 +158,8 @@ export function cut(cx: Context) {
   cx.dynamic.player.activated = true;
 }
 
-// 左向きのときにブロックを配置する位置を変更するのに使用
 export function findSafeObjectPlace(facing: Facing, x: number, y: number, obj: MovableObject) {
+  // 左向きのときにブロックを配置する位置を変更するのに使用
   const width =
     obj.relativePositions.reduce((acc, i) => Math.max(acc, i.x), 0) -
     obj.relativePositions.reduce((acc, i) => Math.min(acc, i.x), 1000) +
