@@ -59,7 +59,6 @@ onMount(() => {
   };
 });
 
-// Todo: 画像をステージごとに変える
 // TODO: ゲームメニューからstage-selectに飛ばす
 </script>
 
@@ -126,7 +125,7 @@ onMount(() => {
     <div class="flex justify-center items-center basis-2/5 shrink ">
       <!-- 画像を中央に配置 -->
       <div class="">
-        <img src="/assets/thumbnaildev.png" alt="" class="" />
+        <img src="/assets/thumbnail{w}-{selected+1}.png" alt="" class="" />
       </div>
       <!-- テキストを画像の右側に配置 -->
       <div class="flex-none w-max flex flex-col items-start bg-white/90 p-4 m-4 rounded-lg border-2">
