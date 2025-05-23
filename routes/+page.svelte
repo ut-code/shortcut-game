@@ -1,6 +1,16 @@
 <script lang="ts">
-import { onDestroy } from "svelte";
+import { onDestroy, onMount } from "svelte";
 
+onMount(() => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (
+    userAgent.includes("android") ||
+    userAgent.match(/iphone|ipad|ipod/) ||
+    (userAgent.includes("macintosh") && navigator.maxTouchPoints >= 1) /* recent iPad */
+  ) {
+    window.alert("このゲームはPC用です。キーボードが接続されていない端末ではプレイできません。");
+  }
+});
 onDestroy(() => {
   // document.body.style.backgroundColor = "black";
 });
