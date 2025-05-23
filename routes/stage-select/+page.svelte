@@ -5,12 +5,7 @@ import "@/ui-components/menu/menu.css";
 import { goto } from "$app/navigation";
 import { MAX_WORLD, SearchParamState } from "./params.svelte.ts";
 
-const search = $state(new SearchParamState());
-onMount(() => {
-  const params = new URLSearchParams(window.location.search);
-  search.world = Number(params.get("world") || "1");
-  search.selected = Number(params.get("selected") || "1");
-});
+const search = new SearchParamState();
 
 const blocks = $derived(
   new Array(search.maxStage).fill(null).map((_, idx) => ({

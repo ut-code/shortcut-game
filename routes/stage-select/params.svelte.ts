@@ -1,5 +1,6 @@
 import { browser } from "$app/environment";
 import { replaceState } from "$app/navigation";
+import { onMount } from "svelte";
 
 export const MAX_WORLD = 4;
 const WORLD_STAGES_MAP = new Map([
@@ -16,6 +17,12 @@ export class SearchParamState {
   constructor() {
     this.#world = null;
     this.#selected = null;
+
+    onMount(() => {
+      const params = new URLSearchParams(window.location.search);
+      this.world = Number(params.get("world") || "1");
+      this.selected = Number(params.get("selected") || "1");
+    });
   }
 
   get world(): number | null {
@@ -82,11 +89,13 @@ export class SearchParamState {
     const url = new URL(window.location.href);
     url.searchParams.set("world", String(this.#world));
     url.searchParams.set("selected", String(this.#selected));
-    try {
-      replaceState(url.toString(), {});
-    } catch (e) {
-      // what do you mean "Cannot call replaceState(...) before router is initialized"
-      console.warn("Failed to update URL:", e);
-    }
+    setTimeout(() => {
+      try {
+        replaceState(url.toString(), {});
+      } catch (e) {
+        // what do you mean "Cannot call replaceState(...) before router is initialized"
+        console.warn("Failed to update URL:", e);
+      }
+    }, 0);
   }
 }
