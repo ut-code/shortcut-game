@@ -99,14 +99,18 @@ export function getCoords(cx: Context) {
 }
 export function createHighlight(cx: Context): Sprite[] | undefined {
   const state = get(cx.state);
-  const { focus, player } = cx.dynamic;
-  if (!focus) throw new Error("focus is null");
+  const { player } = cx.dynamic;
+
   const { blockSize, marginY } = get(cx.config);
   if (!player || !player.holdingKeys[Inputs.Ctrl] || !player.onGround) return;
+  const focusCoords = Ability.focusCoord(cx, player);
+  if (!focusCoords) return;
+
   const highlights: Sprite[] = [];
   // インベントリがあるとき
   if (state.inventory) {
-    const highlightCoords = Ability.findSafeObjectPlace(player.facing, focus.x, focus.y, state.inventory);
+    const highlightCoords = Ability.findSafeObjectPlace(player.facing, focusCoords.x, focusCoords.y, state.inventory);
+    if (!highlightCoords) return;
     let texture = highlightHoldTexture;
     if (!Ability.canPlaceMovableObject(cx, highlightCoords.x, highlightCoords.y, state.inventory)) {
       texture = highlightErrorTexture;
@@ -126,8 +130,8 @@ export function createHighlight(cx: Context): Sprite[] | undefined {
     }
   } else {
     // インベントリがないとき
-    const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
-    const object = cx.grid.getMovableObject(cx, highlightCoords.x, highlightCoords.y);
+    if (!focusCoords) return;
+    const object = cx.grid.getMovableObject(cx, focusCoords.x, focusCoords.y);
     const texture = highlightTexture;
     if (!object) {
       // focusの位置にオブジェクトがないときはfocusだけハイライト
@@ -136,12 +140,11 @@ export function createHighlight(cx: Context): Sprite[] | undefined {
         highlight.rotation = Math.PI / 2;
       }
       highlight.anchor.set(0.5);
-      const highlightCoords = Ability.focusCoord(getCoords(cx), player.facing);
       highlight.width = blockSize;
       highlight.height = blockSize;
       highlight.alpha = 0.5;
-      highlight.x = (highlightCoords.x + 1 / 2) * blockSize;
-      highlight.y = (highlightCoords.y + 1 / 2) * blockSize + marginY;
+      highlight.x = (focusCoords.x + 1 / 2) * blockSize;
+      highlight.y = (focusCoords.y + 1 / 2) * blockSize + marginY;
       highlights.push(highlight);
     } else {
       // focusの位置にオブジェクトがあるときはオブジェクトをカバーするようにハイライト
@@ -448,7 +451,7 @@ export function tick(cx: Context, ticker: Ticker) {
   player.y += player.vy * ticker.deltaTime;
   player.vy += consts.gravity * blockSize * ticker.deltaTime;
 
-  cx.dynamic.focus = Ability.focusCoord(getCoords(cx), player.facing);
+  cx.dynamic.focus = Ability.focusCoord(cx, player);
 }
 
 export function resize(cx: Context, prevConfig: GameConfig) {
