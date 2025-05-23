@@ -100,7 +100,7 @@ onMount(() => {
     <div class="text-7xl text-center flex items-center justify-center gap-8">
       <!-- 左矢印ボタン -->
       <button
-        class="px-4 select-none cursor-pointer {Number(w) <= 1 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 "
+        class="px-4 select-none cursor-pointer {Number(w) <= 1 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black "
         aria-label="前のワールド"
         on:click={prevWorld}
         disabled={Number(w) <= 1}
@@ -110,7 +110,7 @@ onMount(() => {
       <span>World {w}</span>
       <!-- 右矢印ボタン -->
       <button
-        class="px-4 select-none cursor-pointer {Number(w) >= 4 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 "
+        class="px-4 select-none cursor-pointer {Number(w) >= 4 ? "invisible" : ""} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black "
         aria-label="次のワールド"
         on:click={nextWorld}
         disabled={Number(w) >= 4}
