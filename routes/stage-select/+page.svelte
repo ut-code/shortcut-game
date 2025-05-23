@@ -59,7 +59,6 @@ onMount(() => {
   };
 });
 
-// TODO?: Enterキーを押すと、カーソルがある場所のブロックの色が変わる(正しいステージには飛ぶから実害はない)
 // Todo: 画像をステージごとに変える
 // TODO: ゲームメニューからstage-selectに飛ばす
 </script>
@@ -110,7 +109,7 @@ onMount(() => {
         {#each blocks as block, i}
           <button
             type="button"
-            class={`bg-white border-6 pt-8 pb-6 pl-8 pr-6 transition-colors duration-200 text-7xl cursor-pointer ${
+            class={`appearance-none focus:outline-none bg-white border-6 pt-8 pb-6 pl-8 pr-6 transition-colors duration-200 text-7xl cursor-pointer ${
               selected === i ? 'border-red-500 ring ring-red-500' : 'border-base'
             }`}
             on:click={() => handleClick(i)}
