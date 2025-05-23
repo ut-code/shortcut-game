@@ -40,6 +40,9 @@ function handleKeyDown(e: KeyboardEvent) {
         buttons[0].focus();
       }
       e.preventDefault();
+    } else if (e.key === " ") {
+      (document.activeElement as HTMLElement)?.click?.();
+      e.preventDefault();
     }
   }
   if (e.key === "Escape") {
