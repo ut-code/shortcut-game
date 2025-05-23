@@ -2,7 +2,6 @@
 import { onDestroy } from "svelte";
 import "./menu.css";
 import { invalidate } from "$app/navigation";
-import { onMount } from "svelte";
 
 type Props = {
   goaled: boolean;
@@ -70,7 +69,11 @@ onDestroy(() => {
 <dialog bind:this={el} class="modal">
   <div class="modal-box flex flex-col gap-1">
     <h1 class="text-center my-6">Goal!</h1>
+    {#if nextStage === "1-1"}
+    <a class="btn modal-btn" href="/clear" bind:this={btn1} tabindex="1"> Next Stage </a>
+    {:else}
     <a class="btn modal-btn" href={nextStageUrl} bind:this={btn1} tabindex="1"> Next Stage </a>
+    {/if}
     <button
       class="btn modal-btn"
       onclick={() => {

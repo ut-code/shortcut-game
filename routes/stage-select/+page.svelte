@@ -2,38 +2,22 @@
 import Key from "@/ui-components/Key.svelte";
 import { onMount } from "svelte";
 import "@/ui-components/menu/menu.css";
-import { replaceState } from "$app/navigation";
+import { goto } from "$app/navigation";
+import { MAX_WORLD, SearchParamState } from "./params.svelte.ts";
 
-// starts from 1
-let world = $state<number | null>(null);
-let stage = $state<number | null>(null);
-const maxWorld = 4;
-const maxStage = 4;
+const search = new SearchParamState(1);
 
-onMount(() => {
-  const params = new URLSearchParams(window.location.search);
-  world = Number(params.get("w") ?? "1");
-  stage = Number(params.get("s") ?? "1");
-});
+const blocks = $derived(
+  new Array(search.maxStage).fill(null).map((_, idx) => ({
+    label: `${search.world}-${idx + 1}`,
+    link: `/game?stage=${search.world}-${idx + 1}`,
+    thumbnail: `/assets/thumbnail${search.world}-${idx + 1}.png`,
+  })),
+);
 
 let lastKeyTime = 0;
 let lastKey: string | null = null;
 const KEY_REPEAT_DELAY = 180; // ms
-
-function changeStage(worldNum: number, stageNum: number): void {
-  if (worldNum < 1 || worldNum > maxWorld) {
-    throw new Error(`World number must be between 1 and ${maxWorld}, but got ${worldNum}`);
-  }
-  if (stageNum < 1 || stageNum > maxStage) {
-    throw new Error(`Stage number must be between 1 and ${maxStage}, but got ${stageNum}`);
-  }
-  world = worldNum;
-  stage = stageNum;
-  const url = new URL(window.location.href);
-  url.searchParams.set("w", String(world));
-  url.searchParams.set("s", String(stageNum));
-  replaceState(url.toString(), {});
-}
 
 function handleKey(e: KeyboardEvent): void {
   const now = Date.now();
@@ -45,31 +29,52 @@ function handleKey(e: KeyboardEvent): void {
     lastKey = e.key;
   }
 
-  if (stage === null || world === null) {
+  if (search.selected === null) {
     return;
   }
 
   if (e.key === "ArrowRight") {
-    if (stage === maxStage) {
-      if (world < maxWorld) {
-        changeStage(world + 1, 1);
+    if (search.selected === blocks.length - 1) {
+      if (search.world !== 4) {
+        search.nextWorld();
+        search.selected = 1;
       }
     } else {
-      changeStage(world, stage + 1);
+      search.selected += 1;
     }
   } else if (e.key === "ArrowLeft") {
-    if (stage === 1) {
-      if (world > 1) {
-        changeStage(world - 1, maxStage);
+    if (search.selected === 0) {
+      if (search.world !== 1) {
+        search.prevWorld();
+        search.selected = blocks.length - 1;
       }
     } else {
-      changeStage(world, stage - 1);
+      search.selected -= 1;
     }
   } else if (e.key === "Enter" || e.key === " ") {
-    window.location.href = `/game?stage=${world}-${stage}`;
+    goto(`/game?stage=${search.world}-${search.selected}`);
   } else if (e.key === "Escape") {
-    window.location.href = "/";
+    goto("/");
     e.preventDefault();
+    if (search.selected === blocks.length - 1) {
+      if (search.world !== 4) {
+        search.nextWorld();
+        search.selected = 1;
+      }
+    } else {
+      search.selected += 1;
+    }
+  } else if (e.key === "ArrowLeft") {
+    if (search.selected === 0) {
+      if (search.world !== 1) {
+        search.prevWorld();
+        search.selected = blocks.length - 1;
+      }
+    } else {
+      search.selected -= 1;
+    }
+  } else if (e.key === "Enter" || e.key === " ") {
+    goto(blocks[search.selected].link);
   }
 }
 function handleKeyUp() {
@@ -101,24 +106,26 @@ onMount(() => {
     <div class="text-7xl text-center flex items-center justify-center gap-8">
       <!-- 左矢印ボタン -->
       <button
-        class="appearance-none focus:outline-none px-4 select-none cursor-pointer {Number(world) <= 1
-          ? 'invisible'
-          : ''} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
-        aria-label="前のワールド"
-        onclick={() => world !== null && world > 1 && changeStage(world - 1, 1)}
-        disabled={Number(world) <= 1}
+        class={[
+          "appearance-none focus:outline-none px-4 select-none cursor-pointer",
+          search.world <= 1 && 'invisible',
+          "hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"]}
+        onclick={() => search.world--}
+        disabled={search.world <= 1}
       >
         &lt;
       </button>
-      <span>World {world}</span>
+      <span>World {search.world}</span>
       <!-- 右矢印ボタン -->
       <button
-        class="appearance-none focus:outline-none px-4 select-none cursor-pointer {Number(world) >= maxWorld
-          ? 'invisible'
-          : ''} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
         aria-label="次のワールド"
-        onclick={() => world !== null && world < maxWorld && changeStage(world + 1, 1)}
-        disabled={Number(world) >= maxWorld}
+        onclick={() => search.world++}
+        disabled={search.world >= MAX_WORLD}
+        class={[
+          "appearance-none focus:outline-none px-4 select-none cursor-pointer",
+          search.world >= MAX_WORLD && 'invisible',
+          "hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
+        ]}
       >
         &gt;
       </button>
@@ -126,19 +133,21 @@ onMount(() => {
 
     <div class="flex justify-center items-center grow-1">
       <div role="button" tabindex="0" class="flex outline-none items-center">
-        {#each { length: maxStage } as _, idx}
+        {#each blocks as block, idx}
+        {@const stage = idx + 1}
           <button
             type="button"
             class={`appearance-none focus:outline-none bg-white border-6 pt-8 pb-6 pl-8 pr-6 transition-colors duration-200 text-7xl cursor-pointer ${
-              stage === idx + 1
+              search.selected === stage
                 ? "border-red-500 ring ring-red-500 bg-amber-100!"
                 : "border-base"
             }`}
-            onclick={() => world !== null && changeStage(world, idx + 1)}
+            onmouseenter={() => search.selected = stage}
+            onclick={() => goto(block.link)}
           >
-            {idx + 1}
+            {block.label}
           </button>
-          {#if idx + 1 < maxStage}
+          {#if stage < search.maxStage}
             <!-- 線（矢印や線） -->
             <div class="w-20 h-3 bg-black"></div>
           {/if}
@@ -150,13 +159,14 @@ onMount(() => {
     >
       <!-- 画像を中央に配置 -->
       <div class="h-full">
-        {#if stage !== null}
-          {#key world}
-            {#each { length: 4 } as _, idx}
+        {#if search.selected !== null}
+          {#key search.world}
+            {#each blocks as block, idx}
+            {@const stage = idx + 1}
               <img
-                src="/assets/thumbnail{world}-{idx + 1}.png"
+                src={block.thumbnail}
                 alt=""
-                class={["h-full skeleton", idx + 1 !== stage && "hidden"]}
+                class={["h-full skeleton", stage !== search.selected && "hidden"]}
               />
             {/each}
           {/key}
@@ -164,9 +174,19 @@ onMount(() => {
       </div>
       <!-- テキストを画像の右側に配置 -->
       <div
-        class="flex-none w-max max-h-full flex flex-col items-start bg-white/90 p-4 m-4 rounded-lg border-2"
+        class="flex-none w-70 max-h-full bg-white/90 p-4 m-4 rounded-lg border-2"
       >
-        Press <Key key="Enter" enabled /> or <Key key="Space" enabled /> to start
+      <div>
+        Click,
+      </div>
+      <div>
+        Press <Key key="Enter" enabled />
+      </div>
+      <div>or Press <Key key="Space" enabled />
+      </div>
+      <div>
+        To Start
+      </div>
       </div>
     </div>
   </div>

@@ -74,6 +74,5 @@ $effect(() => {
       left top,
       left,
       top;
-    backdrop-filter: blur(10px);
   }
 </style>
