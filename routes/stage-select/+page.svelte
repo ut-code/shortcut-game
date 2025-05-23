@@ -79,6 +79,9 @@ function handleKey(e: KeyboardEvent): void {
     }
   } else if (e.key === "Enter" || e.key === " ") {
     window.location.href = blocks[selected].link;
+  } else if (e.key === "Escape") {
+    window.location.href = "/";
+    e.preventDefault();
   }
 }
 function handleKeyUp() {
@@ -102,13 +105,17 @@ onMount(() => {
   <div class="w-full h-full py-8 backdrop-blur-xs flex flex-col">
     <div class="">
       <button class="btn modal-btn text-xl ml-8 mb-6 w-max! px-4!">
-        <a href="/">&lt; Back to Main Menu</a>
+        <a href="/">
+          &lt;
+          <Key key="Esc" enabled />
+          Back to Main Menu
+        </a>
       </button>
     </div>
     <div class="text-7xl text-center flex items-center justify-center gap-8">
       <!-- 左矢印ボタン -->
       <button
-        class="px-4 select-none cursor-pointer {Number(world) <= 1
+        class="appearance-none focus:outline-none px-4 select-none cursor-pointer {Number(world) <= 1
           ? 'invisible'
           : ''} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
         aria-label="前のワールド"
@@ -120,7 +127,7 @@ onMount(() => {
       <span>World {world}</span>
       <!-- 右矢印ボタン -->
       <button
-        class="px-4 select-none cursor-pointer {Number(world) >= 4
+        class="appearance-none focus:outline-none px-4 select-none cursor-pointer {Number(world) >= 4
           ? 'invisible'
           : ''} hover:-translate-y-1 hover:text-gray-700 active:translate-y-0 active:text-black"
         aria-label="次のワールド"
