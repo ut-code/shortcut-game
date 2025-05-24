@@ -130,6 +130,7 @@ export function cut(cx: Context) {
   if (state.gameover || state.paused || state.goaled) return;
   if (!focus) return;
   if (!cx.dynamic.player) return;
+  if (state.usage.copy === 0 && state.inventory) return;
 
   const x = focus.x;
   const y = focus.y;
