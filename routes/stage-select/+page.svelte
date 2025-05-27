@@ -59,6 +59,12 @@ onMount(() => {
 });
 </script>
 
+<svelte:head>
+  {#each blocks as { thumbnail }}
+    <link rel="preload" as="image" href={thumbnail} />
+  {/each}
+</svelte:head>
+
 <div id="container" class="fixed inset-0">
   <div class="w-full h-full py-8 backdrop-blur-xs flex flex-col">
     <div class="">
@@ -128,19 +134,12 @@ onMount(() => {
       <!-- 画像を中央に配置 -->
       <div class="h-full">
         {#if search.selected !== null}
-          {#key search.world}
-            {#each blocks as block, idx}
-              {@const stage = idx + 1}
-              <img
-                src={block.thumbnail}
-                alt=""
-                class={[
-                  "h-full skeleton",
-                  stage !== search.selected && "hidden",
-                ]}
-              />
-            {/each}
-          {/key}
+          {@const block = blocks.find(
+            (b, idx) => /* stage = idx + 1 */ idx + 1 === search.selected,
+          )}
+          {#if block}
+            <img src={block.thumbnail} alt="" class="h-full skeleton" />
+          {/if}
         {/if}
       </div>
       <!-- テキストを画像の右側に配置 -->
