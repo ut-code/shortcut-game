@@ -118,7 +118,15 @@ export class Grid {
           case Block.fallable:
           case Block.goal:
           case Block.switchBase: {
-            const sprite = createSprite(cellSize, dblock, x, y, this.marginY);
+            const objectId = stageDefinition.blockGroups.find((g) => g.x === x && g.y === y)?.objectId || undefined;
+            let movableBlockColor: number | undefined = undefined;
+            if (
+              dblock === Block.movable &&
+              stageDefinition.blockGroups.filter((b) => b.objectId === objectId).length >= 2
+            ) {
+              movableBlockColor = consts.LARGE_BLOCK_COLOR;
+            }
+            const sprite = createSprite(cellSize, dblock, x, y, this.marginY, movableBlockColor);
             stage.addChild(sprite);
             vspriteRow.push({ sprite, block: dblock, dy: 0, vy: 0 });
             break;
@@ -211,7 +219,10 @@ export class Grid {
         const vsom = this.__vsom[y][x];
         const newCell = newGrid[y][x];
         if (vsom?.block !== newCell.block) {
-          this.setBlock(cx, x, y, newCell);
+          // TODO:this uses a lot of memory
+          const isBlockLarge =
+            newGrid.flatMap((row) => row.filter((cell) => cell.objectId === newCell.objectId)).length >= 2;
+          this.setBlock(cx, x, y, newCell, isBlockLarge);
         }
       }
     }
@@ -345,6 +356,7 @@ export class Grid {
     x: number,
     y: number,
     cNewCell: GridCell,
+    isLargeBlock?: boolean, // todo: please fix shitty code this someone please
   ) {
     const stage = cx._stage_container;
     const cells = get(cx.state).cells;
@@ -362,6 +374,8 @@ export class Grid {
     if (cNewCell.block !== Block.movable && cNewCell.block !== Block.fallable) {
       assert(cNewCell.objectId == null, "Cell is not movable but has an objectId");
     }
+
+    const movableBlockColor = isLargeBlock ? consts.LARGE_BLOCK_COLOR : undefined;
 
     if (vprev?.block === Block.switch && cNewCell.block === Block.switchPressed) {
       // switchがプレイヤーに押されるとき
@@ -409,7 +423,7 @@ export class Grid {
         console.log("cell.block", cNewCell.block);
         return;
       }
-      const movableSprite = createSprite(blockSize, cNewCell.block, x, y, marginY);
+      const movableSprite = createSprite(blockSize, cNewCell.block, x, y, marginY, movableBlockColor);
       stage.addChild(movableSprite);
       assert(cNewCell.objectId !== undefined, "movable block must have objectId");
       assert(
@@ -551,7 +565,8 @@ export class Grid {
           break;
         }
         case Block.movable: {
-          const movableSprite = createSprite(blockSize, cNewCell.block, x, y, marginY);
+          const movableSprite = createSprite(blockSize, cNewCell.block, x, y, marginY, movableBlockColor);
+          console.log(movableBlockColor);
           stage.addChild(movableSprite);
           assert(cNewCell.objectId !== undefined, "movable block must have objectId");
           cells[y][x] = {
@@ -666,7 +681,6 @@ export class Grid {
           vSwapCell.vy = vcell.vy;
           vcell.dy = 0;
           vcell.vy = 0;
-          // また抽象化失敗してる...
           vSwapCell.sprite.y = (y + swapDiff) * blockSize + marginY + vSwapCell.dy;
           console.log("dy", vSwapCell.dy, "vy", vSwapCell.vy);
         }
@@ -908,7 +922,8 @@ function createSprite(
   x: number,
   y: number,
   marginY: number,
-  switchColor?: number, // 例: #ffa500
+  // 使われたり使われなかったりするので注意
+  color?: number, // 例: #ffa500
 ) {
   switch (block) {
     case Block.block: {
@@ -918,10 +933,14 @@ function createSprite(
       return sprite;
     }
     case Block.movable: {
-      const movableSprite = new Sprite(rockTexture);
-      movableSprite.tint = 0xff0000;
-      updateSprite(movableSprite, blockSize, x, y, marginY, 0);
-      return movableSprite;
+      const sprite = new Sprite(rockTexture);
+      if (color) {
+        sprite.tint = color;
+      } else {
+        sprite.tint = 0xff0000;
+      }
+      updateSprite(sprite, blockSize, x, y, marginY, 0);
+      return sprite;
     }
     case Block.fallable: {
       const movableSprite = new Sprite(fallableTexture);
@@ -931,7 +950,7 @@ function createSprite(
     }
     case Block.switch: {
       const switchSprite = new Sprite(switchTexture);
-      if (switchColor) switchSprite.tint = switchColor;
+      if (color) switchSprite.tint = color;
       updateSprite(switchSprite, blockSize, x, y, marginY, 0);
       return switchSprite;
     }
@@ -943,7 +962,7 @@ function createSprite(
     case Block.inverseSwitchingBlockON:
     case Block.switchingBlockOFF: {
       const sprite = new Sprite(rockTexture);
-      if (switchColor) sprite.tint = switchColor;
+      if (color) sprite.tint = color;
       else sprite.tint = 0xffa500;
       updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;
@@ -951,7 +970,7 @@ function createSprite(
     case Block.inverseSwitchingBlockOFF:
     case Block.switchingBlockON: {
       const sprite = new Sprite(rockTexture);
-      if (switchColor) sprite.tint = switchColor;
+      if (color) sprite.tint = color;
       else sprite.tint = 0xffa500;
       sprite.alpha = 0.3;
       updateSprite(sprite, blockSize, x, y, marginY, 0);
@@ -959,7 +978,7 @@ function createSprite(
     }
     case Block.switchPressed: {
       const sprite = new Sprite(switchPressedTexture);
-      if (switchColor) sprite.tint = switchColor;
+      if (color) sprite.tint = color;
       else sprite.tint = 0xffa500;
       updateSprite(sprite, blockSize, x, y, marginY, 0);
       return sprite;

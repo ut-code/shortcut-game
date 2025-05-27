@@ -63,15 +63,19 @@ onDestroy(() => bindings.destroy());
       // if this isn't working well, we can use window.location.reload(); instead
       bindings.reset();
     }}
-    stageNum={stageNum}
+    {stageNum}
   />
   <GoalMenu
     goaled={uiContext.goaled}
     {nextStage}
     reset={() => bindings.reset()}
-    stageNum={stageNum}
+    {stageNum}
   />
-  <GameOverMenu gameover={uiContext.gameover} reset={() => bindings.reset()} stageNum={stageNum} />
+  <GameOverMenu
+    gameover={uiContext.gameover}
+    reset={() => bindings.reset()}
+    {stageNum}
+  />
   <div
     class="uiBackground"
     style="position: fixed; left: 0; top: 0; right: 0; display: flex; align-items: end; "
@@ -85,13 +89,22 @@ onDestroy(() => bindings.destroy());
     <span style="">Clipboard:</span>
     <div class="inventory">
       {#if uiContext.inventory?.block === Block.movable}
-        <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
-        <img
-          src="/assets/block-red.png"
-          alt="inventory"
-          width="100%"
-          height="100%"
-        />
+        {#if uiContext.inventoryIsLarge}
+          <img
+            src="/assets/block-large.png"
+            alt="inventory"
+            width="100%"
+            height="100%"
+          />
+        {:else}
+          <!-- todo: tint 0xff0000 をする必要があるが、そもそもこの画像は仮なのか本当に赤色にするのか -->
+          <img
+            src="/assets/block-red.png"
+            alt="inventory"
+            width="100%"
+            height="100%"
+          />
+        {/if}
       {:else if uiContext.inventory?.block === Block.fallable}
         <img
           src="/assets/woodenbox.png"

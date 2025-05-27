@@ -19,6 +19,7 @@ export const elapsedTimePerFrame = 30;
 
 export const laserWidth = 0.3;
 
+export const LARGE_BLOCK_COLOR = 0xff00a0; // 大きなブロックは別の色で表示する
 export enum Block {
   block = "block",
   movable = "movable",

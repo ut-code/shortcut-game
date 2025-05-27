@@ -58,6 +58,7 @@ export type GameHistory = {
 export type GameDynamic = {
   focus: Coords | null; // current focus coordinates
   player: Player | null;
+  isInventoryBlockLarge: boolean; // please forgive me
 };
 
 export type Context = {
@@ -81,6 +82,7 @@ export type Context = {
 
 export type UIInfo = {
   inventory: MovableObject | null;
+  inventoryIsLarge: boolean;
   inventoryIsInfinite: boolean;
   copy: number;
   paste: number;

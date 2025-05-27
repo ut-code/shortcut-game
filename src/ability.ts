@@ -93,6 +93,7 @@ export function copy(cx: Context) {
 
   History.record(cx);
 
+  cx.dynamic.isInventoryBlockLarge = movableObject.relativePositions.length >= 2;
   cx.dynamic.player.activated = true;
 }
 export function paste(cx: Context) {
@@ -156,6 +157,7 @@ export function cut(cx: Context) {
   printCells(createSnapshot(cx).game.cells, "cut");
   History.record(cx);
 
+  cx.dynamic.isInventoryBlockLarge = movableObject.relativePositions.length >= 2;
   cx.dynamic.player.activated = true;
 }
 
@@ -192,13 +194,20 @@ export function placeMovableObject(cx: Context, x: number, y: number, object: Mo
     return;
   }
   const newObjectId = Math.random().toString();
+  const isBlockLarge = object.relativePositions.length >= 2;
   for (const rel of object.relativePositions) {
     const positionX = x + rel.x;
     const positionY = y + rel.y;
-    grid.setBlock(cx, positionX, positionY, {
-      block: object.block,
-      objectId: newObjectId,
-      switchId: undefined,
-    });
+    grid.setBlock(
+      cx,
+      positionX,
+      positionY,
+      {
+        block: object.block,
+        objectId: newObjectId,
+        switchId: undefined,
+      },
+      isBlockLarge,
+    );
   }
 }

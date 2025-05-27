@@ -94,6 +94,7 @@ export async function setup(
   const initialDynamic = {
     focus: null,
     player: null,
+    isInventoryBlockLarge: false,
   } satisfies GameDynamic;
   const state = writable<GameState>(structuredClone(initialGameState));
   const grid = new Grid(
@@ -116,7 +117,7 @@ export async function setup(
     state: state,
     history,
     config,
-    elapsed: 0, // does this need to be writable? like is anyone listening to this/
+    elapsed: 0,
   };
 
   function reset() {
@@ -214,7 +215,7 @@ export async function setup(
   };
 
   const uiContext = derived([state, history], ([$state, $history]) => {
-    return useUI($state, $history);
+    return useUI($state, $history, cx.dynamic);
   });
   uiContext.subscribe((uiInfo) => {
     bindings.uiInfo = uiInfo;

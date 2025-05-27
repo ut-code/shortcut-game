@@ -109,10 +109,10 @@ function restore(cx: Context, ss: StateSnapshot) {
   cx.dynamic.player.x = ss.playerX;
   cx.dynamic.player.y = ss.playerY;
   cx.dynamic.player.facing = ss.playerFacing;
+  cx.dynamic.isInventoryBlockLarge = (ss.game.inventory?.relativePositions.length ?? 0) >= 2;
   cx.grid.diffAndUpdateTo(cx, ss.game.cells);
   cx.grid.clearFallableSprites(cx);
   cx.grid.clearLaser(cx);
-  printCells(ss.game.cells, "restore");
 }
 function stash(cx: Context) {
   cx.history.update((prev) => {
